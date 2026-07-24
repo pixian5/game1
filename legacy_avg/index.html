@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>霓虹心事 · Neon Heartbeats</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- 标题画面 -->
+  <section id="title-screen" class="screen active">
+    <div class="title-bg"></div>
+    <div class="title-content">
+      <h1 class="game-title">
+        <span class="title-cn">霓虹心事</span>
+        <span class="title-en">Neon Heartbeats</span>
+      </h1>
+      <p class="game-subtitle">三个男人，一座霓城，一场迟到的盛夏</p>
+      <nav class="title-menu">
+        <button class="menu-btn" data-action="new-game">开始新游戏</button>
+        <button class="menu-btn" data-action="continue">继续游戏</button>
+        <button class="menu-btn" data-action="load">读取存档</button>
+        <button class="menu-btn" data-action="gallery">CG · 设定集</button>
+        <button class="menu-btn" data-action="settings">设置</button>
+      </nav>
+      <p class="version">v0.0.3 · 开发测试版</p>
+    </div>
+  </section>
+
+  <!-- 游戏画面 -->
+  <section id="game-screen" class="screen">
+    <div id="stage" class="stage">
+      <div id="bg-layer" class="bg-layer"></div>
+      <div id="sprite-layer" class="sprite-layer">
+        <div class="sprite slot left" data-slot="left"></div>
+        <div class="sprite slot center" data-slot="center"></div>
+        <div class="sprite slot right" data-slot="right"></div>
+      </div>
+      <div id="effect-layer" class="effect-layer"></div>
+    </div>
+
+    <!-- 顶栏 -->
+    <header id="top-bar" class="top-bar">
+      <button class="icon-btn" data-action="back-to-title" title="返回标题">≡</button>
+      <div class="status-mini">
+        <span class="status-item">日期 <b id="status-date">—</b></span>
+        <span class="status-item">章节 <b id="status-chapter">—</b></span>
+      </div>
+      <button class="icon-btn" data-action="quick-menu" title="菜单">☰</button>
+    </header>
+
+    <!-- 对话框 -->
+    <div id="dialog-box" class="dialog-box">
+      <div class="speaker-name" id="speaker-name"></div>
+      <div class="dialog-text" id="dialog-text"></div>
+      <div class="click-hint" id="click-hint">▼</div>
+    </div>
+
+    <!-- 选项层 -->
+    <div id="choice-layer" class="choice-layer" hidden>
+      <div class="choice-prompt" id="choice-prompt"></div>
+      <div class="choice-list" id="choice-list"></div>
+    </div>
+
+    <!-- 快捷菜单 -->
+    <div id="quick-menu" class="quick-menu" hidden>
+      <button class="qm-btn" data-action="save">保存</button>
+      <button class="qm-btn" data-action="load">读取</button>
+      <button class="qm-btn" data-action="auto">自动</button>
+      <button class="qm-btn" data-action="skip">跳过</button>
+      <button class="qm-btn" data-action="log">回看</button>
+      <button class="qm-btn" data-action="close-menu">关闭</button>
+    </div>
+
+    <!-- 回看日志 -->
+    <div id="log-panel" class="log-panel" hidden>
+      <div class="log-header">回看记录 <button class="qm-btn" data-action="close-log">关闭</button></div>
+      <div class="log-list" id="log-list"></div>
+    </div>
+  </section>
+
+  <!-- 存档/读档画面 -->
+  <section id="save-screen" class="screen">
+    <header class="sub-header">
+      <button class="icon-btn" data-action="back-to-title">← 返回</button>
+      <h2 id="save-title">存档</h2>
+    </header>
+    <div class="save-list" id="save-list"></div>
+  </section>
+
+  <!-- 设定集 -->
+  <section id="gallery-screen" class="screen">
+    <header class="sub-header">
+      <button class="icon-btn" data-action="back-to-title">← 返回</button>
+      <h2>设定集</h2>
+    </header>
+    <div class="gallery-tabs">
+      <button class="tab-btn active" data-tab="characters">角色</button>
+      <button class="tab-btn" data-tab="world">世界</button>
+      <button class="tab-btn" data-tab="endings">结局</button>
+    </div>
+    <div class="gallery-content" id="gallery-content"></div>
+  </section>
+
+  <!-- 设置 -->
+  <section id="settings-screen" class="screen">
+    <header class="sub-header">
+      <button class="icon-btn" data-action="back-to-title">← 返回</button>
+      <h2>设置</h2>
+    </header>
+    <div class="settings-list">
+      <div class="setting-row">
+        <label>文字速度</label>
+        <input type="range" id="text-speed" min="0" max="100" value="40">
+        <span id="text-speed-val">40</span>
+      </div>
+      <div class="setting-row">
+        <label>自动播放间隔(秒)</label>
+        <input type="range" id="auto-interval" min="1" max="8" value="3">
+        <span id="auto-interval-val">3</span>
+      </div>
+      <div class="setting-row">
+        <label>音效</label>
+        <input type="checkbox" id="sfx-toggle" checked>
+      </div>
+      <div class="setting-row">
+        <label>未读文字跳过</label>
+        <input type="checkbox" id="skip-unread">
+      </div>
+    </div>
+  </section>
+
+  <!-- 结局画面 -->
+  <section id="ending-screen" class="screen">
+    <div class="ending-bg" id="ending-bg"></div>
+    <div class="ending-content">
+      <p class="ending-tag" id="ending-tag">END</p>
+      <h2 class="ending-title" id="ending-title"></h2>
+      <p class="ending-text" id="ending-text"></p>
+      <div class="ending-actions">
+        <button class="menu-btn" data-action="back-to-title">返回标题</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" hidden></div>
+</div>
+
+<script src="story.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
