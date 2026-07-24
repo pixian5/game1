@@ -535,8 +535,8 @@ const STORY = {
         {from:'luci', text:'你不用回答我。我只是……来道个别。', choice:{
           prompt:'他就要走了。',
           options:[
-            {text:'喊住他，不让他走', effects:{affection:{}, flags:{luci_stop:1}}, thenEvent:'route_luci_chase_rain'},
-            {text:'看着他离开', effects:{affection:{}, flags:{luci_letgo:1}}, thenEvent:'route_luci_rain_night'}
+            {text:'喊住他，不让他走', effects:{affection:{}, flags:{luci_stop:1}, thenEvent:'route_luci_chase_rain'}},
+            {text:'看着他离开', effects:{affection:{}, flags:{luci_letgo:1}, thenEvent:'route_luci_rain_night'}}
           ]
         }}
       ]
@@ -556,8 +556,8 @@ const STORY = {
         {from:'luci', text:'（信封里是一张去米兰的机票，名字写着：林夏。背面：如果你愿意，我们一起走。）', choice:{
           prompt:'雨水模糊了视线。',
           options:[
-            {text:'追去他家', effects:{affection:{}, flags:{luci_chase:1}}, thenEvent:'route_luci_end_check'},
-            {text:'站在雨里直到天亮', effects:{affection:{}, flags:{luci_giveup:1}}, thenEvent:'route_luci_end_check'}
+            {text:'追去他家', effects:{affection:{}, flags:{luci_chase:1}, thenEvent:'route_luci_end_check'}},
+            {text:'站在雨里直到天亮', effects:{affection:{}, flags:{luci_giveup:1}, thenEvent:'route_luci_end_check'}}
           ]
         }}
       ]
@@ -652,8 +652,8 @@ const STORY = {
         {from:'jiangyu', text:'我可能唱不完。但我想试。', choice:{
           prompt:'他唱到副歌前，停了。',
           options:[
-            {text:'站起来，走到台前', effects:{affection:{}, flags:{jiangyu_stand:1}}, thenEvent:'route_jiangyu_end_check'},
-            {text:'安静等他自己开口', effects:{affection:{}, flags:{jiangyu_silent:1}}, thenEvent:'route_jiangyu_end_check'}
+            {text:'站起来，走到台前', effects:{affection:{}, flags:{jiangyu_stand:1}, thenEvent:'route_jiangyu_end_check'}},
+            {text:'安静等他自己开口', effects:{affection:{}, flags:{jiangyu_silent:1}, thenEvent:'route_jiangyu_end_check'}}
           ]
         }}
       ]
@@ -1499,17 +1499,14 @@ STORY.achievements = {
   perfect_listen:{ id:'perfect_listen',name:'完美倾听者',   icon:'👂', desc:'听完所有电话通话', condition: s => s.callLog.filter(c=>c.status==='answered').length >= 3 },
   no_reply:      { id:'no_reply',      name:'已读不回',     icon:'😶', desc:'让一个男主等待回复超过30秒', condition: s => s.flags.followup_triggered === true },
   // 社交类
-  moment_star:   { id:'moment_star',   name:'动态之星',     icon:'🌟', desc:'发动态并收到3个以上角色互动', condition: s => s.moments.filter(m=>m.author==='me' && (m.likes||[]).length >= 3).length >= 1 },
-  group_active:  { id:'group_active',  name:'群聊活跃',     icon:'👥', desc:'在群聊里发过3条以上消息', condition: s => {
+  moment_star:   { id:'moment_star',   name:'动态之星',     icon:'🌟', desc:'发动态并收到角色互动', condition: s => s.moments.filter(m=>m.author==='me' && (m.likes||[]).length >= 1).length >= 1 },
+  group_active:  { id:'group_active',  name:'群聊活跃',     icon:'👥', desc:'在群聊里发过消息', condition: s => {
     let cnt = 0;
     for(const gid in s.groups){ cnt += (s.groups[gid].messages||[]).filter(m=>m.from==='me').length; }
-    return cnt >= 3;
+    return cnt >= 1;
   }},
   // 探索类
-  explorer:      { id:'explorer',      name:'霓城漫游人',   icon:'🗺️', desc:'前往过所有5个地点', condition: s => {
-    const visited = new Set(Object.keys(s.visitedEncounters).map(k=>k.split('_')[0]));
-    return ['home','gallery','bar','park','studio'].some(()=>true) && s.flags.visited_all_locations === true;
-  }},
+  explorer:      { id:'explorer',      name:'霓城漫游人',   icon:'🗺️', desc:'前往过所有地点', condition: s => s.flags.visited_all_locations === true },
   memory_keeper: { id:'memory_keeper', name:'记忆收藏家',   icon:'🖼️', desc:'解锁3张以上相册照片', condition: s => s.photos.length >= 3 },
   dream_walker:  { id:'dream_walker',  name:'梦境行者',     icon:'🌙', desc:'收集3个以上梦境碎片', condition: s => s.dreamShards.length >= 3 },
   tarot_believer:{ id:'tarot_believer',name:'占卜信徒',     icon:'🔮', desc:'连续3天抽塔罗', condition: s => (s.tarotHistory||[]).length >= 3 },

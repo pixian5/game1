@@ -322,7 +322,6 @@ class PhoneEngine {
     for(const [id, evt] of Object.entries(this.story.events)){
       if(this.state.firedEvents[id]) continue;
       if(evt.trigger && evt.trigger.day === d && evt.trigger.hour === t.hour){
-        this.state.firedEvents[id] = true;
         this.scheduleEvent(id);
       }
     }
@@ -402,11 +401,19 @@ class PhoneEngine {
   }
 
   // 玩家发送消息（通过选项触发）
+  // 归一化选项 effects：兼容 thenEvent 写在 effects 外层
+  normalizeOptionEffects(opt){
+    if(!opt) return {};
+    const eff = {...(opt.effects || {})};
+    if(opt.thenEvent && !eff.thenEvent) eff.thenEvent = opt.thenEvent;
+    return eff;
+  }
   sendMessage(convId, text, effects){
+    const eff = effects || {};
     // 旁白决策：不入会话，仅应用 effects
     if(convId === 'narrator'){
-      this._applyEffects(effects);
-      if(effects && effects.thenEvent) this._dispatchSpecialThen(effects.thenEvent);
+      this._applyEffects(eff);
+      if(eff.thenEvent) this._dispatchSpecialThen(eff.thenEvent);
       return;
     }
     const conv = this.state.conversations[convId];
@@ -422,8 +429,8 @@ class PhoneEngine {
     // 清理会话挂起选项
     if(conv.pendingChoice){ delete conv.pendingChoice; }
     this.emit('conversationUpdate', {id:convId, conv});
-    this._applyEffects(effects);
-    if(effects && effects.thenEvent) this._dispatchSpecialThen(effects.thenEvent);
+    this._applyEffects(eff);
+    if(eff.thenEvent) this._dispatchSpecialThen(eff.thenEvent);
   }
 
   // 处理特殊 thenEvent（邀约 accept/decline），否则按普通事件触发
@@ -751,13 +758,10 @@ class PhoneEngine {
     this.emit('stateChange', this.state);
     // 推进时间30分钟
     this.advanceTime(30);
-    // 检查是否已访问所有地点（成就判定）
-    const allLocs = Object.keys(this.story.locations);
-    const visitedCount = allLocs.filter(l => l === this.state.currentLocation || true).length;
-    // 简化：只要所有 location 都至少 currentLocation 过一次（这里用 flags 累计）
     if(!this.state.flags._visited_set) this.state.flags._visited_set = {};
     this.state.flags._visited_set[locId] = true;
-    if(allLocs.every(l => this.state.flags._visited_set[l])){
+    const allLocs = Object.keys(this.story.locations || {});
+    if(allLocs.length > 0 && allLocs.every(l => this.state.flags._visited_set[l])){
       this.state.flags.visited_all_locations = true;
     }
     // 尝试触发偶遇

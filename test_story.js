@@ -91,7 +91,7 @@ async function doChoice(convId, optIdx=0, desc=''){
   console.log(`  >> 选(${evt.convId}): ${opt.text}`);
   const conv = engine.state.conversations[evt.convId];
   if(conv) conv.pendingChoice = null;
-  engine.sendMessage(evt.convId, opt.text, opt.effects);
+  engine.sendMessage(evt.convId, opt.text, engine.normalizeOptionEffects(opt));
   return true;
 }
 
@@ -114,7 +114,7 @@ async function doAnyChoice(optIdx=0, desc=''){
   console.log(`  >> 选(${evt.convId}): ${opt.text}`);
   const conv = engine.state.conversations[evt.convId];
   if(conv) conv.pendingChoice = null;
-  engine.sendMessage(evt.convId, opt.text, opt.effects);
+  engine.sendMessage(evt.convId, opt.text, engine.normalizeOptionEffects(opt));
   return true;
 }
 
@@ -479,6 +479,106 @@ async function run(){
   check('getLockedAchievements返回未解锁', lockedList.length >= 1, `列表:${lockedList.length}`);
   // 真结局解锁检查函数存在
   check('isTrueEndingUnlocked函数可调用', typeof engine.isTrueEndingUnlocked === 'function');
+
+  // ===== 回忆杀 / thenEvent 归一化 / 来电应答 =====
+  console.log('\n=== 修复回归验证 ===');
+  console.log('[N] 回忆杀 resolveMemory');
+  if(!engine.state.photos.find(p=>p.id==='neon_city')) engine.unlockPhoto('neon_city');
+  const memId = engine.getMemoriesByPhoto('neon_city');
+  check('照片可关联回忆', !!memId, `memId:${memId}`);
+  if(memId){
+    const started = engine.triggerMemory(memId);
+    check('触发回忆成功', started);
+    engine.resolveMemory(memId, 0);
+    check('回忆已结算', !!engine.state.resolvedMemories[memId]);
+    check('回忆碎片已收集', engine.state.memoryShards.some(s=>s.memId===memId),
+      `碎片数:${engine.state.memoryShards.length}`);
+    const again = engine.triggerMemory(memId);
+    check('回忆不可重复触发', again === false);
+  }
+
+  console.log('[O] thenEvent 外层兼容 + 陆辞线断点');
+  const norm = engine.normalizeOptionEffects({
+    text:'x', effects:{flags:{luci_stop:1}}, thenEvent:'route_luci_chase_rain'
+  });
+  check('normalizeOptionEffects 合并外层 thenEvent', norm.thenEvent==='route_luci_chase_rain' && norm.flags?.luci_stop===1);
+  const milanOpt = STORY.events.route_luci_milan_2.messages[0].choice.options[0];
+  check('陆辞米兰选项 thenEvent 在 effects 内', !!milanOpt.effects?.thenEvent,
+    `thenEvent:${milanOpt.effects?.thenEvent||'missing'}`);
+  const jiangOpt = STORY.events.route_jiangyu_show_msg_2.messages[0].choice.options[0];
+  check('江屿登台选项 thenEvent 在 effects 内', !!jiangOpt.effects?.thenEvent,
+    `thenEvent:${jiangOpt.effects?.thenEvent||'missing'}`);
+
+  console.log('[P] 陆辞线 GOOD 快速链路');
+  const engineLuci = new PhoneEngine(STORY);
+  engineLuci.newGame();
+  // 直接切入陆辞线关键节点，验证 thenEvent 不再断链
+  engineLuci.state.day = 5;
+  engineLuci.state.affection.luci = 5;
+  engineLuci.scheduleEvent('route_luci_start');
+  await waitFor(()=> engineLuci.state.firedEvents['route_luci_school'] || engineLuci.state.day > 5, 8000, '陆辞学校日');
+  // 手动推进到告白选项
+  engineLuci.scheduleEvent('route_luci_rooftop');
+  await sleep(2500);
+  // 若挂起了选择则选 GOOD 分支
+  const luciConv = engineLuci.state.conversations.luci;
+  if(luciConv?.pendingChoice){
+    const opt = luciConv.pendingChoice.options[0];
+    engineLuci.sendMessage('luci', opt.text, engineLuci.normalizeOptionEffects(opt));
+  }
+  // 直接验证米兰分叉 thenEvent 可调度
+  engineLuci.state.firedEvents = {...engineLuci.state.firedEvents};
+  delete engineLuci.state.firedEvents['route_luci_chase_rain'];
+  delete engineLuci.state.firedEvents['route_luci_end_check'];
+  delete engineLuci.state.firedEvents['__luci_end_judge'];
+  delete engineLuci.state.firedEvents['ending_luci_good'];
+  engineLuci.state.ended = false;
+  engineLuci.state.flags.luci_confess = 1;
+  engineLuci.state.flags.luci_stop = 1;
+  engineLuci.state.flags.luci_choice = 'accept';
+  const milanEffects = engineLuci.normalizeOptionEffects(
+    STORY.events.route_luci_milan_2.messages[0].choice.options[0]
+  );
+  engineLuci.sendMessage('luci', '喊住他，不让他走', milanEffects);
+  await waitFor(()=> !!engineLuci.state.firedEvents['route_luci_chase_rain'], 5000, '陆辞 chase 事件');
+  check('陆辞 thenEvent 可触发 chase', !!engineLuci.state.firedEvents['route_luci_chase_rain']);
+  // 直接终局判定
+  engineLuci.scheduleEvent('__luci_end_judge');
+  await waitFor(()=> engineLuci.state.ended, 3000, '陆辞结局');
+  check('陆辞线可到达结局', engineLuci.state.ended === true,
+    `结局:${Object.keys(engineLuci.state.endingSeen).join(',')}`);
+
+  console.log('[Q] 江屿线 thenEvent 断点');
+  const engineJy = new PhoneEngine(STORY);
+  engineJy.newGame();
+  engineJy.state.ended = false;
+  engineJy.state.flags.jiangyu_hold = 1;
+  engineJy.state.flags.jiangyu_stand = 1;
+  engineJy.state.flags.jiangyu_choice = 'stay';
+  const jyEffects = engineJy.normalizeOptionEffects(
+    STORY.events.route_jiangyu_show_msg_2.messages[0].choice.options[0]
+  );
+  engineJy.sendMessage('jiangyu', '站起来，走到台前', jyEffects);
+  await waitFor(()=> !!engineJy.state.firedEvents['route_jiangyu_end_check'], 5000, '江屿 end_check');
+  check('江屿 thenEvent 可触发 end_check', !!engineJy.state.firedEvents['route_jiangyu_end_check']);
+  engineJy.scheduleEvent('__jiangyu_end_judge');
+  await waitFor(()=> engineJy.state.ended, 3000, '江屿结局');
+  check('江屿线可到达结局', engineJy.state.ended === true,
+    `结局:${Object.keys(engineJy.state.endingSeen).join(',')}`);
+
+  console.log('[R] answerCall 清理未接定时器');
+  const engineCall = new PhoneEngine(STORY);
+  engineCall.newGame();
+  let missed = false;
+  engineCall.on('callMissed', ()=>{ missed = true; });
+  // 直接触发电话事件
+  engineCall.state.firedEvents = {};
+  engineCall.scheduleEvent('jiangyu_call_night');
+  await waitFor(()=> engineCall._pendingCallEventId === 'jiangyu_call_night', 5000, '来电挂起');
+  engineCall.answerCall('jiangyu_call_night');
+  await sleep(26000);
+  check('接听后不会触发 callMissed', missed === false);
+  check('接听后 pending 已清空', engineCall._pendingCallEventId === null);
 
   // 总结
   console.log('\n=== 总结 ===');

@@ -496,7 +496,7 @@
         const opt = choice.options[defaultIdx];
         const conv = engine.state.conversations[convId];
         if(conv) conv.pendingChoice = null;
-        engine.sendMessage(convId, opt.text, opt.effects);
+        engine.sendMessage(convId, opt.text, mergeOptionEffects(opt));
         bar.hidden = true;
         toast('（沉默）');
       });
@@ -587,6 +587,7 @@
     const call = window._currentCall;
     if(!call) return;
     if(action === 'accept'){
+      engine.answerCall(call.eventId);
       $('call-actions').hidden = true;
       $('call-label').textContent = '通话中';
       $('call-timer').hidden = false;
@@ -595,7 +596,6 @@
       runCallScript(call);
     } else if(action === 'decline'){
       engine.declineCall(call.eventId);
-      engine.addCallLog(call.from, 'missed', '—');
       window._currentCall = null;
       showScreen('home');
       toast('已挂断');
@@ -676,7 +676,13 @@
     }
   }
   function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function nl2brEscaped(s){
+    return escapeHtml(s).replace(/\n/g, '<br>');
+  }
+  function mergeOptionEffects(opt){
+    return engine.normalizeOptionEffects ? engine.normalizeOptionEffects(opt) : {...(opt?.effects||{})};
   }
   function viewPhoto(pid){
     const p = STORY.photos[pid];
@@ -977,10 +983,10 @@
       }
       item.innerHTML = `
         <div class="moment-top">
-          <div class="moment-avatar" style="background:${m.bg}">${m.avatar}</div>
+          <div class="moment-avatar" style="background:${escapeHtml(m.bg)}">${escapeHtml(m.avatar)}</div>
           <div class="moment-body">
-            <div class="moment-name">${m.name}</div>
-            <div class="moment-text">${m.text.replace(/\n/g,'<br>')}</div>
+            <div class="moment-name">${escapeHtml(m.name)}</div>
+            <div class="moment-text">${nl2brEscaped(m.text)}</div>
             ${m.art ? `<div class="moment-art">${getMomentArt(m.art)}</div>` : ''}
             <div class="moment-meta">
               <span>${m.dateLabel} ${m.time}</span>
@@ -1413,7 +1419,7 @@
       if(g && g.pendingChoice){
         const opt = g.pendingChoice.options[idx];
         if(opt){
-          engine.sendGroupMessage(currentGroupId, opt.text, opt.effects);
+          engine.sendGroupMessage(currentGroupId, opt.text, mergeOptionEffects(opt));
           g.pendingChoice = null;
           $('group-chat-input-bar').hidden = true;
         }
