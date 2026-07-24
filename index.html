@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>霓虹心事 · 林夏的手机 · v0.0.12</title>
-<meta name="version" content="v0.0.12">
-<link rel="stylesheet" href="style.css">
+<title>霓虹心事 · 林夏的手机 · v0.0.13</title>
+<meta name="version" content="v0.0.13">
+<link rel="stylesheet" href="style.css?v=0.0.13">
 </head>
 <body>
 <div id="phone-frame">
@@ -104,6 +104,19 @@
         <button class="app-icon" data-app="perspective">
           <span class="app-emoji">👁️</span><span class="app-name">男主视角</span>
           <span class="app-badge" id="badge-perspective" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="player">
+          <span class="app-emoji">🪞</span><span class="app-name">主角</span>
+        </button>
+        <button class="app-icon" data-app="relations">
+          <span class="app-emoji">💞</span><span class="app-name">关系</span>
+        </button>
+        <button class="app-icon" data-app="tasks">
+          <span class="app-emoji">✅</span><span class="app-name">今日</span>
+          <span class="app-badge" id="badge-tasks" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="watch">
+          <span class="app-emoji">🎬</span><span class="app-name">观赏</span>
         </button>
       </div>
       <div class="home-dock">
@@ -469,6 +482,49 @@
       </div>
     </section>
 
+    <!-- v0.0.13 主角自定义App -->
+    <section id="player-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>主角档案</h1>
+        <button class="moments-post-btn" id="player-edit-btn" data-action="edit-player">✎</button>
+      </header>
+      <div class="player-content" id="player-content"></div>
+    </section>
+
+    <!-- 主角编辑/性格问答模态 -->
+    <section id="player-edit-screen" class="screen overlay-screen">
+      <div class="player-edit-content" id="player-edit-content"></div>
+    </section>
+
+    <!-- v0.0.13 关系阶段App -->
+    <section id="relations-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>关系阶段</h1>
+      </header>
+      <div class="relations-content" id="relations-content"></div>
+    </section>
+
+    <!-- v0.0.13 每日任务App -->
+    <section id="tasks-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>今日任务</h1>
+        <div class="shop-coins" id="tasks-streak">🔥 0</div>
+      </header>
+      <div class="tasks-content" id="tasks-content"></div>
+    </section>
+
+    <!-- v0.0.13 观赏模式App -->
+    <section id="watch-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>观赏模式</h1>
+      </header>
+      <div class="watch-content" id="watch-content"></div>
+    </section>
+
     <!-- 发朋友圈模态框 -->
     <section id="post-moment-screen" class="screen overlay-screen">
       <div class="post-moment-content">
@@ -515,8 +571,8 @@
   </div>
 </div>
 
-<script src="story.js"></script>
-<script src="engine.js"></script>
-<script src="app.js"></script>
+<script src="story.js?v=0.0.13"></script>
+<script src="engine.js?v=0.0.13"></script>
+<script src="app.js?v=0.0.13"></script>
 </body>
 </html>

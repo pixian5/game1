@@ -425,7 +425,7 @@ async function run(){
     `物品数:${STORY.shop?Object.keys(STORY.shop.items).length:0}`);
   check('3位男主有喜好表', STORY.shop && Object.keys(STORY.shop.preferences).length >= 3,
     `男主数:${STORY.shop?Object.keys(STORY.shop.preferences).length:0}`);
-  check('初始金币为500', engine.state.coins === 500, `金币:${engine.state.coins}`);
+  check('初始金币≥500（剧情推进可能因日常任务增加）', engine.state.coins >= 500, `金币:${engine.state.coins}`);
   // 购买测试
   const beforeCoins = engine.state.coins;
   const buyR = engine.buyGift('art_book');
@@ -675,6 +675,164 @@ async function run(){
   check('isTruthEndingSeen返回true', engine.isTruthEndingSeen('shenyan') === true);
   // 终极真结局检查
   check('isUltimateTruthEndingUnlocked函数可调用', typeof engine.isUltimateTruthEndingUnlocked === 'function');
+
+  // ===== v0.0.13 新玩法测试 =====
+  console.log('\n=== v0.0.13 新玩法测试 ===\n');
+
+  console.log('[W1] 主角自定义+动态称谓');
+  // 默认主角
+  const defPlayer = engine.getPlayer();
+  check('默认主角有名字', !!defPlayer.name && defPlayer.name === '林夏');
+  check('默认主角有昵称', defPlayer.nickname === '夏夏');
+  // 自定义主角
+  engine.setPlayer({
+    name: '苏念', nickname: '念念', age: 25,
+    bg: '#3a1a3a', pronoun: '她', answers: {}
+  });
+  check('setPlayer保存姓名', engine.state.player.name === '苏念');
+  check('setPlayer自动生成头像首字', engine.state.player.avatar === '苏');
+  check('setPlayer保存称谓', engine.state.player.pronoun === '她');
+  // 性格问答
+  const quiz = STORY.playerCustomization?.personalityQuiz || [];
+  check('性格问答≥3题', quiz.length >= 3, `题数:${quiz.length}`);
+  const beforeActive = engine.state.personality.active;
+  engine.answerQuiz('pq1', 0);  // 立刻接起 → active+1, brave+1
+  check('answerQuiz记录答案', engine.state.player.answers.pq1 === 0);
+  check('answerQuiz应用effects', engine.state.personality.active === beforeActive + 1);
+  engine.finishQuiz();
+  check('finishQuiz设置标志', engine.state.playerQuizDone === true);
+  // 动态称谓：苏苏始终叫"夏夏"，沈砚之阶段1叫全名
+  const susuNick = engine.getCharNickname('susu');
+  check('苏苏称谓为夏夏', susuNick.call === '夏夏');
+  const shenyanNick1 = engine.getCharNickname('shenyan');
+  // 当前沈砚之好感度可能已经>0，按阶段判定
+  check('沈砚之称谓有内容', !!shenyanNick1.call);
+  check('沈砚之称谓有内心独白', !!shenyanNick1.inner);
+  // 文本替换
+  const replaced = engine.replacePlayerTokens('你好，$PLAYER$。$NICK$，今晚有空吗？');
+  check('replacePlayerTokens替换姓名', replaced.includes('苏念'));
+  check('replacePlayerTokens替换昵称', replaced.includes('念念'));
+
+  console.log('[W2] 关系阶段+临界事件');
+  // 关系阶段定义检查
+  check('3位男主有关系阶段', STORY.relationshipStages && Object.keys(STORY.relationshipStages).length >= 3,
+    `数:${STORY.relationshipStages?Object.keys(STORY.relationshipStages).length:0}`);
+  Object.entries(STORY.relationshipStages||{}).forEach(([cid, stages])=>{
+    check(`${cid}有4个阶段`, stages.length === 4, `数:${stages.length}`);
+    // 阶段 minAff/maxAff 连续
+    let prevMax = -1;
+    stages.forEach((s, i)=>{
+      check(`${cid}阶段${s.stage} minAff连续`, s.minAff === prevMax + 1 || i === 0, `minAff:${s.minAff}`);
+      prevMax = s.maxAff;
+    });
+  });
+  // 临界事件定义检查
+  check('3个临界事件已定义', STORY.criticalEvents && Object.keys(STORY.criticalEvents).length >= 3,
+    `数:${STORY.criticalEvents?Object.keys(STORY.criticalEvents).length:0}`);
+  // 阶段3必须配 criticalEvent
+  const stage3HasCritical = Object.values(STORY.relationshipStages||{})
+    .every(stages => stages[2] && stages[2].criticalEvent);
+  check('阶段3均配置criticalEvent', stage3HasCritical);
+  // 获取当前阶段
+  const curStage = engine.getRelationshipStage('shenyan');
+  check('getRelationshipStage返回阶段对象', curStage && curStage.stage && curStage.name);
+  const curStageNum = engine.getRelationshipStageNum('shenyan');
+  check('getRelationshipStageNum返回数字', typeof curStageNum === 'number' && curStageNum >= 1);
+  // getAllRelationshipStages
+  const allStages = engine.getAllRelationshipStages();
+  check('getAllRelationshipStages返回3条', allStages.length === 3, `数:${allStages.length}`);
+  // 模拟好感度提升触发阶段升级
+  const initShenyanStage = engine.state.relationshipStages.shenyan || 1;
+  // 临时把好感度拉到阶段3，检查 relationshipStageUp 事件
+  let stageUpEvt = null;
+  const stageUpHandler = (p)=>{ stageUpEvt = p; };
+  engine.on('relationshipStageUp', stageUpHandler);
+  // 强制把好感度提到阶段3（>=7）
+  const targetAff = 8;
+  engine.state.affection.shenyan = targetAff;
+  const upResult = engine.checkRelationshipStageUp('shenyan');
+  check('好感度提升后触发阶段升级', !!upResult);
+  check('relationshipStages状态已更新', engine.state.relationshipStages.shenyan >= initShenyanStage + 1);
+  await sleep(100);
+  check('relationshipStageUp事件已触发', !!stageUpEvt);
+  engine.off('relationshipStageUp', stageUpHandler);
+
+  console.log('[W3] 每日任务+连胜奖励');
+  check('任务模板池≥5个', STORY.dailyTasks && STORY.dailyTasks.pool.length >= 5,
+    `数:${STORY.dailyTasks?STORY.dailyTasks.pool.length:0}`);
+  check('连胜奖励≥3档', STORY.dailyTasks && STORY.dailyTasks.streakRewards.length >= 3,
+    `数:${STORY.dailyTasks?STORY.dailyTasks.streakRewards.length:0}`);
+  // 每个任务必须有 check 函数和 reward
+  const allTasksHaveCheck = STORY.dailyTasks.pool.every(t => typeof t.check === 'function' && t.reward);
+  check('每个任务有check函数和reward', allTasksHaveCheck);
+  // newGame 后初始任务已生成
+  const engine2 = new PhoneEngine(STORY);
+  engine2.newGame();
+  await sleep(200);
+  check('newGame后生成3个任务', engine2.state.dailyTasks.length === 3,
+    `数:${engine2.state.dailyTasks.length}`);
+  check('每个任务初始completed=false', engine2.state.dailyTasks.every(t=>!t.completed));
+  check('lastTaskDay已记录', engine2.state.lastTaskDay === engine2.state.day);
+  // 模拟完成所有任务（直接修改 state）
+  engine2.state.dailyTasks.forEach(t=>{
+    if(!t.completed){
+      t.completed = true;
+      if(t.reward.coins) engine2.state.coins += t.reward.coins;
+    }
+  });
+  // 跨天：触发连胜 +1
+  const initStreak = engine2.state.taskStreak || 0;
+  engine2.state.day++;  // 模拟跨天
+  // 触发 checkDailyTasks 跨天逻辑
+  let taskEvt = null;
+  engine2.on('dailyTasksUpdated', ()=>{ taskEvt = true; });
+  engine2.checkDailyTasks();
+  check('跨天后连胜+1', engine2.state.taskStreak === initStreak + 1, `连胜:${engine2.state.taskStreak}`);
+  check('跨天后生成新任务', engine2.state.dailyTasks.length === 3);
+  check('dailyTasksUpdated事件触发', !!taskEvt);
+  // 模拟未完成所有任务 → 连胜清零
+  engine2.state.day++;
+  engine2.checkDailyTasks();
+  // 此时未完成，连胜应清零（但要看新任务是否都未完成）
+  // 由于新生成的任务都是未完成，allDone=false → streak=0
+  check('未完成所有任务后连胜清零', engine2.state.taskStreak === 0, `连胜:${engine2.state.taskStreak}`);
+  // 连胜奖励领取
+  engine2.state.taskStreak = 3;
+  const claimR = engine2.claimStreakReward(3);
+  check('claimStreakReward可领取', claimR === true);
+  check('claimStreakReward金币增加', engine2.state.coins >= 500);
+  check('taskStreakClaimed标记已领', engine2.state.taskStreakClaimed[3] === true);
+  // 重复领取
+  const claimAgain = engine2.claimStreakReward(3);
+  check('不可重复领取', claimAgain === false);
+
+  console.log('[W4] 观赏模式+自动推进');
+  check('5种观赏策略', STORY.watchMode && Object.keys(STORY.watchMode.strategies).length === 5,
+    `数:${STORY.watchMode?Object.keys(STORY.watchMode.strategies).length:0}`);
+  // 每个策略有 pick 函数
+  const allHavePick = Object.values(STORY.watchMode.strategies).every(s => typeof s.pick === 'function');
+  check('每个策略有pick函数', allHavePick);
+  // setWatchMode
+  engine.setWatchMode(true, 'affection');
+  check('setWatchMode开启', engine.state.watchMode === true);
+  check('setWatchMode策略', engine.state.watchStrategy === 'affection');
+  // pickAutoChoice
+  const testOpts = [
+    {text:'A', effects:{affection:{shenyan:1}}},
+    {text:'B', effects:{affection:{shenyan:3}}},
+    {text:'C', effects:{affection:{shenyan:0}}}
+  ];
+  const picked = engine.pickAutoChoice(testOpts);
+  check('pickAutoChoice返回索引', typeof picked === 'number' && picked >= 0);
+  // affection 策略应选 +3 那个（索引1）
+  check('affection策略选好感最高项', picked === 1, `实际:${picked}`);
+  // 切换为 random 策略
+  engine.setWatchMode(true, 'random');
+  const randPicked = engine.pickAutoChoice(testOpts);
+  check('random策略返回合法索引', randPicked >= 0 && randPicked < testOpts.length);
+  // 关闭观赏模式
+  engine.setWatchMode(false);
+  check('setWatchMode关闭', engine.state.watchMode === false);
 
   // 总结
   console.log('\n=== 总结 ===');

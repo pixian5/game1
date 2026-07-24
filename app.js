@@ -20,7 +20,11 @@
     collection:$('collection-app'), puzzles:$('puzzles-app'),
     puzzleDetail:$('puzzle-detail-screen'), calendar2:$('calendar2-app'),
     perspective:$('perspective-app'), pscene:$('perspective-scene-screen'),
-    truthEnding:$('truth-ending-screen')
+    truthEnding:$('truth-ending-screen'),
+    // v0.0.13 新玩法
+    player:$('player-app'), playerEdit:$('player-edit-screen'),
+    relations:$('relations-app'), tasks:$('tasks-app'),
+    watch:$('watch-app')
   };
   let currentConvId = null;
   let currentGroupId = null;
@@ -193,6 +197,22 @@
     if(psceneOpt){ handlePsceneOption(parseInt(psceneOpt.dataset.psceneOpt)); return; }
     const truthBtn = e.target.closest('[data-action="show-truth"]');
     if(truthBtn){ showTruthEnding(truthBtn.dataset.charId); return; }
+    // v0.0.13 主角档案编辑
+    const editPlayerBtn = e.target.closest('[data-action="edit-player"]');
+    if(editPlayerBtn){ openPlayerEdit(); return; }
+    const cancelEditBtn = e.target.closest('[data-action="cancel-player-edit"]');
+    if(cancelEditBtn){ playerEditState = null; showScreen('player'); return; }
+    const savePlayerBtn = e.target.closest('[data-action="save-player"]');
+    if(savePlayerBtn){ savePlayer(); return; }
+    if(handlePlayerEditClick(e.target)){ return; }
+    // v0.0.13 每日任务连胜奖励
+    const claimStreakBtn = e.target.closest('[data-action="claim-streak"]');
+    if(claimStreakBtn){ claimStreakReward(parseInt(claimStreakBtn.dataset.days)); return; }
+    // v0.0.13 观赏模式
+    const watchToggleBtn = e.target.closest('[data-action="toggle-watch"]');
+    if(watchToggleBtn){ toggleWatchMode(); return; }
+    const watchStrategyBtn = e.target.closest('[data-watch-strategy]');
+    if(watchStrategyBtn){ setWatchStrategy(watchStrategyBtn.dataset.watchStrategy); return; }
   });
 
   function openApp(app){
@@ -216,6 +236,11 @@
       case 'puzzles': renderPuzzles(); showScreen('puzzles'); break;
       case 'calendar2': renderCalendar2(); showScreen('calendar2'); break;
       case 'perspective': renderPerspective(); showScreen('perspective'); break;
+      // v0.0.13 新玩法
+      case 'player': renderPlayer(); showScreen('player'); break;
+      case 'relations': renderRelations(); showScreen('relations'); break;
+      case 'tasks': renderTasks(); showScreen('tasks'); break;
+      case 'watch': renderWatch(); showScreen('watch'); break;
     }
   }
 
@@ -419,6 +444,19 @@
 
   // 选项触发：若玩家正在该会话则立即显示，否则 engine 已挂起 pendingChoice
   engine.on('choicePrompt', ({convId, choice, conv})=>{
+    // v0.0.13 观赏模式：自动选择
+    if(engine.state.watchMode && choice.options && choice.options.length > 0 && !choice.isInvitation){
+      const autoIdx = engine.pickAutoChoice(choice.options);
+      const autoOpt = choice.options[autoIdx];
+      const delay = STORY.watchMode?.autoAdvanceDelay || 1500;
+      setTimeout(()=>{
+        if(conv){ conv.pendingChoice = null; }
+        // 旁白决策也走 sendMessage 接口
+        engine.sendMessage(convId, autoOpt.text, engine.normalizeOptionEffects(autoOpt));
+        toast(`🎬 观赏自动选：${autoOpt.text}`);
+      }, delay);
+      return;
+    }
     if(convId === 'narrator'){
       // 旁白决策：直接弹模态框
       showNarratorChoice(choice);
@@ -2159,6 +2197,397 @@
     document.body.appendChild(n);
     setTimeout(()=> n.remove(), 4000);
   });
+
+  // ===== v0.0.13 主角档案 App =====
+  const PLAYER_COLORS = ['#5a2a4a','#2a2f5a','#2a5a3a','#5a3a1a','#3a1a3a','#1a3a4a','#4a1a2a','#3a3a3a'];
+  let playerEditState = null;  // 临时编辑态
+  function renderPlayer(){
+    const content = $('player-content');
+    const p = engine.getPlayer();
+    let html = `<div class="player-hero">
+      <div class="player-hero-avatar" style="background:${p.bg || '#5a2a4a'}">${escapeHtml(p.avatar || (p.name ? p.name[0] : '林'))}</div>
+      <div class="player-hero-name">${escapeHtml(p.name || '林夏')}</div>
+      <div class="player-hero-nick">昵称 · ${escapeHtml(p.nickname || '夏夏')}</div>
+      <div class="player-hero-meta">
+        <span>${p.age || 24} 岁</span>
+        <span>称谓 · ${escapeHtml(p.pronoun || '她')}</span>
+        ${engine.state.playerQuizDone ? '<span style="color:#4ade80">✓ 性格已画像</span>' : '<span style="color:var(--accent2)">性格问答待完成</span>'}
+      </div>
+    </div>`;
+    // 性格问答回顾
+    const quiz = STORY.playerCustomization?.personalityQuiz || [];
+    if(quiz.length > 0){
+      html += '<div class="player-section-title">性格画像回顾</div>';
+      html += '<div class="player-quiz-list">';
+      quiz.forEach(q=>{
+        const ansIdx = p.answers?.[q.id];
+        const opt = (ansIdx !== undefined) ? q.options[ansIdx] : null;
+        html += `<div class="player-quiz-item">
+          <div class="player-quiz-q">${escapeHtml(q.question)}</div>
+          <div class="player-quiz-a">${opt ? ('→ ' + escapeHtml(opt.text) + (opt.label ? ` (${opt.label})` : '')) : '未作答'}</div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+    // 动态称谓表
+    const chars = ['shenyan','luci','jiangyu','susu'];
+    html += '<div class="player-section-title">男主对你的称谓</div>';
+    html += '<div class="player-nick-table">';
+    chars.forEach(cid=>{
+      const char = STORY.characters[cid];
+      if(!char) return;
+      const nick = engine.getCharNickname(cid);
+      const hasRelStage = !!(STORY.relationshipStages && STORY.relationshipStages[cid]);
+      const stageNum = hasRelStage ? engine.getRelationshipStageNum(cid) : '—';
+      html += `<div class="player-nick-row">
+        <div class="player-nick-char" style="background:${char.bg}">${char.avatar}</div>
+        <div class="player-nick-info">
+          <div class="player-nick-call">${escapeHtml(nick.call)}</div>
+          ${nick.inner ? `<div class="player-nick-inner">"${escapeHtml(nick.inner)}"</div>` : ''}
+        </div>
+        <div class="player-nick-stage">${hasRelStage ? ('阶段 ' + stageNum) : '闺蜜'}</div>
+      </div>`;
+    });
+    html += '</div>';
+    content.innerHTML = html;
+  }
+
+  function openPlayerEdit(){
+    const p = engine.getPlayer();
+    playerEditState = {
+      name: p.name || '林夏',
+      nickname: p.nickname || '夏夏',
+      avatar: p.avatar || (p.name ? p.name[0] : '林'),
+      bg: p.bg || '#5a2a4a',
+      age: p.age || 24,
+      pronoun: p.pronoun || '她',
+      answers: {...(p.answers || {})}
+    };
+    renderPlayerEdit();
+    showScreen('playerEdit');
+  }
+
+  function renderPlayerEdit(){
+    const s = playerEditState;
+    if(!s) return;
+    const quiz = STORY.playerCustomization?.personalityQuiz || [];
+    let html = `<div class="player-edit-title">编辑主角档案</div>
+      <div class="player-edit-sub">自定义姓名、昵称和性格画像</div>`;
+    // 基本信息
+    html += `<div class="player-edit-field">
+      <div class="player-edit-label">姓名</div>
+      <input class="player-edit-input" id="pe-name" type="text" maxlength="6" value="${escapeHtml(s.name)}">
+    </div>`;
+    html += `<div class="player-edit-field">
+      <div class="player-edit-label">昵称（闺蜜/男主称呼你的小名基础）</div>
+      <input class="player-edit-input" id="pe-nick" type="text" maxlength="6" value="${escapeHtml(s.nickname)}">
+    </div>`;
+    html += `<div class="player-edit-field">
+      <div class="player-edit-label">年龄</div>
+      <input class="player-edit-input" id="pe-age" type="number" min="18" max="40" value="${s.age}">
+    </div>`;
+    // 头像底色
+    html += `<div class="player-edit-field">
+      <div class="player-edit-label">头像底色</div>
+      <div class="player-edit-color-row" id="pe-colors">
+        ${PLAYER_COLORS.map(c=>`<div class="player-edit-color-opt ${c===s.bg?'selected':''}" data-pe-color="${c}" style="background:${c}"></div>`).join('')}
+      </div>
+    </div>`;
+    // 称谓
+    html += `<div class="player-edit-field">
+      <div class="player-edit-label">称谓</div>
+      <div class="player-edit-pronoun-row" id="pe-pronouns">
+        ${['她','他','TA'].map(pn=>`<div class="player-edit-pronoun-opt ${pn===s.pronoun?'selected':''}" data-pe-pronoun="${pn}">${pn}</div>`).join('')}
+      </div>
+    </div>`;
+    // 性格问答
+    html += '<div class="player-edit-label" style="margin-top:8px;">性格问答（影响初始画像）</div>';
+    quiz.forEach(q=>{
+      const sel = s.answers[q.id];
+      html += `<div class="player-edit-question">
+        <div class="player-edit-question-text">${escapeHtml(q.question)}</div>
+        <div class="player-edit-options">`;
+      q.options.forEach((opt, i)=>{
+        html += `<div class="player-edit-opt ${i===sel?'selected':''}" data-pe-quiz="${q.id}" data-pe-idx="${i}">
+          ${escapeHtml(opt.text)}
+          ${opt.label ? `<span class="player-edit-opt-label">${escapeHtml(opt.label)}</span>` : ''}
+        </div>`;
+      });
+      html += '</div></div>';
+    });
+    // 操作按钮
+    html += `<div class="player-edit-actions">
+      <button class="player-edit-btn secondary" data-action="cancel-player-edit">取消</button>
+      <button class="player-edit-btn" data-action="save-player">保存</button>
+    </div>`;
+    $('player-edit-content').innerHTML = html;
+  }
+
+  function handlePlayerEditClick(target){
+    // 颜色选择
+    const colorOpt = target.closest('[data-pe-color]');
+    if(colorOpt){
+      playerEditState.bg = colorOpt.dataset.peColor;
+      renderPlayerEdit();
+      return true;
+    }
+    // 称谓选择
+    const pronounOpt = target.closest('[data-pe-pronoun]');
+    if(pronounOpt){
+      playerEditState.pronoun = pronounOpt.dataset.pePronoun;
+      renderPlayerEdit();
+      return true;
+    }
+    // 性格问答选择
+    const quizOpt = target.closest('[data-pe-quiz]');
+    if(quizOpt){
+      playerEditState.answers[quizOpt.dataset.peQuiz] = parseInt(quizOpt.dataset.peIdx);
+      renderPlayerEdit();
+      return true;
+    }
+    return false;
+  }
+
+  function savePlayer(){
+    if(!playerEditState) return;
+    const nameInput = $('pe-name');
+    const nickInput = $('pe-nick');
+    const ageInput = $('pe-age');
+    const name = (nameInput?.value || '').trim() || '林夏';
+    const nickname = (nickInput?.value || '').trim() || '夏夏';
+    const age = Math.max(18, Math.min(40, parseInt(ageInput?.value) || 24));
+    // 头像取姓名首字
+    const avatar = name[0];
+    // 应用性格问答 effects：先减去旧 effects，再加新 effects
+    // 简化：仅在首次作答时累加；若已作答则跳过重复应用
+    const oldAnswers = engine.state.player?.answers || {};
+    const newAnswers = playerEditState.answers;
+    // 重置 personality 中由 quiz 产生的维度（避免重复累加）
+    // 简化策略：直接保存新 answers，不重新计算 personality（已应用过的不再加）
+    // 但若首次作答，需要应用 effects
+    const quiz = STORY.playerCustomization?.personalityQuiz || [];
+    quiz.forEach(q=>{
+      const oldIdx = oldAnswers[q.id];
+      const newIdx = newAnswers[q.id];
+      if(oldIdx === undefined && newIdx !== undefined){
+        const opt = q.options[newIdx];
+        if(opt && opt.effects) engine._applyEffects(opt.effects);
+      }
+    });
+    engine.setPlayer({
+      name, nickname, avatar, age,
+      bg: playerEditState.bg,
+      pronoun: playerEditState.pronoun,
+      answers: newAnswers
+    });
+    // 完成性问答题标志
+    if(Object.keys(newAnswers).length >= quiz.length){
+      engine.state.playerQuizDone = true;
+      engine.emit('stateChange', engine.state);
+    }
+    playerEditState = null;
+    toast('档案已保存');
+    renderPlayer();
+    showScreen('player');
+  }
+
+  // 监听主角变化刷新
+  engine.on('playerChanged', ()=>{
+    if(screens.player && screens.player.classList.contains('active')) renderPlayer();
+  });
+
+  // ===== v0.0.13 关系阶段 App =====
+  function renderRelations(){
+    const content = $('relations-content');
+    const all = engine.getAllRelationshipStages();
+    let html = '';
+    all.forEach(r=>{
+      const char = STORY.characters[r.charId];
+      if(!char) return;
+      const stages = STORY.relationshipStages?.[r.charId] || [];
+      const curStageNum = r.stageNum;
+      const aff = r.affection;
+      const maxAff = stages[stages.length-1]?.maxAff || 99;
+      const pct = Math.min(100, (aff / maxAff) * 100);
+      html += `<div class="rel-card">
+        <div class="rel-card-header">
+          <div class="rel-card-avatar" style="background:${char.bg}">${char.avatar}</div>
+          <div class="rel-card-info">
+            <div class="rel-card-name">${escapeHtml(char.name)}</div>
+            <div class="rel-card-stage">阶段 ${curStageNum} · ${escapeHtml(r.stage.name)} · ${escapeHtml(r.stage.title)}</div>
+            <div class="rel-card-aff">好感度 ${aff}</div>
+          </div>
+        </div>
+        <div class="rel-card-bar">
+          <div class="rel-card-bar-fill" style="width:${pct}%"></div>
+          <div class="rel-card-bar-marks">
+            ${stages.map(()=>'<div class="rel-card-bar-mark"></div>').join('')}
+          </div>
+        </div>
+        <div class="rel-stages">`;
+      stages.forEach(s=>{
+        const isCurrent = s.stage === curStageNum;
+        const isPassed = s.stage < curStageNum;
+        const isLocked = s.stage > curStageNum;
+        const cls = isCurrent ? 'current' : (isPassed ? 'passed' : 'locked');
+        html += `<div class="rel-stage-item ${cls}">
+          <div class="rel-stage-dot"></div>
+          <div class="rel-stage-info">
+            <div class="rel-stage-name">阶段 ${s.stage} · ${escapeHtml(s.name)}</div>
+            <div class="rel-stage-title">${escapeHtml(s.title)}</div>
+            <div class="rel-stage-desc">${escapeHtml(s.desc)}</div>
+            ${isCurrent && s.unlockMsg ? `<div class="rel-stage-unlock">"${escapeHtml(s.unlockMsg)}"</div>` : ''}
+            ${s.criticalEvent && !isLocked ? `<div class="rel-stage-unlock" style="color:#ffd566">★ 临界事件已配置</div>` : ''}
+          </div>
+        </div>`;
+      });
+      html += '</div></div>';
+    });
+    content.innerHTML = html;
+  }
+
+  // 关系阶段提升提示
+  engine.on('relationshipStageUp', ({charId, stage, prevStage})=>{
+    const char = STORY.characters[charId];
+    if(!char) return;
+    const n = document.createElement('div');
+    n.className = 'egg-notif';
+    n.textContent = `★ ${char.name} 关系阶段提升：${stage.name} · ${stage.title}`;
+    document.body.appendChild(n);
+    setTimeout(()=> n.remove(), 4000);
+    if(stage.unlockMsg){
+      toast(stage.unlockMsg);
+    }
+    if(screens.relations && screens.relations.classList.contains('active')){
+      renderRelations();
+    }
+  });
+
+  // ===== v0.0.13 每日任务 App =====
+  function renderTasks(){
+    // 顶部连胜
+    $('tasks-streak').textContent = '🔥 ' + (engine.state.taskStreak || 0);
+    const content = $('tasks-content');
+    const tasks = engine.getDailyTasks();
+    let html = `<div class="tasks-streak-banner">
+      <div class="tasks-streak-num">${engine.state.taskStreak || 0}</div>
+      <div class="tasks-streak-label">连续完成天数</div>
+      <div class="tasks-streak-hint">${tasks.every(t=>t.completed) && tasks.length>0 ? '今日已全部完成 ✓' : `今日完成 ${tasks.filter(t=>t.completed).length}/${tasks.length}`}</div>
+    </div>`;
+    // 今日任务列表
+    html += '<div class="tasks-section-title">今日任务</div>';
+    if(tasks.length === 0){
+      html += '<div style="font-size:12px;color:var(--ink-mute);padding:8px 0;">暂无任务</div>';
+    } else {
+      tasks.forEach(t=>{
+        html += `<div class="task-item ${t.completed?'done':''}">
+          <div class="task-check">${t.completed ? '✓' : ''}</div>
+          <div class="task-info">
+            <div class="task-name">${escapeHtml(t.name)}</div>
+            <div class="task-desc">${escapeHtml(t.desc)}</div>
+          </div>
+          <div class="task-reward">+${t.reward?.coins || 0} 💰</div>
+        </div>`;
+      });
+    }
+    // 连胜奖励
+    const rewards = STORY.dailyTasks?.streakRewards || [];
+    if(rewards.length > 0){
+      html += '<div class="tasks-section-title">连胜奖励</div>';
+      html += '<div class="tasks-streak-rewards">';
+      rewards.forEach(r=>{
+        const claimed = engine.state.taskStreakClaimed[r.days];
+        const unlocked = (engine.state.taskStreak || 0) >= r.days;
+        const cls = claimed ? 'claimed' : (unlocked ? 'unlocked' : '');
+        html += `<div class="streak-reward-item ${cls}">
+          <div class="streak-reward-days">${r.days}天</div>
+          <div class="streak-reward-info">
+            <div class="streak-reward-name">${escapeHtml(r.name)}</div>
+            <div class="streak-reward-desc">${escapeHtml(r.desc)} · 奖励 ${r.reward?.coins||0}💰${r.reward?.collectible?' +纪念品':''}</div>
+          </div>
+          ${claimed ? '<div class="streak-reward-claimed">已领取 ✓</div>' :
+            (unlocked ? `<button class="streak-reward-claim" data-action="claim-streak" data-days="${r.days}">领取</button>` :
+            `<div style="font-size:10px;color:var(--ink-mute)">还差 ${r.days - (engine.state.taskStreak||0)} 天</div>`)}
+        </div>`;
+      });
+      html += '</div>';
+    }
+    content.innerHTML = html;
+  }
+
+  // 任务完成通知
+  engine.on('dailyTaskCompleted', (tasks)=>{
+    tasks.forEach(t=>{
+      const n = document.createElement('div');
+      n.className = 'egg-notif';
+      n.textContent = `✅ 任务完成：${t.name} +${t.reward?.coins||0}💰`;
+      document.body.appendChild(n);
+      setTimeout(()=> n.remove(), 3000);
+    });
+    if(screens.tasks && screens.tasks.classList.contains('active')){
+      renderTasks();
+    }
+  });
+  engine.on('streakRewardClaimed', (r)=>{
+    toast(`连胜奖励：${r.name} +${r.reward?.coins||0}💰`);
+    if(screens.tasks && screens.tasks.classList.contains('active')){
+      renderTasks();
+    }
+  });
+
+  function claimStreakReward(days){
+    const ok = engine.claimStreakReward(days);
+    if(!ok) toast('暂不可领取');
+    renderTasks();
+  }
+
+  // ===== v0.0.13 观赏模式 App =====
+  function renderWatch(){
+    const content = $('watch-content');
+    const isOn = engine.state.watchMode;
+    const curStrategy = engine.state.watchStrategy || 'balanced';
+    const strategies = STORY.watchMode?.strategies || {};
+    let html = `<div class="watch-status-card">
+      <div class="watch-status-icon">${isOn ? '🎬' : '⏸'}</div>
+      <div class="watch-status-title">${isOn ? '观赏模式 · 运行中' : '观赏模式 · 未开启'}</div>
+      <div class="watch-status-sub">${isOn ? `策略：${escapeHtml(strategies[curStrategy]?.name || '平衡')}` : '开启后剧情将自动推进'}</div>
+      <button class="watch-toggle-btn ${isOn?'off':''}" data-action="toggle-watch">${isOn ? '停止观赏' : '开启观赏模式'}</button>
+    </div>`;
+    html += '<div class="watch-section-title">选择自动策略</div>';
+    html += '<div class="watch-strategy-list">';
+    Object.values(strategies).forEach(s=>{
+      html += `<div class="watch-strategy-item ${s.id===curStrategy?'selected':''}" data-watch-strategy="${s.id}">
+        <div class="watch-strategy-icon">${WATCH_ICONS[s.id] || '🎯'}</div>
+        <div class="watch-strategy-info">
+          <div class="watch-strategy-name">${escapeHtml(s.name)}</div>
+          <div class="watch-strategy-desc">${escapeHtml(s.desc)}</div>
+        </div>
+        ${s.id===curStrategy ? '<div class="watch-strategy-check">✓</div>' : ''}
+      </div>`;
+    });
+    html += '</div>';
+    html += `<div class="watch-info">
+      💡 观赏模式下，遇到选项时引擎会按所选策略自动选择，剧情自动推进。适合反复体验不同路线与结局。<br>
+      · 平衡：折中选择，体验完整剧情<br>
+      · 好感优先：优先好感度+最高的选项<br>
+      · 理性/感性：按性格偏好选择<br>
+      · 随机：完全随机，可能触发不同结局
+    </div>`;
+    content.innerHTML = html;
+  }
+  const WATCH_ICONS = {balanced:'🎯', affection:'💖', rational:'🧠', emotional:'💫', random:'🎲'};
+
+  function toggleWatchMode(){
+    const newOn = !engine.state.watchMode;
+    engine.setWatchMode(newOn);
+    toast(newOn ? '观赏模式已开启' : '观赏模式已停止');
+    renderWatch();
+  }
+  function setWatchStrategy(strategyId){
+    engine.setWatchMode(engine.state.watchMode, strategyId);
+    toast('策略已切换');
+    renderWatch();
+  }
 
   // ===== 初始化 =====
   function init(){

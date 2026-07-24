@@ -118,7 +118,20 @@ class PhoneEngine {
       discoveredClues: {},       // {clueId: true}
       // v0.0.10 男主视角
       perspectivesSeen: {},      // {charId: {sceneId: true}}
-      truthEndingsSeen: {}       // {charId: true}
+      truthEndingsSeen: {},      // {charId: true}
+      // v0.0.13 主角自定义
+      player: null,              // {name, nickname, avatar, bg, age, pronoun, answers}
+      playerQuizDone: false,     // 是否完成性格问答
+      // v0.0.13 关系阶段
+      relationshipStages: {},    // {charId: currentStage}
+      // v0.0.13 每日任务
+      dailyTasks: [],            // [{id, name, desc, reward, completed}]
+      lastTaskDay: 0,            // 上次生成任务的游戏日
+      taskStreak: 0,             // 连续完成天数
+      taskStreakClaimed: {},     // 已领取的连胜奖励 {days: true}
+      // v0.0.13 观赏模式
+      watchMode: false,          // 是否开启观赏模式
+      watchStrategy: 'balanced'  // 观赏策略
     };
   }
   on(event, fn){ (this.listeners[event] ||= []).push(fn); return fn; }
@@ -147,9 +160,13 @@ class PhoneEngine {
   // 统一应用 effects：避免 30+ 处复制粘贴
   _applyEffects(effects){
     if(!effects) return;
+    const affChanged = [];
     if(effects.affection){
       for(const k in effects.affection){
-        if(this.state.affection[k] !== undefined) this.state.affection[k] += effects.affection[k];
+        if(this.state.affection[k] !== undefined){
+          this.state.affection[k] += effects.affection[k];
+          affChanged.push(k);
+        }
       }
     }
     if(effects.flags){
@@ -160,6 +177,8 @@ class PhoneEngine {
         if(this.state.personality[k] !== undefined) this.state.personality[k] += effects.personality[k];
       }
     }
+    // v0.0.13 关系阶段检查
+    affChanged.forEach(cid => this.checkRelationshipStageUp(cid));
   }
   // 公开接口：供 UI 层调用，避免直接改 state
   applyEffects(effects){ this._applyEffects(effects); this.emit('stateChange', this.state); }
@@ -170,6 +189,8 @@ class PhoneEngine {
     // 初始金币和心情从 story 配置读取
     if(this.story.shop) this.state.coins = this.story.shop.initialCoins || 500;
     if(this.story.moods) this.state.mood = 'calm';
+    // v0.0.13 初始化每日任务
+    this.generateDailyTasks();
     // 初始：苏苏发来欢迎消息
     this.scheduleEvent('intro_susu');
     this.emit('stateChange', this.state);
@@ -232,6 +253,7 @@ class PhoneEngine {
     this.checkFlashbacks();
     this.checkHoliday();
     this.checkEasterEggs();
+    this.checkDailyTasks();
   }
   _checkTimeEventsForRange(fromDay, fromHour, toDay, toHour){
     // 枚举 (day, hour) 范围内可能被跳过的时间触发事件
@@ -1481,6 +1503,199 @@ class PhoneEngine {
     return ['shenyan','luci','jiangyu'].every(c => this.state.truthEndingsSeen[c] === true);
   }
 
+  // ===== v0.0.13 主角自定义+动态称谓 =====
+  setPlayer(info){
+    const def = (this.story.playerCustomization && this.story.playerCustomization.defaultPlayer) || {};
+    this.state.player = {
+      name: info.name || def.name || '林夏',
+      nickname: info.nickname || def.nickname || '夏夏',
+      avatar: info.avatar || (info.name ? info.name[0] : '林'),
+      bg: info.bg || def.bg || '#5a2a4a',
+      age: info.age || def.age || 24,
+      pronoun: info.pronoun || def.pronoun || '她',
+      answers: info.answers || {}
+    };
+    this.emit('playerChanged', this.state.player);
+    this.emit('stateChange', this.state);
+  }
+  getPlayer(){
+    if(this.state.player) return this.state.player;
+    return (this.story.playerCustomization && this.story.playerCustomization.defaultPlayer) || {name:'林夏',nickname:'夏夏',avatar:'林'};
+  }
+  answerQuiz(quizId, optIdx){
+    const quiz = (this.story.playerCustomization?.personalityQuiz || []).find(q=>q.id === quizId);
+    if(!quiz) return false;
+    const opt = quiz.options[optIdx];
+    if(!opt) return false;
+    if(!this.state.player) this.setPlayer({});
+    this.state.player.answers[quizId] = optIdx;
+    if(opt.effects) this._applyEffects(opt.effects);
+    this.emit('stateChange', this.state);
+    return true;
+  }
+  finishQuiz(){
+    this.state.playerQuizDone = true;
+    this.emit('quizFinished', this.state.player);
+    this.emit('stateChange', this.state);
+  }
+  // 获取男主对玩家的当前称谓
+  getCharNickname(charId){
+    const aff = this.state.affection[charId] || 0;
+    const list = this.story.playerCustomization?.dynamicNicknames?.[charId] || [];
+    for(const n of list){
+      if(aff >= n.min && aff <= n.max) return n;
+    }
+    return list[0] || { call: this.getPlayer().name, inner: '' };
+  }
+  // 文本替换：把 $PLAYER$ / $NICK$ 替换为玩家名/昵称
+  replacePlayerTokens(text){
+    if(!text) return text;
+    const p = this.getPlayer();
+    return text.replace(/\$PLAYER\$/g, p.name)
+               .replace(/\$NICK\$/g, p.nickname);
+  }
+
+  // ===== v0.0.13 关系阶段+临界事件 =====
+  getRelationshipStage(charId){
+    const aff = this.state.affection[charId] || 0;
+    const stages = this.story.relationshipStages?.[charId] || [];
+    for(const s of stages){
+      if(aff >= s.minAff && aff <= s.maxAff) return s;
+    }
+    return stages[0] || null;
+  }
+  getRelationshipStageNum(charId){
+    const st = this.getRelationshipStage(charId);
+    return (st && st.stage) || 1;
+  }
+  checkRelationshipStageUp(charId){
+    const cur = this.getRelationshipStageNum(charId);
+    const prev = this.state.relationshipStages[charId] || 1;
+    if(cur > prev){
+      // 阶段提升
+      this.state.relationshipStages[charId] = cur;
+      const stage = this.getRelationshipStage(charId);
+      this.emit('relationshipStageUp', {charId, stage, prevStage: prev});
+      // 临界事件
+      if(stage.criticalEvent){
+        const evt = this.story.criticalEvents?.[stage.criticalEvent];
+        if(evt && !this.state.firedEvents[stage.criticalEvent]){
+          this._setTimeout(()=> this.scheduleEvent(stage.criticalEvent), 2000);
+        }
+      }
+      return stage;
+    } else if(cur < prev){
+      this.state.relationshipStages[charId] = cur;
+    }
+    return null;
+  }
+  getAllRelationshipStages(){
+    return ['shenyan','luci','jiangyu'].map(cid => ({
+      charId: cid,
+      stage: this.getRelationshipStage(cid) || {stage:1, name:'陌生', title:'', desc:''},
+      stageNum: this.getRelationshipStageNum(cid),
+      affection: this.state.affection[cid] || 0
+    }));
+  }
+
+  // ===== v0.0.13 每日任务+连胜奖励 =====
+  generateDailyTasks(){
+    const pool = (this.story.dailyTasks?.pool || []).slice();
+    // 随机抽 3 个
+    const tasks = [];
+    for(let i=0; i<3 && pool.length>0; i++){
+      const idx = Math.floor(Math.random() * pool.length);
+      const t = pool.splice(idx, 1)[0];
+      tasks.push({
+        id: t.id, name: t.name, desc: t.desc, reward: t.reward,
+        completed: false, check: t.check
+      });
+    }
+    this.state.dailyTasks = tasks;
+    this.state.lastTaskDay = this.state.day;
+    this.emit('dailyTasksUpdated', tasks);
+    return tasks;
+  }
+  checkDailyTasks(){
+    if(this.state.lastTaskDay !== this.state.day){
+      // 跨天：检查昨日是否全部完成，更新连胜
+      const allDone = this.state.dailyTasks.length > 0 && this.state.dailyTasks.every(t=>t.completed);
+      if(allDone){
+        this.state.taskStreak = (this.state.taskStreak || 0) + 1;
+      } else {
+        this.state.taskStreak = 0;
+      }
+      this.generateDailyTasks();
+    }
+    // 检查当前任务完成情况
+    let newlyCompleted = [];
+    this.state.dailyTasks.forEach(t => {
+      if(!t.completed){
+        try {
+          if(t.check(this.state)){
+            t.completed = true;
+            // 发放奖励
+            if(t.reward.coins){
+              this.state.coins = (this.state.coins || 0) + t.reward.coins;
+            }
+            newlyCompleted.push(t);
+          }
+        } catch(_) {}
+      }
+    });
+    if(newlyCompleted.length > 0){
+      this.emit('dailyTaskCompleted', newlyCompleted);
+      this.checkStreakRewards();
+    }
+    this.emit('stateChange', this.state);
+    return newlyCompleted;
+  }
+  checkStreakRewards(){
+    const rewards = this.story.dailyTasks?.streakRewards || [];
+    for(const r of rewards){
+      if(this.state.taskStreak >= r.days && !this.state.taskStreakClaimed[r.days]){
+        this.state.taskStreakClaimed[r.days] = true;
+        if(r.reward.coins) this.state.coins += r.reward.coins;
+        if(r.reward.collectible) this.collectItem(r.reward.collectible);
+        if(r.reward.flag) this.state.flags[r.reward.flag] = true;
+        this.emit('streakRewardClaimed', r);
+      }
+    }
+  }
+  claimStreakReward(days){
+    const rewards = this.story.dailyTasks?.streakRewards || [];
+    const r = rewards.find(rr => rr.days === days);
+    if(!r) return false;
+    if(this.state.taskStreak < r.days) return false;
+    if(this.state.taskStreakClaimed[days]) return false;
+    this.state.taskStreakClaimed[days] = true;
+    if(r.reward.coins) this.state.coins += r.reward.coins;
+    if(r.reward.collectible) this.collectItem(r.reward.collectible);
+    if(r.reward.flag) this.state.flags[r.reward.flag] = true;
+    this.emit('streakRewardClaimed', r);
+    this.emit('stateChange', this.state);
+    return true;
+  }
+  getDailyTasks(){
+    if(this.state.lastTaskDay !== this.state.day){
+      this.generateDailyTasks();
+    }
+    return this.state.dailyTasks;
+  }
+
+  // ===== v0.0.13 观赏模式+自动推进 =====
+  setWatchMode(enabled, strategy){
+    this.state.watchMode = !!enabled;
+    if(strategy) this.state.watchStrategy = strategy;
+    this.emit('watchModeChanged', {enabled: this.state.watchMode, strategy: this.state.watchStrategy});
+    this.emit('stateChange', this.state);
+  }
+  pickAutoChoice(options){
+    const strategy = this.story.watchMode?.strategies?.[this.state.watchStrategy] || this.story.watchMode?.strategies?.balanced;
+    if(!strategy || !options || options.length === 0) return 0;
+    try { return strategy.pick(options); } catch(_) { return 0; }
+  }
+
   // ===== 存档 =====
   static SAVE_VERSION = 1;
   save(slot){
@@ -1540,7 +1755,16 @@ class PhoneEngine {
       puzzleProgress: data.state.puzzleProgress || {},
       discoveredClues: data.state.discoveredClues || {},
       perspectivesSeen: data.state.perspectivesSeen || {},
-      truthEndingsSeen: data.state.truthEndingsSeen || {}
+      truthEndingsSeen: data.state.truthEndingsSeen || {},
+      player: data.state.player || null,
+      playerQuizDone: data.state.playerQuizDone || false,
+      relationshipStages: data.state.relationshipStages || {},
+      dailyTasks: data.state.dailyTasks || [],
+      lastTaskDay: data.state.lastTaskDay || 0,
+      taskStreak: data.state.taskStreak || 0,
+      taskStreakClaimed: data.state.taskStreakClaimed || {},
+      watchMode: data.state.watchMode || false,
+      watchStrategy: data.state.watchStrategy || 'balanced'
     };
     this.emit('stateChange', this.state);
     this.emit('timeChange', this.getTime());
