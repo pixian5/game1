@@ -66,6 +66,9 @@
         <button class="app-icon" data-app="profile">
           <span class="app-emoji">🔮</span><span class="app-name">画像</span>
         </button>
+        <button class="app-icon" data-app="map">
+          <span class="app-emoji">🗺️</span><span class="app-name">出行</span>
+        </button>
       </div>
       <div class="home-dock">
         <button class="app-icon" data-app="messages"><span class="app-emoji">💬</span></button>
@@ -214,6 +217,31 @@
     </section>
 
     <!-- 梦境界面 -->
+    <!-- 出行/地图App -->
+    <section id="map-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>出行</h1>
+      </header>
+      <div class="map-current" id="map-current">
+        <div class="map-current-label">当前位置</div>
+        <div class="map-current-name" id="map-current-name">家</div>
+        <div class="map-current-hint" id="map-current-hint">选择要去的地方</div>
+      </div>
+      <div class="map-list" id="map-list"></div>
+    </section>
+
+    <!-- 偶遇/回忆剧情屏（复用 overlay 风格） -->
+    <section id="encounter-screen" class="screen overlay-screen">
+      <div class="dream-bg"></div>
+      <div class="dream-content">
+        <div class="dream-title" id="encounter-title"></div>
+        <div class="dream-desc" id="encounter-desc"></div>
+        <div class="dream-options" id="encounter-options"></div>
+        <button class="back-btn" id="encounter-close" data-action="close-encounter" style="position:absolute;top:24px;right:24px;font-size:24px;">✕</button>
+      </div>
+    </section>
+
     <section id="dream-screen" class="screen overlay-screen">
       <div class="dream-bg"></div>
       <div class="dream-content">

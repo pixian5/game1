@@ -53,7 +53,17 @@ class PhoneEngine {
       // 梦境碎片
       dreamShards: [],
       // 性格画像维度
-      personality: {active:0, passive:0, rational:0, emotional:0, independent:0, dependent:0}
+      personality: {active:0, passive:0, rational:0, emotional:0, independent:0, dependent:0},
+      // 当前地点
+      currentLocation: 'home',
+      // 已触发的偶遇（避免重复）
+      visitedEncounters: {},
+      // 回忆碎片（通过照片触发）
+      memoryShards: [],
+      // 已触发的回忆
+      resolvedMemories: {},
+      // 已触发的情报
+      firedIntel: {}
     };
   }
   on(event, fn){ (this.listeners[event] ||= []).push(fn); }
@@ -96,6 +106,7 @@ class PhoneEngine {
     this.emit('timeChange', this.getTime());
     // 检查时间触发的事件
     this.checkTimeEvents();
+    this.checkIntel();
   }
   // 跳到次日某个时间
   advanceToNextDay(hour=9){
@@ -103,6 +114,7 @@ class PhoneEngine {
     this.state.minute = hour*60;
     this.emit('timeChange', this.getTime());
     this.checkTimeEvents();
+    this.checkIntel();
   }
 
   // ===== 事件调度 =====
@@ -196,12 +208,13 @@ class PhoneEngine {
       const typingTime = Math.min(2200, Math.max(700, msg.text.length * 50));
       setTimeout(()=>{
         conv.typing = false;
-        conv.messages.push({
+        const msgObj = {
           from: msg.from,
           text: msg.text,
           time: this.getTime().time,
           ts: Date.now()
-        });
+        };
+        conv.messages.push(msgObj);
         conv.unread++;
         this.emit('conversationUpdate', {id:msg.from, conv});
         this.emit('messageReceived', {from:msg.from, text:msg.text, conv});
@@ -209,6 +222,29 @@ class PhoneEngine {
         if(msg.choice){
           conv.pendingChoice = msg.choice; // engine 层挂起选项，UI/测试均可读取
           this.emit('choicePrompt', {convId:msg.from, choice:msg.choice, conv});
+        }
+        // 已读不回后果：若该消息配置了 followup，启动计时器
+        if(msg.followup){
+          const fu = msg.followup;
+          setTimeout(()=>{
+            // 若该消息仍是会话最后一条（玩家既没读也没回）→ 触发跟进
+            if(conv.messages[conv.messages.length-1] === msgObj && conv.unread > 0){
+              conv.messages.push({
+                from: msg.from,
+                text: fu.text,
+                time: this.getTime().time,
+                ts: Date.now(),
+                isFollowup: true
+              });
+              conv.unread++;
+              if(fu.affection){
+                Object.keys(fu.affection).forEach(k=> this.state.affection[k] += fu.affection[k]);
+              }
+              this.emit('conversationUpdate', {id:msg.from, conv});
+              this.emit('messageReceived', {from:msg.from, text:fu.text, conv, isFollowup:true});
+              this.emit('stateChange', this.state);
+            }
+          }, (fu.delay || 30) * 1000);
         }
         // 链式触发下一个事件（msg.then 指向 event id）
         if(msg.then) setTimeout(()=> this.scheduleEvent(msg.then), 600);
@@ -488,13 +524,136 @@ class PhoneEngine {
     return {
       traits,
       shards: this.state.dreamShards.length,
-      shardDetails: this.state.dreamShards
+      shardDetails: this.state.dreamShards,
+      memoryShards: this.state.memoryShards,
+      memoryCount: this.state.memoryShards.length
     };
   }
   // 记录性格变化（由选择触发）
   trackPersonality(dim, value){
     if(this.state.personality[dim] !== undefined){
       this.state.personality[dim] += value;
+    }
+  }
+
+  // ===== 出行/地点系统 =====
+  goToLocation(locId){
+    const loc = this.story.locations[locId];
+    if(!loc) return false;
+    this.state.currentLocation = locId;
+    this.emit('locationChange', {locId, loc});
+    this.emit('stateChange', this.state);
+    // 推进时间30分钟
+    this.advanceTime(30);
+    // 尝试触发偶遇
+    return this.tryEncounter(locId);
+  }
+  tryEncounter(locId){
+    const loc = this.story.locations[locId];
+    if(!loc || !loc.encounters) return false;
+    // 找满足条件且未触发过的偶遇
+    const available = loc.encounters.filter(e=>{
+      if(e.once && this.state.visitedEncounters[e.id]) return false;
+      try { return !e.condition || e.condition(this.state); }
+      catch(_) { return false; }
+    });
+    if(available.length === 0){
+      this.emit('encounterEmpty', {locId});
+      return false;
+    }
+    // 随机选一个
+    const enc = available[Math.floor(Math.random() * available.length)];
+    this.state.visitedEncounters[enc.id] = true;
+    this.emit('encounterTriggered', {locId, enc});
+    return true;
+  }
+  resolveEncounter(enc, optIdx){
+    const opt = enc.choice?.options?.[optIdx];
+    if(!opt) return;
+    // 应用 effects
+    if(opt.affection){
+      Object.keys(opt.affection).forEach(k=> this.state.affection[k] += opt.affection[k]);
+    }
+    if(opt.personality){
+      Object.keys(opt.personality).forEach(k=> this.state.personality[k] += opt.personality[k]);
+    }
+    if(opt.flags){
+      Object.keys(opt.flags).forEach(k=> this.state.flags[k] = opt.flags[k]);
+    }
+    // 角色回复（若有）
+    if(opt.reply){
+      const conv = this.state.conversations[enc.char];
+      if(conv){
+        setTimeout(()=>{
+          conv.messages.push({
+            from: enc.char,
+            text: opt.reply,
+            time: this.getTime().time,
+            ts: Date.now()
+          });
+          conv.unread++;
+          this.emit('conversationUpdate', {id:enc.char, conv});
+          this.emit('messageReceived', {from:enc.char, text:opt.reply, conv});
+        }, 1200);
+      } else if(enc.char === 'narrator'){
+        setTimeout(()=> this.emit('messageReceived', {from:'narrator', text:opt.reply}), 1200);
+      }
+    }
+    this.emit('encounterResolved', {enc, opt});
+    this.emit('stateChange', this.state);
+  }
+
+  // ===== 回忆杀系统 =====
+  triggerMemory(memId){
+    const mem = this.story.memories[memId];
+    if(!mem) return false;
+    if(this.state.resolvedMemories[memId]) return false;
+    this.emit('memoryStart', {memId, mem});
+    return true;
+  }
+  resolveMemory(memId, optIdx){
+    const mem = this.story.memories[memId];
+    if(!mem) return;
+    const opt = mem.options[optIdx];
+    if(!opt) return;
+    this.state.resolvedMemories[memId] = true;
+    this.state.memoryShards.push({
+      memId,
+      title: mem.title,
+      choice: opt.text,
+      shard: opt.shard || null,
+      meaning: opt.meaning || null
+    });
+    if(opt.personality){
+      Object.keys(opt.personality).forEach(k=> this.state.personality[k] += opt.personality[k]);
+    }
+    this.emit('memoryResolved', {memId, opt});
+    this.emit('stateChange', this.state);
+  }
+  getMemoriesByPhoto(photoId){
+    // 找到触发该照片的回忆
+    const memId = Object.keys(this.story.memories).find(k=> this.story.memories[k].triggerPhoto === photoId);
+    return memId || null;
+  }
+
+  // ===== 苏苏情报网 =====
+  checkIntel(){
+    if(!this.story.intel) return;
+    for(const [id, intel] of Object.entries(this.story.intel)){
+      if(this.state.firedIntel[id]) continue;
+      try {
+        if(!intel.condition || intel.condition(this.state)){
+          this.state.firedIntel[id] = true;
+          this.state.flags[id] = true;
+          // 苏苏发情报消息
+          this.queueMessage({
+            from:'susu',
+            text: intel.text,
+            then: intel.then || null
+          }, 1);
+          this.emit('intelReceived', {id, intel});
+        }
+      } catch(_) {}
     }
   }
 

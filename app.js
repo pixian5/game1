@@ -10,7 +10,8 @@
     album:$('album-app'), photoView:$('photo-view'),
     calendar:$('calendar-app'), music:$('music-app'),
     notes:$('notes-app'), profile:$('profile-app'),
-    dream:$('dream-screen'), ending:$('ending-screen')
+    dream:$('dream-screen'), ending:$('ending-screen'),
+    map:$('map-app'), encounter:$('encounter-screen')
   };
   let currentConvId = null;
   let timeoutTimer = null;
@@ -121,6 +122,32 @@
     // 自由输入
     const freeSendBtn = e.target.closest('[data-action="free-send"]');
     if(freeSendBtn){ handleFreeSend(); return; }
+    // 出行/地点
+    const locBtn = e.target.closest('[data-loc]');
+    if(locBtn){ goToLocation(locBtn.dataset.loc); return; }
+    // 偶遇选项
+    const encOpt = e.target.closest('[data-enc-opt]');
+    if(encOpt){
+      const idx = parseInt(encOpt.dataset.encOpt);
+      if(currentEncounter){
+        engine.resolveEncounter(currentEncounter, idx);
+        setTimeout(()=> closeEncounter(), 200);
+      }
+      return;
+    }
+    // 关闭偶遇屏
+    const closeEncBtn = e.target.closest('[data-action="close-encounter"]');
+    if(closeEncBtn){ closeEncounter(); return; }
+    // 回忆杀（相册触发）
+    const memBtn = e.target.closest('[data-memory]');
+    if(memBtn){
+      const memId = engine.getMemoriesByPhoto(memBtn.dataset.memory);
+      if(memId){
+        const ok = engine.triggerMemory(memId);
+        if(!ok) toast('这段回忆已经回味过了');
+      }
+      return;
+    }
   });
 
   function openApp(app){
@@ -133,7 +160,74 @@
       case 'music': renderMusic(); showScreen('music'); break;
       case 'notes': renderNotes(); showScreen('notes'); break;
       case 'profile': renderProfile(); showScreen('profile'); break;
+      case 'map': renderMap(); showScreen('map'); break;
     }
+  }
+
+  // ===== 出行/地图 =====
+  function renderMap(){
+    const cur = engine.state.currentLocation || 'home';
+    const curLoc = STORY.locations[cur];
+    $('map-current-name').textContent = curLoc ? (curLoc.icon + ' ' + curLoc.name) : '未知';
+    $('map-current-hint').textContent = curLoc ? curLoc.hint : '';
+    const list = $('map-list');
+    list.innerHTML = '';
+    Object.entries(STORY.locations).forEach(([id, loc])=>{
+      const item = document.createElement('button');
+      item.className = 'map-item' + (id===cur ? ' current' : '');
+      item.dataset.loc = id;
+      item.innerHTML = `
+        <div class="map-item-icon">${loc.icon}</div>
+        <div class="map-item-info">
+          <div class="map-item-name">${loc.name}</div>
+          <div class="map-item-hint">${loc.hint}</div>
+        </div>
+        ${id===cur ? '<div class="map-item-tag">当前</div>' : '<div class="map-item-go">前往</div>'}
+      `;
+      list.appendChild(item);
+    });
+  }
+  function goToLocation(locId){
+    if(locId === engine.state.currentLocation){
+      // 已在当前地点，仍尝试触发偶遇
+      const ok = engine.tryEncounter(locId);
+      if(!ok) toast('这里暂时没有新发现…');
+      return;
+    }
+    const hadEncounter = engine.goToLocation(locId);
+    renderMap();
+    if(!hadEncounter) toast('到了' + (STORY.locations[locId]?.name || '') + '，没什么特别的');
+  }
+
+  // ===== 偶遇/回忆剧情屏 =====
+  let currentEncounter = null;
+  function showEncounter(enc){
+    currentEncounter = enc;
+    $('encounter-title').textContent = enc.title;
+    $('encounter-desc').textContent = enc.desc;
+    const opts = $('encounter-options');
+    opts.innerHTML = '';
+    if(enc.choice){
+      enc.choice.options.forEach((opt, i)=>{
+        const btn = document.createElement('button');
+        btn.className = 'dream-opt';
+        btn.innerHTML = opt.text + (opt.hint?` <span style="color:var(--ink-mute);font-size:11px">(${opt.hint})</span>`:'');
+        btn.dataset.encOpt = i;
+        opts.appendChild(btn);
+      });
+    } else {
+      // 无选择，加一个"继续"按钮
+      const btn = document.createElement('button');
+      btn.className = 'dream-opt';
+      btn.textContent = '继续';
+      btn.dataset.encOpt = '0';
+      opts.appendChild(btn);
+    }
+    showScreen('encounter');
+  }
+  function closeEncounter(){
+    currentEncounter = null;
+    showScreen('map');
   }
 
   // ===== 消息列表 =====
@@ -234,7 +328,7 @@
       div.className = 'msg sys';
       div.textContent = m.text;
     } else {
-      div.className = 'msg recv';
+      div.className = 'msg recv' + (m.isFollowup ? ' is-followup' : '');
       div.textContent = m.text;
     }
     const time = document.createElement('span');
@@ -551,7 +645,13 @@
     if(!unlocked){ toast('照片未解锁'); return; }
     $('photo-bg').style.background = `linear-gradient(135deg, #1a0a2e, #0a0712)`;
     $('photo-art').innerHTML = getPhotoArt(p.art, true);
-    $('photo-caption').innerHTML = `<strong>${p.title}</strong><br>${p.caption.replace(/\n/g,'<br>')}`;
+    // 检查是否有回忆可触发
+    const memId = engine.getMemoriesByPhoto(pid);
+    const hasMemory = memId && !engine.state.resolvedMemories[memId];
+    const memBtn = hasMemory
+      ? `<button class="photo-memory-btn" data-memory="${pid}">✦ 回味这段回忆</button>`
+      : (memId ? '<div class="photo-memory-done">回忆已回味</div>' : '');
+    $('photo-caption').innerHTML = `<strong>${p.title}</strong><br>${p.caption.replace(/\n/g,'<br>')}${memBtn}`;
     showScreen('photoView');
   }
   function getPhotoArt(type){
@@ -933,6 +1033,40 @@
     }, 1800);
   });
 
+  // ===== 偶遇 =====
+  engine.on('encounterTriggered', ({locId, enc})=>{
+    showEncounter(enc);
+  });
+  engine.on('encounterEmpty', ()=>{
+    toast('这里暂时没有新发现…');
+  });
+
+  // ===== 回忆杀 =====
+  engine.on('memoryStart', ({memId, mem})=>{
+    // 复用偶遇屏显示回忆
+    showEncounter({
+      id: memId,
+      title: mem.title,
+      desc: mem.desc,
+      choice: { prompt:'', options: mem.options },
+      isMemory: true,
+      char: 'narrator'
+    });
+  });
+  engine.on('memoryResolved', ({opt})=>{
+    setTimeout(()=>{
+      if(opt.shard) toast('✦ 获得回忆碎片：' + opt.shard);
+    }, 300);
+    setTimeout(()=>{
+      if(screens.encounter.classList.contains('active')) showScreen('album');
+    }, 1500);
+  });
+
+  // ===== 苏苏情报 =====
+  engine.on('intelReceived', ({id, intel})=>{
+    toast('📨 苏苏发来一条情报');
+  });
+
   // ===== 性格画像 =====
   function renderProfile(){
     const content = $('profile-content');
@@ -970,6 +1104,17 @@
     if(profile.shardDetails.length > 0){
       html += '<div class="profile-shards"><div class="profile-shards-title">记忆碎片</div>';
       profile.shardDetails.forEach(s=>{
+        html += `<div class="profile-shard">
+          <div class="profile-shard-title">✦ ${s.shard || s.title}</div>
+          ${s.meaning ? `<div class="profile-shard-meaning">${s.meaning}</div>` : ''}
+        </div>`;
+      });
+      html += '</div>';
+    }
+    // 回忆碎片
+    if(profile.memoryShards && profile.memoryShards.length > 0){
+      html += '<div class="profile-shards"><div class="profile-shards-title">回忆碎片</div>';
+      profile.memoryShards.forEach(s=>{
         html += `<div class="profile-shard">
           <div class="profile-shard-title">✦ ${s.shard || s.title}</div>
           ${s.meaning ? `<div class="profile-shard-meaning">${s.meaning}</div>` : ''}

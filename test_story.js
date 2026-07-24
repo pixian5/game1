@@ -92,8 +92,41 @@ async function doChoice(convId, optIdx=0, desc=''){
 }
 
 // 任意 choice（用于 narrator 触发的选项）
+// 注意：v0.0.6 引入的苏苏情报 choice 会和主线 choice 同时挂起，
+// 为避免误选，doAnyChoice 只匹配非 susu 的 choicePrompt。
 async function doAnyChoice(optIdx=0, desc=''){
-  return await doChoice(null, optIdx, desc);
+  const pred = e=>e.type==='choicePrompt' && e.convId !== 'susu';
+  const evt = await wait(pred, 12000, desc||'任意选项');
+  if(!evt) return false;
+  const opt = evt.choice.options[optIdx];
+  if(!opt){
+    console.log(`  [no opt ${optIdx}] options: ${evt.choice.options.map(o=>o.text).join('|')}`);
+    return false;
+  }
+  console.log(`  >> 选(${evt.convId}): ${opt.text}`);
+  const conv = engine.state.conversations[evt.convId];
+  if(conv) conv.pendingChoice = null;
+  engine.sendMessage(evt.convId, opt.text, opt.effects);
+  return true;
+}
+
+// 清空挂起的苏苏情报 choice（选第 optIdx 个），避免干扰主线 doAnyChoice
+async function drainSusuIntel(optIdx=0){
+  let drained = 0;
+  for(;;){
+    const idx = eventLog.findIndex(e=>e.type==='choicePrompt' && e.convId==='susu');
+    if(idx < 0) break;
+    const evt = eventLog.splice(idx, 1)[0];
+    const opt = evt.choice.options[optIdx];
+    if(opt){
+      console.log(`  >> 清苏苏情报: ${opt.text}`);
+      engine.state.conversations.susu.pendingChoice = null;
+      engine.sendMessage('susu', opt.text, opt.effects);
+      drained++;
+    }
+    await sleep(200);
+  }
+  return drained;
 }
 
 // ===== 梦境自动处理 =====
@@ -221,7 +254,9 @@ async function run(){
   check('开幕式当天', !!open);
   await waitFor(()=> engine.state.moments.find(m=>m.id==='moment_shenyan_opening_day'), 8000, '开幕式朋友圈');
   check('开幕式朋友圈已发布', !!engine.state.moments.find(m=>m.id==='moment_shenyan_opening_day'));
-  const ok7 = await doAnyChoice(0, '开幕式选项');
+  // 清掉可能挂起的苏苏情报 choice，避免干扰
+  await drainSusuIntel(0);
+  const ok7 = await doChoice('luci', 0, '开幕式选项');
   check('开幕式选项', ok7);
 
   console.log('[16] 天台');
