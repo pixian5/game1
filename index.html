@@ -47,6 +47,10 @@
           <span class="app-emoji">📞</span><span class="app-name">电话</span>
           <span class="app-badge" id="badge-phone" hidden>0</span>
         </button>
+        <button class="app-icon" data-app="moments">
+          <span class="app-emoji">🌈</span><span class="app-name">朋友圈</span>
+          <span class="app-badge" id="badge-moments" hidden>0</span>
+        </button>
         <button class="app-icon" data-app="album">
           <span class="app-emoji">📷</span><span class="app-name">相册</span>
         </button>
@@ -58,6 +62,9 @@
         </button>
         <button class="app-icon" data-app="notes">
           <span class="app-emoji">📝</span><span class="app-name">备忘录</span>
+        </button>
+        <button class="app-icon" data-app="profile">
+          <span class="app-emoji">🔮</span><span class="app-name">画像</span>
         </button>
       </div>
       <div class="home-dock">
@@ -92,7 +99,15 @@
       <div class="chat-body" id="chat-body"></div>
       <div class="chat-input-bar" id="chat-input-bar" hidden>
         <div class="chat-prompt" id="chat-prompt"></div>
+        <div class="chat-timeout-bar" id="chat-timeout-bar" hidden>
+          <div class="chat-timeout-fill" id="chat-timeout-fill"></div>
+          <span class="chat-timeout-text" id="chat-timeout-text"></span>
+        </div>
         <div class="chat-options" id="chat-options"></div>
+        <div class="chat-free-input" id="chat-free-input" hidden>
+          <input type="text" id="chat-free-input-field" placeholder="输入你想说的话…" autocomplete="off">
+          <button id="chat-free-send" data-action="free-send">发送</button>
+        </div>
       </div>
     </section>
 
@@ -103,6 +118,16 @@
         <h1>通话记录</h1>
       </header>
       <div class="call-list" id="call-list"></div>
+    </section>
+
+    <!-- 朋友圈App -->
+    <section id="moments-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>朋友圈</h1>
+        <button class="moments-post-btn" id="moments-post-btn" data-action="post-moment">📷</button>
+      </header>
+      <div class="moments-list" id="moments-list"></div>
     </section>
 
     <!-- 来电界面 -->
@@ -177,6 +202,43 @@
         <h1>备忘录</h1>
       </header>
       <div class="notes-list" id="notes-list"></div>
+    </section>
+
+    <!-- 性格画像App -->
+    <section id="profile-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>性格画像</h1>
+      </header>
+      <div class="profile-content" id="profile-content"></div>
+    </section>
+
+    <!-- 梦境界面 -->
+    <section id="dream-screen" class="screen overlay-screen">
+      <div class="dream-bg"></div>
+      <div class="dream-content">
+        <div class="dream-title" id="dream-title"></div>
+        <div class="dream-desc" id="dream-desc"></div>
+        <div class="dream-options" id="dream-options"></div>
+      </div>
+    </section>
+
+    <!-- 发朋友圈模态框 -->
+    <section id="post-moment-screen" class="screen overlay-screen">
+      <div class="post-moment-content">
+        <div class="post-moment-header">
+          <button class="back-btn" data-back="moments">取消</button>
+          <h1>发动态</h1>
+          <button class="post-moment-publish" id="post-moment-publish" data-action="publish-moment">发表</button>
+        </div>
+        <textarea class="post-moment-text" id="post-moment-text" placeholder="这一刻的想法…" rows="4"></textarea>
+        <div class="post-moment-art">
+          <span class="pm-art-label">配图：</span>
+          <button class="pm-art-opt" data-moment-art="city">🌃</button>
+          <button class="pm-art-opt" data-moment-art="rooftop">🌃</button>
+          <button class="pm-art-opt" data-moment-art="">🚫</button>
+        </div>
+      </div>
     </section>
 
     <!-- 结局 -->

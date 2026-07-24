@@ -45,7 +45,15 @@ class PhoneEngine {
       // 当前路线
       route: null,
       // 游戏是否结束
-      ended: false
+      ended: false,
+      // 朋友圈动态
+      moments: [],
+      // 朋友圈互动记录 {momentId: {liked, commented, commentIdx}}
+      momentInteractions: {},
+      // 梦境碎片
+      dreamShards: [],
+      // 性格画像维度
+      personality: {active:0, passive:0, rational:0, emotional:0, independent:0, dependent:0}
     };
   }
   on(event, fn){ (this.listeners[event] ||= []).push(fn); }
@@ -127,6 +135,11 @@ class PhoneEngine {
       this.addNote(evt.note);
     } else if(evt.type === 'calendar_add'){
       this.addCalendar(evt.event);
+    } else if(evt.type === 'moment_post'){
+      this.postMoment(evt.moment);
+    } else if(evt.type === 'dream'){
+      this.triggerDream(evt.dream);
+      return; // 梦境后续在玩家完成后处理
     } else if(evt.type === 'advance_time'){
       this.showTimeAdvance(evt.text, ()=>{ this.advanceTime(evt.minutes); this.afterEvent(evt); });
       return;
@@ -210,6 +223,7 @@ class PhoneEngine {
       if(effects){
         if(effects.affection) Object.keys(effects.affection).forEach(k=> this.state.affection[k] += effects.affection[k]);
         if(effects.flags) Object.keys(effects.flags).forEach(k=> this.state.flags[k] = effects.flags[k]);
+        if(effects.personality) Object.keys(effects.personality).forEach(k=> this.state.personality[k] += effects.personality[k]);
         if(effects.thenEvent) setTimeout(()=> this.scheduleEvent(effects.thenEvent), 900);
       }
       return;
@@ -221,9 +235,9 @@ class PhoneEngine {
     if(effects){
       if(effects.affection) Object.keys(effects.affection).forEach(k=> this.state.affection[k] += effects.affection[k]);
       if(effects.flags) Object.keys(effects.flags).forEach(k=> this.state.flags[k] = effects.flags[k]);
+      if(effects.personality) Object.keys(effects.personality).forEach(k=> this.state.personality[k] += effects.personality[k]);
       if(effects.thenEvent) setTimeout(()=> this.scheduleEvent(effects.thenEvent), 900);
     }
-    // 不再自动推进时间——由 effects.thenEvent 自己用 advance_time/advance_day 控制
   }
 
   // 玩家选择路线（特殊处理：直接触发对应路线的首个事件）
@@ -311,6 +325,177 @@ class PhoneEngine {
   addCalendar(event){
     this.state.calendar.push(event);
     this.emit('stateChange', this.state);
+  }
+
+  // ===== 朋友圈 =====
+  postMoment(momentId){
+    const tmpl = this.story.moments[momentId];
+    if(!tmpl) return;
+    if(this.state.moments.find(m=>m.id===momentId)) return; // 已发布
+    const char = this.story.characters[tmpl.author];
+    const moment = {
+      id: momentId,
+      author: tmpl.author,
+      name: char?.name || tmpl.author,
+      avatar: char?.avatar || '?',
+      bg: char?.bg || '#2a2f5a',
+      text: tmpl.text,
+      art: tmpl.art || null,
+      time: this.getTime().time,
+      day: this.state.day,
+      dateLabel: this.getDateLabel().full,
+      likes: [...(tmpl.likes||[])],
+      comments: [...(tmpl.comments||[])],
+      // 玩家互动后的追加评论（角色回复）
+      replyOnLike: tmpl.replyOnLike || null,
+      commentOptions: tmpl.commentOptions || null,
+      replyOnComment: tmpl.replyOnComment || null
+    };
+    this.state.moments.unshift(moment);
+    this.emit('momentPosted', moment);
+    this.emit('stateChange', this.state);
+    // 若有 onLike 的自动回复，不在此触发——等玩家点赞时再触发
+  }
+  likeMoment(momentId){
+    const moment = this.state.moments.find(m=>m.id===momentId);
+    if(!moment) return false;
+    const inter = this.state.momentInteractions[momentId] || {};
+    if(inter.liked) return false; // 已点赞
+    inter.liked = true;
+    this.state.momentInteractions[momentId] = inter;
+    moment.likes.push('me');
+    // 若有回复触发
+    if(moment.replyOnLike){
+      setTimeout(()=>{
+        moment.comments.push({from: moment.author, text: moment.replyOnLike, isReply:true});
+        this.emit('momentUpdate', moment);
+        this.emit('stateChange', this.state);
+      }, 1500);
+    }
+    // 好感度变化
+    const tmpl = this.story.moments[momentId];
+    if(tmpl?.onLike?.affection){
+      Object.keys(tmpl.onLike.affection).forEach(k=> this.state.affection[k] += tmpl.onLike.affection[k]);
+    }
+    this.emit('momentUpdate', moment);
+    this.emit('stateChange', this.state);
+    return true;
+  }
+  commentMoment(momentId, optIdx){
+    const moment = this.state.moments.find(m=>m.id===momentId);
+    if(!moment || !moment.commentOptions) return false;
+    const inter = this.state.momentInteractions[momentId] || {};
+    if(inter.commented) return false;
+    const opt = moment.commentOptions[optIdx];
+    if(!opt) return false;
+    inter.commented = true;
+    inter.commentIdx = optIdx;
+    this.state.momentInteractions[momentId] = inter;
+    // 玩家评论
+    moment.comments.push({from:'me', text: opt.text});
+    // 好感度
+    if(opt.affection){
+      Object.keys(opt.affection).forEach(k=> this.state.affection[k] += opt.affection[k]);
+    }
+    // 角色回复
+    if(opt.reply){
+      setTimeout(()=>{
+        moment.comments.push({from: moment.author, text: opt.reply, isReply:true});
+        this.emit('momentUpdate', moment);
+        this.emit('stateChange', this.state);
+      }, 1800);
+    }
+    this.emit('momentUpdate', moment);
+    this.emit('stateChange', this.state);
+    return true;
+  }
+  // 玩家自己发动态
+  createMyMoment(text, art){
+    const id = 'my_moment_' + Date.now();
+    const moment = {
+      id, author:'me', name:'林夏', avatar:'林', bg:'#5a2a4a',
+      text, art: art||null,
+      time: this.getTime().time, day: this.state.day,
+      dateLabel: this.getDateLabel().full,
+      likes: [], comments: [],
+      isMine: true
+    };
+    this.state.moments.unshift(moment);
+    this.emit('momentPosted', moment);
+    this.emit('stateChange', this.state);
+    // 好感度高的角色可能来点赞评论
+    this._maybeReactToMyMoment(moment);
+    return id;
+  }
+  _maybeReactToMyMoment(moment){
+    // 根据好感度，随机角色来互动
+    const affs = Object.entries(this.state.affection).filter(([k,v])=>v > 0);
+    if(affs.length === 0) return;
+    affs.sort((a,b)=>b[1]-a[1]);
+    const topChar = affs[0][0];
+    setTimeout(()=>{
+      moment.likes.push(topChar);
+      this.emit('momentUpdate', moment);
+      this.emit('stateChange', this.state);
+    }, 2000 + Math.random()*3000);
+  }
+
+  // ===== 梦境碎片 =====
+  triggerDream(dreamId){
+    const dream = this.story.dreams[dreamId];
+    if(!dream) return;
+    this.emit('dreamStart', {dreamId, dream});
+  }
+  resolveDream(dreamId, choiceIdx){
+    const dream = this.story.dreams[dreamId];
+    if(!dream) return;
+    const opt = dream.options[choiceIdx];
+    if(!opt) return;
+    // 收集碎片
+    this.state.dreamShards.push({
+      dreamId,
+      title: dream.title,
+      choice: opt.text,
+      shard: opt.shard || null,
+      meaning: opt.meaning || null
+    });
+    // 性格画像
+    if(opt.personality){
+      Object.keys(opt.personality).forEach(k=> this.state.personality[k] += opt.personality[k]);
+    }
+    this.emit('dreamResolved', {dreamId, choice: opt});
+    this.emit('stateChange', this.state);
+    // 触发后续
+    if(dream.then) setTimeout(()=> this.scheduleEvent(dream.then), 800);
+  }
+
+  // ===== 性格画像 =====
+  getPersonalityProfile(){
+    const p = this.state.personality;
+    const traits = [];
+    // 主动 vs 被动
+    if(p.active > p.passive) traits.push({dim:'行动力', value:'主动型', score: p.active});
+    else if(p.passive > p.active) traits.push({dim:'行动力', value:'被动型', score: p.passive});
+    else traits.push({dim:'行动力', value:'平衡型', score: p.active});
+    // 感性 vs 理性
+    if(p.emotional > p.rational) traits.push({dim:'决策方式', value:'感性主导', score: p.emotional});
+    else if(p.rational > p.emotional) traits.push({dim:'决策方式', value:'理性主导', score: p.rational});
+    else traits.push({dim:'决策方式', value:'平衡型', score: p.rational});
+    // 独立 vs 依赖
+    if(p.independent > p.dependent) traits.push({dim:'依赖度', value:'独立型', score: p.independent});
+    else if(p.dependent > p.independent) traits.push({dim:'依赖度', value:'依赖型', score: p.dependent});
+    else traits.push({dim:'依赖度', value:'平衡型', score: p.independent});
+    return {
+      traits,
+      shards: this.state.dreamShards.length,
+      shardDetails: this.state.dreamShards
+    };
+  }
+  // 记录性格变化（由选择触发）
+  trackPersonality(dim, value){
+    if(this.state.personality[dim] !== undefined){
+      this.state.personality[dim] += value;
+    }
   }
 
   // ===== 时间推进动画 =====
