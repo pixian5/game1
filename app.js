@@ -1,6 +1,7 @@
 /* ===== 霓虹心事 · 手机模拟应用入口 ===== */
 (function(){
   const engine = new PhoneEngine(STORY);
+  if (typeof window !== 'undefined') window.__engine = engine; // debug hook for UI verification
   const $ = id => document.getElementById(id);
   const screens = {
     lock:$('lock-screen'), home:$('home-screen'),
@@ -23,7 +24,7 @@
 
   // ===== 屏幕切换 =====
   function showScreen(name){
-    Object.values(screens).forEach(s=>s.classList.remove('active'));
+    Object.values(screens).forEach(s=>{ if(s) s.classList.remove('active'); });
     if(screens[name]) screens[name].classList.add('active');
   }
 
@@ -38,7 +39,7 @@
   }
 
   // ===== 通知 =====
-  function showNotif(from, text){
+  function showNotif(from, text, onClick){
     const char = STORY.characters[from];
     if(!char) return;
     const stack = $('notif-stack');
@@ -52,7 +53,8 @@
       </div>
     `;
     n.onclick = ()=>{
-      openConversation(from);
+      if(typeof onClick === 'function') onClick();
+      else openConversation(from);
       n.remove();
     };
     stack.appendChild(n);
@@ -348,6 +350,7 @@
   engine.on('stateChange', ()=>{
     updateBadges();
     if(screens.messages.classList.contains('active')) renderConvList();
+    updateMomentsBadge();
   });
   engine.on('timeChange', updateTimeDisplay);
   engine.on('conversationUpdate', ({id, conv})=>{
@@ -501,13 +504,16 @@
     tick();
   }
 
+  function safeJSON(str, fallback){
+    try { return JSON.parse(str); } catch(e){ return fallback; }
+  }
   function handleFreeSend(isTimeout){
     const field = $('chat-free-input-field');
     const text = field.value.trim();
     const convId = field.dataset.convId;
     if(!convId) return;
-    const keywords = JSON.parse(field.dataset.keywords || '[]');
-    const defaultEffect = JSON.parse(field.dataset.defaultEffect || '{}');
+    const keywords = safeJSON(field.dataset.keywords || '[]', []);
+    const defaultEffect = safeJSON(field.dataset.defaultEffect || '{}', {});
     const bar = $('chat-input-bar');
     if(timeoutTimer){ clearTimeout(timeoutTimer); timeoutTimer = null; }
     const conv = engine.state.conversations[convId];
@@ -601,7 +607,8 @@
               Object.keys(opt.effects.affection).forEach(k=> engine.state.affection[k] += opt.effects.affection[k]);
             }
             choices.remove();
-            call.step = (opt.then !== undefined ? opt.then : call.step + 1);
+            // 防御：then:0 视为"继续下一步"，避免无限循环
+            call.step = (typeof opt.then === 'number' && opt.then > 0) ? opt.then : call.step + 1;
             nextStep();
           };
           choices.appendChild(btn);
@@ -644,6 +651,9 @@
       grid.innerHTML = '<div style="color:var(--ink-mute);text-align:center;padding:40px;grid-column:1/-1;">暂无照片</div>';
     }
   }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
   function viewPhoto(pid){
     const p = STORY.photos[pid];
     if(!p) return;
@@ -655,9 +665,9 @@
     const memId = engine.getMemoriesByPhoto(pid);
     const hasMemory = memId && !engine.state.resolvedMemories[memId];
     const memBtn = hasMemory
-      ? `<button class="photo-memory-btn" data-memory="${pid}">✦ 回味这段回忆</button>`
+      ? `<button class="photo-memory-btn" data-memory="${escapeHtml(pid)}">✦ 回味这段回忆</button>`
       : (memId ? '<div class="photo-memory-done">回忆已回味</div>' : '');
-    $('photo-caption').innerHTML = `<strong>${p.title}</strong><br>${p.caption.replace(/\n/g,'<br>')}${memBtn}`;
+    $('photo-caption').innerHTML = `<strong>${escapeHtml(p.title)}</strong><br>${escapeHtml(p.caption).replace(/\n/g,'<br>')}${memBtn}`;
     showScreen('photoView');
   }
   function getPhotoArt(type){
@@ -697,6 +707,40 @@
         <g fill="#3a2a4a"><rect x="40" y="85" width="20" height="15"/><rect x="65" y="85" width="20" height="15"/><rect x="90" y="85" width="20" height="15"/><rect x="115" y="85" width="20" height="15"/><rect x="140" y="85" width="20" height="15"/></g>
         <text x="100" y="155" text-anchor="middle" fill="#ff5fa8" font-size="11" font-family="serif">九年</text>
         <text x="100" y="172" text-anchor="middle" fill="#7d6e99" font-size="8" font-family="monospace">明天就告白</text>
+      </svg>`,
+      studio:`<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1838"/><stop offset="1" stop-color="#0a0712"/></linearGradient></defs>
+        <rect width="200" height="200" fill="url(#sky)"/>
+        <polygon points="60,40 140,40 160,80 40,80" fill="#2a2545" stroke="#3a3555" stroke-width="1"/>
+        <rect x="40" y="80" width="120" height="100" fill="#1a1525"/>
+        <rect x="70" y="92" width="60" height="50" fill="#0f0a18" stroke="#3a3050" stroke-width="1"/>
+        <rect x="72" y="94" width="56" height="46" fill="#2a2540"/>
+        <ellipse cx="100" cy="135" rx="14" ry="20" fill="#1a1530" opacity="0.8"/>
+        <ellipse cx="100" cy="138" rx="10" ry="16" fill="#0a0712"/>
+        <g fill="#7a5cff" opacity="0.6"><circle cx="78" cy="110" r="1"/><circle cx="122" cy="105" r="1"/><circle cx="85" cy="125" r="1"/></g>
+        <rect x="50" y="150" width="100" height="3" fill="#2a2545"/>
+        <g fill="#fff" opacity="0.7"><circle cx="70" cy="30" r="0.8"/><circle cx="130" cy="22" r="1"/><circle cx="100" cy="18" r="0.8"/></g>
+        <text x="100" y="178" text-anchor="middle" fill="#7d6e99" font-size="9" font-family="monospace">私人画室 · 月光</text>
+        <text x="100" y="192" text-anchor="middle" fill="#7a5cff" font-size="8" font-family="serif">三年的画</text>
+      </svg>`,
+      school:`<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="ssky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2a4a"/><stop offset="1" stop-color="#1a1525"/></linearGradient></defs>
+        <rect width="200" height="200" fill="url(#ssky)"/>
+        <rect x="0" y="140" width="200" height="60" fill="#2a2035"/>
+        <polygon points="40,100 80,70 120,70 160,100 160,140 40,140" fill="#2a2540" stroke="#3a3555" stroke-width="1"/>
+        <rect x="50" y="105" width="20" height="25" fill="#1a1830"/>
+        <rect x="80" y="105" width="20" height="25" fill="#1a1830"/>
+        <rect x="110" y="105" width="20" height="25" fill="#1a1830"/>
+        <rect x="140" y="105" width="15" height="25" fill="#1a1830"/>
+        <g fill="#fbbf24" opacity="0.6"><rect x="55" y="112" width="10" height="8"/><rect x="85" y="112" width="10" height="8"/><rect x="115" y="112" width="10" height="8"/></g>
+        <rect x="0" y="155" width="200" height="3" fill="#3a2a4a"/>
+        <circle cx="30" cy="160" r="8" fill="#3a4a2a"/>
+        <circle cx="30" cy="158" r="6" fill="#4a5a3a"/>
+        <rect x="155" y="148" width="6" height="20" fill="#3a2a2a"/>
+        <circle cx="158" cy="148" r="5" fill="#7a5cff" opacity="0.7"/>
+        <g fill="#fbbf24" opacity="0.4"><circle cx="50" cy="30" r="1"/><circle cx="100" cy="20" r="1.2"/><circle cx="150" cy="35" r="0.8"/></g>
+        <text x="100" y="178" text-anchor="middle" fill="#7d6e99" font-size="9" font-family="monospace">旧学校 · 银杏</text>
+        <text x="100" y="192" text-anchor="middle" fill="#4ade80" font-size="8" font-family="serif">九年又一百八十二天</text>
       </svg>`
     };
     return arts[type] || `<svg viewBox="0 0 200 200"><rect width="200" height="200" fill="#1a1420"/><text x="100" y="100" text-anchor="middle" fill="#7d6e99" font-size="14">？</text></svg>`;
@@ -1009,9 +1053,6 @@
   engine.on('momentUpdate', ()=>{
     if(screens.moments.classList.contains('active')) renderMoments();
   });
-  engine.on('stateChange', ()=>{
-    updateMomentsBadge();
-  });
 
   // ===== 梦境 =====
   engine.on('dreamStart', ({dreamId, dream})=>{
@@ -1079,7 +1120,8 @@
     const profile = engine.getPersonalityProfile();
     const p = engine.state.personality;
     if(profile.shards === 0 && p.active + p.passive + p.emotional + p.rational === 0){
-      content.innerHTML = '<div class="profile-empty">梦境尚未开始<br>你的画像正在形成中…</div>';
+      const invHtml = renderInvitationsList();
+      content.innerHTML = '<div class="profile-empty">梦境尚未开始<br>你的画像正在形成中…</div>' + (invHtml || '');
       return;
     }
     let html = '<div class="profile-hero"><div class="profile-hero-title">林夏</div><div class="profile-hero-sub">已收集 ' + profile.shards + ' 个记忆碎片</div></div>';
@@ -1128,7 +1170,36 @@
       });
       html += '</div>';
     }
+    // 邀约列表
+    const invHtml = renderInvitationsList();
+    if(invHtml) html += invHtml;
     content.innerHTML = html;
+  }
+
+  // 邀约列表渲染（嵌入性格画像App）
+  function renderInvitationsList(){
+    if(!STORY.invitations) return '';
+    const entries = Object.entries(STORY.invitations);
+    if(entries.length === 0) return '';
+    let html = '<div class="profile-shards"><div class="profile-shards-title">邀约记录</div>';
+    entries.forEach(([id, inv])=>{
+      const char = STORY.characters[inv.from] || {name:'?'};
+      const resolved = engine.state.resolvedInvitations[id];
+      const pending = engine.state.invitations.find(p=>p.id===id && p.status==='pending');
+      let status = '未触发', cls = 'inv-pending';
+      if(resolved === 'accepted'){ status = '已赴约'; cls = 'inv-accepted'; }
+      else if(resolved === 'declined'){ status = '已拒绝'; cls = 'inv-declined'; }
+      else if(resolved === 'missed'){ status = '已错过'; cls = 'inv-missed'; }
+      else if(pending){ status = '待回复 · ' + (inv.schedule || ''); cls = 'inv-active'; }
+      else { status = '尚未达成'; cls = 'inv-locked'; }
+      html += `<div class="profile-shard ${cls}">
+        <div class="profile-shard-title">${char.avatar} ${char.name} · ${escapeHtml(inv.schedule||'邀约')}</div>
+        <div class="profile-shard-meaning">${escapeHtml(inv.text)}</div>
+        <div style="margin-top:4px;font-size:11px;color:var(--ink-mute)">状态：${status}</div>
+      </div>`;
+    });
+    html += '</div>';
+    return html;
   }
 
   // ===== 语音信箱 =====
@@ -1303,7 +1374,8 @@
   });
   engine.on('groupMessageReceived', ({groupId, from})=>{
     const char = STORY.characters[from];
-    if(char) showNotif(from, char.name + '在群里发了消息');
+    const g = engine.state.groups[groupId];
+    if(char && g) showNotif(from, `在「${g.name}」发了消息`, ()=> openGroupChat(groupId));
   });
 
   // 群聊点击委托

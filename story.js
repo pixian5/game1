@@ -166,15 +166,15 @@ const STORY = {
         {who:'him', text:'……喂。'},
         {who:'him', text:'我是江屿。今天的酒，味道还好吗。'},
         {who:'choice', options:[
-          {text:'好喝。怎么突然打电话？', then:0},
-          {text:'还行。有事吗？', then:0}
+          {text:'好喝。怎么突然打电话？'},
+          {text:'还行。有事吗？'}
         ]},
         {who:'him', text:'没什么事。只是想确认一下。'},
         {who:'him', text:'我写过一首歌，叫《夏》。歌词里的人，也叫林夏。'},
         {who:'him', text:'但那是很多年前的事了。别多想。只是巧合。'},
         {who:'choice', options:[
-          {text:'真的只是巧合吗？', then:0, effects:{affection:{jiangyu:2}}},
-          {text:'好。我不问。', then:0, effects:{affection:{jiangyu:1}}}
+          {text:'真的只是巧合吗？', effects:{affection:{jiangyu:2}}},
+          {text:'好。我不问。', effects:{affection:{jiangyu:1}}}
         ]},
         {who:'him', text:'……晚安。'}
       ],
@@ -463,11 +463,21 @@ const STORY = {
         {from:'narrator', text:'（你意识到这段关系出了问题。你的选择是？）', choice:{
           prompt:'你的最后抉择：',
           options:[
-            {text:'和他正面对峙', effects:{affection:{}, flags:{shenyan_choice:'confront'}, thenEvent:'ending_shenyan_good'}},
-            {text:'默默忍受', effects:{affection:{}, flags:{shenyan_choice:'endure'}, thenEvent:'ending_shenyan_bad'}}
+            {text:'和他正面对峙', effects:{affection:{}, flags:{shenyan_choice:'confront'}, thenEvent:'__shenyan_end_judge'}, hint:'决心破局'},
+            {text:'默默忍受', effects:{affection:{}, flags:{shenyan_choice:'endure'}, thenEvent:'__shenyan_end_judge'}, hint:'滑向 BAD END'}
           ]
         }}
       ]
+    },
+    // 结局判定：累积 flag 决定走向，最终选择作为修正
+    '__shenyan_end_judge': {
+      type:'ending', delay:0,
+      // ending 在触发时由 engine 根据 flags 计算
+      _compute: s => {
+        const good = (s.flags.shenyan_brave?1:0) + (s.flags.shenyan_resist?1:0) + (s.flags.shenyan_awaken?1:0) + (s.flags.shenyan_choice==='confront'?1:0);
+        const bad  = (s.flags.shenyan_obey?1:0) + (s.flags.shenyan_deny?1:0) + (s.flags.shenyan_choice==='endure'?1:0);
+        return good >= bad ? 'shenyan_good' : 'shenyan_bad';
+      }
     },
     'ending_shenyan_good': { type:'ending', ending:'shenyan_good' },
     'ending_shenyan_bad': { type:'ending', ending:'shenyan_bad' },
@@ -558,11 +568,19 @@ const STORY = {
         {from:'narrator', text:'（看到他藏了九年的心意。你的选择是？）', choice:{
           prompt:'你的最后抉择：',
           options:[
-            {text:'去找他，回应他', effects:{affection:{}, flags:{luci_choice:'accept'}, thenEvent:'ending_luci_good'}},
-            {text:'错过时机', effects:{affection:{}, flags:{luci_choice:'miss'}, thenEvent:'ending_luci_bad'}}
+            {text:'去找他，回应他', effects:{affection:{}, flags:{luci_choice:'accept'}, thenEvent:'__luci_end_judge'}, hint:'向 GOOD END'},
+            {text:'错过时机', effects:{affection:{}, flags:{luci_choice:'miss'}, thenEvent:'__luci_end_judge'}, hint:'向 BAD END'}
           ]
         }}
       ]
+    },
+    '__luci_end_judge': {
+      type:'ending', delay:0,
+      _compute: s => {
+        const good = (s.flags.luci_confess?1:0) + (s.flags.luci_stop?1:0) + (s.flags.luci_chase?1:0) + (s.flags.luci_choice==='accept'?1:0);
+        const bad  = (s.flags.luci_avoid?1:0) + (s.flags.luci_letgo?1:0) + (s.flags.luci_giveup?1:0) + (s.flags.luci_choice==='miss'?1:0);
+        return good >= bad ? 'luci_good' : 'luci_bad';
+      }
     },
     'ending_luci_good': { type:'ending', ending:'luci_good' },
     'ending_luci_bad': { type:'ending', ending:'luci_bad' },
@@ -646,11 +664,19 @@ const STORY = {
         {from:'narrator', text:'（你看到他在泥潭里挣扎。你的选择是？）', choice:{
           prompt:'你的最后抉择：',
           options:[
-            {text:'陪他一起写完那首歌', effects:{affection:{}, flags:{jiangyu_choice:'stay'}, thenEvent:'ending_jiangyu_good'}},
-            {text:'让他独自面对过去', effects:{affection:{}, flags:{jiangyu_choice:'leave'}, thenEvent:'ending_jiangyu_bad'}}
+            {text:'陪他一起写完那首歌', effects:{affection:{}, flags:{jiangyu_choice:'stay'}, thenEvent:'__jiangyu_end_judge'}, hint:'向 GOOD END'},
+            {text:'让他独自面对过去', effects:{affection:{}, flags:{jiangyu_choice:'leave'}, thenEvent:'__jiangyu_end_judge'}, hint:'向 BAD END'}
           ]
         }}
       ]
+    },
+    '__jiangyu_end_judge': {
+      type:'ending', delay:0,
+      _compute: s => {
+        const good = (s.flags.jiangyu_hold?1:0) + (s.flags.jiangyu_stand?1:0) + (s.flags.jiangyu_choice==='stay'?1:0);
+        const bad  = (s.flags.jiangyu_leave?1:0) + (s.flags.jiangyu_silent?1:0) + (s.flags.jiangyu_choice==='leave'?1:0);
+        return good >= bad ? 'jiangyu_good' : 'jiangyu_bad';
+      }
     },
     'ending_jiangyu_good': { type:'ending', ending:'jiangyu_good' },
     'ending_jiangyu_bad': { type:'ending', ending:'jiangyu_bad' },
