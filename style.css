@@ -763,3 +763,96 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--ink
 /* 邀约消息标识 */
 .msg .invitation-tag{font-size:10px;color:var(--accent2);font-weight:600;display:block;margin-bottom:4px;letter-spacing:0.05em;}
 
+/* ===== v0.0.9 新玩法：礼物商城 / 心情 / 塔罗 / 成就 ===== */
+
+/* 礼物商城 */
+.shop-coins{font-size:13px;color:#fbbf24;font-weight:600;margin-left:auto;padding-right:8px;}
+.shop-tabs{display:flex;border-bottom:0.5px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.2);}
+.shop-tab{flex:1;padding:12px 0;font-size:13px;color:var(--ink-mute);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;}
+.shop-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.shop-content{flex:1;overflow-y:auto;padding:14px;}
+.shop-item{display:flex;align-items:center;gap:12px;padding:12px;margin-bottom:10px;background:rgba(255,255,255,0.04);border-radius:14px;border:0.5px solid rgba(255,255,255,0.06);}
+.shop-item-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#2a1f4a,#1a1530);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+.shop-item-info{flex:1;min-width:0;}
+.shop-item-name{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:3px;}
+.shop-item-desc{font-size:11px;color:var(--ink-mute);line-height:1.4;}
+.shop-item-price{font-size:13px;color:#fbbf24;font-weight:600;margin-bottom:6px;}
+.shop-buy-btn{padding:6px 14px;font-size:12px;border-radius:8px;background:var(--accent);color:#fff;border:none;cursor:pointer;flex-shrink:0;}
+.shop-buy-btn:disabled{opacity:0.4;cursor:not-allowed;background:#555;}
+.shop-empty{text-align:center;padding:40px 20px;color:var(--ink-mute);font-size:13px;}
+
+/* 礼物赠送弹层 */
+.gift-send-modal{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:flex-end;justify-content:center;}
+.gift-send-content{width:100%;max-width:420px;background:linear-gradient(180deg,#1a1428 0%,#0a0712 100%);border-radius:20px 20px 0 0;padding:20px;max-height:70vh;overflow-y:auto;border-top:1px solid rgba(255,255,255,0.1);}
+.gift-send-title{font-size:15px;color:var(--ink);margin-bottom:14px;text-align:center;}
+.gift-send-char{display:flex;gap:8px;margin-bottom:14px;justify-content:center;}
+.gift-send-char-btn{width:48px;height:48px;border-radius:50%;border:2px solid transparent;background:rgba(255,255,255,0.05);color:var(--ink);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.gift-send-char-btn.selected{border-color:var(--accent);background:rgba(255,95,168,0.15);}
+.gift-pref-hint{font-size:11px;color:var(--ink-mute);text-align:center;margin-bottom:10px;min-height:16px;}
+.gift-pref-hint .star{color:#fbbf24;}
+
+/* 心情App */
+.mood-content{flex:1;overflow-y:auto;padding:18px;}
+.mood-current{background:linear-gradient(135deg,rgba(255,95,168,0.12),rgba(122,92,255,0.08));border-radius:18px;padding:24px;text-align:center;margin-bottom:20px;border:0.5px solid rgba(255,255,255,0.08);}
+.mood-current-icon{font-size:56px;margin-bottom:8px;}
+.mood-current-label{font-size:18px;color:var(--ink);font-weight:600;margin-bottom:6px;}
+.mood-current-hint{font-size:12px;color:var(--ink-mute);font-style:italic;}
+.mood-section-title{font-size:12px;color:var(--ink-mute);letter-spacing:0.1em;margin-bottom:10px;text-transform:uppercase;}
+.mood-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px;}
+.mood-opt{padding:14px 8px;background:rgba(255,255,255,0.04);border-radius:12px;border:1px solid transparent;cursor:pointer;text-align:center;transition:all 0.2s;}
+.mood-opt:hover{background:rgba(255,255,255,0.08);}
+.mood-opt.selected{border-color:var(--accent);background:rgba(255,95,168,0.1);}
+.mood-opt-icon{font-size:28px;margin-bottom:4px;}
+.mood-opt-label{font-size:12px;color:var(--ink);}
+.mood-diary-section{margin-top:8px;}
+.mood-diary-input{width:100%;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;color:var(--ink);font-size:13px;font-family:inherit;resize:none;min-height:80px;margin-bottom:8px;}
+.mood-diary-input:focus{outline:none;border-color:var(--accent);}
+.mood-diary-submit{padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;cursor:pointer;}
+.mood-diary-list{margin-top:14px;display:flex;flex-direction:column;gap:8px;}
+.mood-diary-item{background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 12px;border-left:2px solid var(--accent);}
+.mood-diary-item-text{font-size:13px;color:var(--ink);line-height:1.6;margin-bottom:4px;}
+.mood-diary-item-meta{font-size:10px;color:var(--ink-mute);}
+
+/* 塔罗App */
+.tarot-content{flex:1;overflow-y:auto;padding:18px;text-align:center;}
+.tarot-today{background:linear-gradient(180deg,rgba(122,92,255,0.18),rgba(10,7,18,0.4));border-radius:18px;padding:24px 18px;margin-bottom:20px;border:0.5px solid rgba(122,92,255,0.3);}
+.tarot-card-display{width:140px;height:220px;margin:0 auto 16px;border-radius:12px;background:linear-gradient(180deg,#2a1845,#0a0712);border:1.5px solid #7a5cff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px;position:relative;}
+.tarot-card-display.reversed{transform:rotate(180deg);}
+.tarot-card-roman{font-size:18px;color:#c8a84a;font-family:serif;margin-bottom:8px;}
+.tarot-card-name{font-size:16px;color:#e8d8b8;font-weight:600;text-align:center;}
+.tarot-card-reversed-tag{position:absolute;top:8px;right:8px;font-size:9px;color:#ff5fa8;background:rgba(255,95,168,0.15);padding:2px 6px;border-radius:4px;transform:rotate(180deg);}
+.tarot-text{font-size:13px;color:var(--ink);line-height:1.7;font-family:var(--serif);}
+.tarot-hint{font-size:11px;color:var(--ink-mute);margin-top:8px;}
+.tarot-draw-btn{padding:12px 28px;background:linear-gradient(135deg,#7a5cff,#5a3cff);color:#fff;border:none;border-radius:14px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;}
+.tarot-draw-btn:disabled{opacity:0.4;cursor:not-allowed;background:#555;}
+.tarot-empty{text-align:center;padding:50px 20px;color:var(--ink-mute);}
+.tarot-empty-icon{font-size:60px;margin-bottom:12px;opacity:0.4;}
+.tarot-history{margin-top:20px;text-align:left;}
+.tarot-history-title{font-size:12px;color:var(--ink-mute);letter-spacing:0.1em;margin-bottom:10px;text-transform:uppercase;}
+.tarot-history-item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:6px;font-size:12px;}
+.tarot-history-card{color:#c8a84a;font-family:serif;min-width:50px;}
+
+/* 成就App */
+.achievements-content{flex:1;overflow-y:auto;padding:14px;}
+.ach-progress{background:linear-gradient(135deg,rgba(255,189,79,0.12),rgba(255,95,168,0.08));border-radius:14px;padding:16px;margin-bottom:16px;text-align:center;border:0.5px solid rgba(255,189,79,0.2);}
+.ach-progress-num{font-size:24px;font-weight:700;color:#fbbf24;}
+.ach-progress-total{font-size:13px;color:var(--ink-mute);margin-top:4px;}
+.ach-progress-bar{height:6px;background:rgba(255,255,255,0.08);border-radius:3px;margin-top:10px;overflow:hidden;}
+.ach-progress-fill{height:100%;background:linear-gradient(90deg,#fbbf24,#ff5fa8);transition:width 0.4s;}
+.ach-true-ending-hint{margin-top:10px;font-size:11px;color:var(--ink-mute);}
+.ach-true-ending-hint.unlocked{color:#fbbf24;font-weight:600;}
+.ach-section-title{font-size:12px;color:var(--ink-mute);letter-spacing:0.1em;margin:14px 0 10px;text-transform:uppercase;}
+.ach-item{display:flex;align-items:center;gap:12px;padding:12px;margin-bottom:8px;background:rgba(255,255,255,0.04);border-radius:12px;border:0.5px solid rgba(255,255,255,0.05);}
+.ach-item.unlocked{background:rgba(255,189,79,0.08);border-color:rgba(255,189,79,0.2);}
+.ach-item.locked{opacity:0.55;}
+.ach-item-icon{width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.ach-item.unlocked .ach-item-icon{background:rgba(255,189,79,0.15);}
+.ach-item-info{flex:1;min-width:0;}
+.ach-item-name{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;}
+.ach-item-desc{font-size:11px;color:var(--ink-mute);line-height:1.4;}
+
+/* 成就解锁通知 */
+.ach-notif{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#fbbf24,#ff5fa8);color:#1a0a2e;padding:10px 18px;border-radius:24px;font-size:13px;font-weight:600;z-index:2000;box-shadow:0 6px 24px rgba(255,189,79,0.4);animation:achNotifSlide 0.4s ease;}
+@keyframes achNotifSlide{from{transform:translate(-50%,-30px);opacity:0;}to{transform:translate(-50%,0);opacity:1;}}
+
+

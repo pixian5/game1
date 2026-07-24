@@ -14,7 +14,9 @@
     map:$('map-app'), encounter:$('encounter-screen'),
     groups:$('groups-app'), groupChat:$('group-chat-screen'),
     contacts:$('contacts-app'), charProfile:$('char-profile-screen'),
-    flashback:$('flashback-screen')
+    flashback:$('flashback-screen'),
+    shop:$('shop-app'), mood:$('mood-app'),
+    tarot:$('tarot-app'), achievements:$('achievements-app')
   };
   let currentConvId = null;
   let currentGroupId = null;
@@ -153,6 +155,25 @@
       }
       return;
     }
+    // v0.0.9 新玩法
+    const shopTab = e.target.closest('[data-shop-tab]');
+    if(shopTab){ renderShop(shopTab.dataset.shopTab); return; }
+    const buyBtn = e.target.closest('[data-buy]');
+    if(buyBtn){ handleBuyGift(buyBtn.dataset.buy); return; }
+    const sendGiftBtn = e.target.closest('[data-send-gift]');
+    if(sendGiftBtn){ openGiftSendModal(sendGiftBtn.dataset.sendGift); return; }
+    const giftCharBtn = e.target.closest('[data-gift-char]');
+    if(giftCharBtn){ selectGiftChar(giftCharBtn.dataset.giftChar); return; }
+    const giftConfirmBtn = e.target.closest('[data-action="confirm-gift"]');
+    if(giftConfirmBtn){ handleConfirmGift(); return; }
+    const giftCancelBtn = e.target.closest('[data-action="cancel-gift"]');
+    if(giftCancelBtn){ closeGiftSendModal(); return; }
+    const moodOpt = e.target.closest('[data-mood-opt]');
+    if(moodOpt){ engine.setMood(moodOpt.dataset.moodOpt); renderMood(); return; }
+    const diarySubmit = e.target.closest('[data-action="submit-diary"]');
+    if(diarySubmit){ handleDiarySubmit(); return; }
+    const tarotDraw = e.target.closest('[data-action="draw-tarot"]');
+    if(tarotDraw){ handleDrawTarot(); return; }
   });
 
   function openApp(app){
@@ -168,6 +189,10 @@
       case 'map': renderMap(); showScreen('map'); break;
       case 'groups': renderGroupList(); showScreen('groups'); break;
       case 'contacts': renderContacts(); showScreen('contacts'); break;
+      case 'shop': renderShop('store'); showScreen('shop'); break;
+      case 'mood': renderMood(); showScreen('mood'); break;
+      case 'tarot': renderTarot(); showScreen('tarot'); break;
+      case 'achievements': renderAchievements(); showScreen('achievements'); break;
     }
   }
 
@@ -1519,6 +1544,299 @@
   // ===== 通话未接提醒 =====
   engine.on('callMissed', (eventId)=>{
     toast('未接来电');
+  });
+
+  // ===== v0.0.9 礼物商城 =====
+  let shopCurrentTab = 'store';
+  function renderShop(tab){
+    shopCurrentTab = tab || shopCurrentTab;
+    document.querySelectorAll('.shop-tab').forEach(t=>{
+      t.classList.toggle('active', t.dataset.shopTab === shopCurrentTab);
+    });
+    $('shop-coins').textContent = '💰 ' + engine.state.coins;
+    const content = $('shop-content');
+    if(shopCurrentTab === 'store'){
+      const items = Object.values(STORY.shop.items);
+      content.innerHTML = items.map(item=>{
+        const canAfford = engine.state.coins >= item.price;
+        return `<div class="shop-item">
+          <div class="shop-item-icon">${item.icon}</div>
+          <div class="shop-item-info">
+            <div class="shop-item-name">${escapeHtml(item.name)} <span style="font-size:10px;color:var(--ink-mute)">·${item.cat}</span></div>
+            <div class="shop-item-desc">${escapeHtml(item.desc)}</div>
+            <div class="shop-item-price">💰 ${item.price}</div>
+          </div>
+          <button class="shop-buy-btn" data-buy="${item.id}" ${canAfford?'':'disabled'}>${canAfford?'购买':'金币不足'}</button>
+        </div>`;
+      }).join('');
+    } else if(shopCurrentTab === 'inventory'){
+      const inv = engine.state.inventory;
+      if(inv.length === 0){
+        content.innerHTML = '<div class="shop-empty">背包空空如也<br>去商店买点礼物送给他吧</div>';
+      } else {
+        // 按物品id分组
+        const grouped = {};
+        inv.forEach(g=>{ grouped[g.id] = (grouped[g.id]||0) + 1; });
+        content.innerHTML = Object.entries(grouped).map(([itemId, count])=>{
+          const item = STORY.shop.items[itemId];
+          if(!item) return '';
+          return `<div class="shop-item">
+            <div class="shop-item-icon">${item.icon}</div>
+            <div class="shop-item-info">
+              <div class="shop-item-name">${escapeHtml(item.name)} ×${count}</div>
+              <div class="shop-item-desc">${escapeHtml(item.desc)}</div>
+            </div>
+            <button class="shop-buy-btn" data-send-gift="${itemId}" style="background:var(--accent2)">送出</button>
+          </div>`;
+        }).join('');
+      }
+    } else if(shopCurrentTab === 'gifts'){
+      const gifts = engine.state.gifts;
+      if(gifts.length === 0){
+        content.innerHTML = '<div class="shop-empty">还没送出过礼物</div>';
+      } else {
+        content.innerHTML = gifts.slice().reverse().map(g=>{
+          const item = STORY.shop.items[g.itemId];
+          const char = STORY.characters[g.to] || {};
+          const multLabel = g.mult >= 2 ? '最爱 ⭐⭐' : (g.mult >= 1.5 ? '喜欢 ⭐' : (g.mult >= 1 ? '一般' : '不喜欢'));
+          return `<div class="shop-item">
+            <div class="shop-item-icon">${item?.icon || '🎁'}</div>
+            <div class="shop-item-info">
+              <div class="shop-item-name">${char.avatar||''} ${char.name||g.to} · ${escapeHtml(item?.name||'')}</div>
+              <div class="shop-item-desc">第${g.day}天送出 · ${multLabel} · 好感 +${g.gain}</div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+    }
+  }
+  function handleBuyGift(itemId){
+    const r = engine.buyGift(itemId);
+    if(!r.ok){ toast(r.reason); return; }
+    toast('已购买：' + r.item.name);
+    renderShop(shopCurrentTab);
+  }
+  let giftSendItemId = null;
+  let giftSendCharId = null;
+  function openGiftSendModal(itemId){
+    giftSendItemId = itemId;
+    giftSendCharId = null;
+    const item = STORY.shop.items[itemId];
+    if(!item) return;
+    const modal = document.createElement('div');
+    modal.className = 'gift-send-modal';
+    modal.id = 'gift-send-modal';
+    modal.innerHTML = `<div class="gift-send-content">
+      <div class="gift-send-title">把「${escapeHtml(item.name)}」送给谁？</div>
+      <div class="gift-send-char">
+        ${['shenyan','luci','jiangyu'].map(cid=>{
+          const c = STORY.characters[cid];
+          return `<button class="gift-send-char-btn" data-gift-char="${cid}" style="background:${c.bg}" title="${c.name}">${c.avatar}</button>`;
+        }).join('')}
+      </div>
+      <div class="gift-pref-hint" id="gift-pref-hint">点击头像查看他对此礼物的喜好</div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:10px;">
+        <button data-action="cancel-gift" style="padding:8px 20px;background:rgba(255,255,255,0.08);color:var(--ink);border:none;border-radius:10px;font-size:13px;cursor:pointer;">取消</button>
+        <button data-action="confirm-gift" id="gift-confirm-btn" disabled style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;cursor:pointer;opacity:0.4;">确认送出</button>
+      </div>
+    </div>`;
+    document.body.appendChild(modal);
+    // 点击背景关闭
+    modal.addEventListener('click', e=>{ if(e.target === modal) closeGiftSendModal(); });
+  }
+  function selectGiftChar(charId){
+    giftSendCharId = charId;
+    document.querySelectorAll('.gift-send-char-btn').forEach(b=>{
+      b.classList.toggle('selected', b.dataset.giftChar === charId);
+    });
+    const prefs = STORY.shop.preferences[charId] || {};
+    const mult = prefs[giftSendItemId];
+    const hintEl = $('gift-pref-hint');
+    const confirmBtn = $('gift-confirm-btn');
+    if(!mult){
+      hintEl.innerHTML = '他对此礼物的喜好：<span class="star">一般（×1）</span>';
+    } else if(mult >= 2){
+      hintEl.innerHTML = '他对此礼物的喜好：<span class="star">最爱（×2）⭐⭐</span>';
+    } else if(mult >= 1.5){
+      hintEl.innerHTML = '他对此礼物的喜好：<span class="star">喜欢（×1.5）⭐</span>';
+    } else if(mult >= 1){
+      hintEl.innerHTML = '他对此礼物的喜好：<span class="star">一般（×1）</span>';
+    } else {
+      hintEl.innerHTML = '他不太喜欢这类东西（×0.5）';
+    }
+    if(confirmBtn){ confirmBtn.disabled = false; confirmBtn.style.opacity = '1'; }
+  }
+  function handleConfirmGift(){
+    if(!giftSendItemId || !giftSendCharId){ toast('请选择赠送对象'); return; }
+    const r = engine.giveGift(giftSendCharId, giftSendItemId);
+    closeGiftSendModal();
+    if(!r.ok){ toast(r.reason); return; }
+    const charName = STORY.characters[giftSendCharId]?.name || '';
+    toast(`已送出 · ${charName} 好感 +${r.gain}`);
+    renderShop(shopCurrentTab);
+  }
+  function closeGiftSendModal(){
+    const m = $('gift-send-modal');
+    if(m) m.remove();
+    giftSendItemId = null;
+    giftSendCharId = null;
+  }
+  engine.on('giftGiven', ({to, itemId, mult, gain, reaction})=>{
+    const char = STORY.characters[to];
+    if(char) showNotif(to, `收到礼物 · 好感 +${gain}`);
+  });
+
+  // ===== v0.0.9 心情状态+内心独白 =====
+  function renderMood(){
+    const content = $('mood-content');
+    const cur = STORY.moods[engine.state.mood] || STORY.moods.calm;
+    let html = `<div class="mood-current">
+      <div class="mood-current-icon">${cur.icon}</div>
+      <div class="mood-current-label">${cur.label}</div>
+      <div class="mood-current-hint">"${escapeHtml(cur.hint)}"</div>
+    </div>`;
+    html += '<div class="mood-section-title">切换心情</div>';
+    html += '<div class="mood-grid">';
+    Object.values(STORY.moods).forEach(m=>{
+      html += `<div class="mood-opt ${m.id===engine.state.mood?'selected':''}" data-mood-opt="${m.id}">
+        <div class="mood-opt-icon">${m.icon}</div>
+        <div class="mood-opt-label">${m.label}</div>
+      </div>`;
+    });
+    html += '</div>';
+    // 内心独白
+    html += '<div class="mood-diary-section">';
+    html += '<div class="mood-section-title">内心独白</div>';
+    html += `<textarea class="mood-diary-input" id="mood-diary-text" placeholder="今天发生了什么？把心里的话写下来…"></textarea>`;
+    html += '<button class="mood-diary-submit" data-action="submit-diary">记下这一刻</button>';
+    // 历史日记
+    if(engine.state.diary.length > 0){
+      html += '<div class="mood-diary-list">';
+      engine.state.diary.slice().reverse().slice(0, 5).forEach(d=>{
+        const m = STORY.moods[d.mood] || {icon:'·'};
+        html += `<div class="mood-diary-item">
+          <div class="mood-diary-item-text">${m.icon} ${escapeHtml(d.text)}</div>
+          <div class="mood-diary-item-meta">第${d.day}天 ${d.time}</div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+    content.innerHTML = html;
+  }
+  function handleDiarySubmit(){
+    const field = $('mood-diary-text');
+    if(!field) return;
+    const text = field.value.trim();
+    if(!text){ toast('先写点什么吧'); return; }
+    engine.addDiary(text);
+    toast('已记下');
+    renderMood();
+  }
+  engine.on('moodChanged', ({mood, moodInfo})=>{
+    toast('心情：' + moodInfo.label);
+  });
+
+  // ===== v0.0.9 塔罗占卜 =====
+  function renderTarot(){
+    const content = $('tarot-content');
+    const fortune = engine.state.todayFortune;
+    let html = '';
+    if(fortune){
+      html += `<div class="tarot-today">
+        <div class="tarot-card-display ${fortune.reversed?'reversed':''}">
+          ${fortune.reversed ? '<div class="tarot-card-reversed-tag">逆位</div>' : ''}
+          <div class="tarot-card-roman">${fortune.roman}</div>
+          <div class="tarot-card-name">${escapeHtml(fortune.name)}</div>
+        </div>
+        <div class="tarot-text">${escapeHtml(fortune.text)}</div>
+        <div class="tarot-hint">第${fortune.day}天的牌阵 · ${fortune.reversed?'逆位':'正位'}</div>
+      </div>`;
+      html += `<button class="tarot-draw-btn" disabled>今日已抽过</button>`;
+    } else {
+      html += `<div class="tarot-empty">
+        <div class="tarot-empty-icon">🔮</div>
+        <div>今日尚未抽牌</div>
+        <div style="font-size:11px;margin-top:6px;">每日一抽，揭示霓城的运势</div>
+      </div>`;
+      html += `<button class="tarot-draw-btn" data-action="draw-tarot">抽取今日塔罗</button>`;
+    }
+    // 历史
+    if(engine.state.tarotHistory.length > 0){
+      html += '<div class="tarot-history">';
+      html += '<div class="tarot-history-title">历史牌阵</div>';
+      engine.state.tarotHistory.slice().reverse().slice(0, 6).forEach(h=>{
+        const card = STORY.tarot.cards[h.cardId];
+        if(!card) return;
+        html += `<div class="tarot-history-item">
+          <span class="tarot-history-card">${card.roman} ${card.name}</span>
+          <span style="color:${h.reversed?'#ff5fa8':'#4ade80'}">${h.reversed?'逆':'正'}</span>
+          <span style="margin-left:auto;color:var(--ink-mute)">第${h.day}天</span>
+        </div>`;
+      });
+      html += '</div>';
+    }
+    content.innerHTML = html;
+  }
+  function handleDrawTarot(){
+    const r = engine.drawTarot();
+    if(!r.ok){ toast(r.reason || '抽牌失败'); return; }
+    renderTarot();
+  }
+
+  // ===== v0.0.9 成就系统 =====
+  function renderAchievements(){
+    const content = $('achievements-content');
+    const unlocked = engine.getUnlockedAchievements();
+    const locked = engine.getLockedAchievements();
+    const total = unlocked.length + locked.length;
+    const pct = total > 0 ? (unlocked.length / total) * 100 : 0;
+    const trueUnlocked = engine.isTrueEndingUnlocked();
+    let html = `<div class="ach-progress">
+      <div class="ach-progress-num">${unlocked.length} / ${total}</div>
+      <div class="ach-progress-total">已解锁成就</div>
+      <div class="ach-progress-bar"><div class="ach-progress-fill" style="width:${pct}%"></div></div>
+      <div class="ach-true-ending-hint ${trueUnlocked?'unlocked':''}">${trueUnlocked?'✨ 真结局已解锁':'达成 60% 成就 + 选择独行路线 → 解锁真结局'}</div>
+    </div>`;
+    if(unlocked.length > 0){
+      html += '<div class="ach-section-title">已解锁</div>';
+      unlocked.forEach(a=>{
+        html += `<div class="ach-item unlocked">
+          <div class="ach-item-icon">${a.icon}</div>
+          <div class="ach-item-info">
+            <div class="ach-item-name">${escapeHtml(a.name)}</div>
+            <div class="ach-item-desc">${escapeHtml(a.desc)}</div>
+          </div>
+        </div>`;
+      });
+    }
+    if(locked.length > 0){
+      html += '<div class="ach-section-title">未解锁</div>';
+      locked.forEach(a=>{
+        html += `<div class="ach-item locked">
+          <div class="ach-item-icon">${a.icon}</div>
+          <div class="ach-item-info">
+            <div class="ach-item-name">${escapeHtml(a.name)}</div>
+            <div class="ach-item-desc">${escapeHtml(a.desc)}</div>
+          </div>
+        </div>`;
+      });
+    }
+    content.innerHTML = html;
+  }
+  // 成就解锁通知
+  engine.on('achievementsUnlocked', (achs)=>{
+    achs.forEach(a=>{
+      const n = document.createElement('div');
+      n.className = 'ach-notif';
+      n.textContent = `🏆 成就解锁：${a.name}`;
+      document.body.appendChild(n);
+      setTimeout(()=> n.remove(), 3000);
+    });
+    // 若成就页打开则刷新
+    if(screens.achievements && screens.achievements.classList.contains('active')){
+      renderAchievements();
+    }
   });
 
   // ===== 初始化 =====

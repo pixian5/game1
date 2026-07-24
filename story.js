@@ -1396,4 +1396,140 @@ STORY.flashbacks = {
 // 闪回触发检查（由 engine.checkFlashbacks 调用）
 // 闪回完成后的回调事件（可选）
 
+// ===== 礼物商城+喜好系统 =====
+// 礼物分类：每个男主有"最爱/喜欢/一般/讨厌"四档，对应好感倍率
+STORY.shop = {
+  // 商品库（按品类分组）
+  items: {
+    art_book:     { id:'art_book',     name:'绝版画册',     icon:'📖', price:280, cat:'艺术', desc:'罕见的当代画册，扉页还带作者签名' },
+    vintage_cam:  { id:'vintage_cam',  name:'复古胶卷相机', icon:'📷', price:350, cat:'摄影', desc:'七十年代机械相机，快门声清脆如初' },
+    vinyl_record: { id:'vinyl_record', name:'黑胶唱片',     icon:'💿', price:220, cat:'音乐', desc:'限量黑胶，B面藏着一首未公开曲' },
+    cocktail_set: { id:'cocktail_set', name:'调酒器具',     icon:'🍸', price:180, cat:'酒具', desc:'专业调酒七件套，铜质光泽' },
+    hand_warm:    { id:'hand_warm',    name:'手作暖茶罐',   icon:'🍵', price:80,  cat:'日常', desc:'桂花乌龙茶包，温热又妥帖' },
+    sketch_pen:   { id:'sketch_pen',   name:'速写钢笔',     icon:'✒️', price:120, cat:'艺术', desc:'手工打磨笔尖，适合速写' },
+    film_roll:    { id:'film_roll',    name:'过期胶卷',     icon:'🎞️', price:60,  cat:'摄影', desc:'过期三个月，拍出来颜色会偏暖' },
+    vinyl_blank:  { id:'vinyl_blank',  name:'空白黑胶',     icon:'⚫', price:150, cat:'音乐', desc:'可以录一段自己的声音' }
+  },
+  // 男主喜好表：key=礼物id, value=倍率(0.5/1/1.5/2)
+  preferences: {
+    shenyan: {
+      art_book:2, sketch_pen:1.5, vintage_cam:1, vinyl_record:0.5,
+      cocktail_set:0.5, hand_warm:1, film_roll:0.5, vinyl_blank:1
+    },
+    luci: {
+      vintage_cam:2, film_roll:1.5, art_book:1, sketch_pen:1,
+      vinyl_record:0.5, cocktail_set:0.5, hand_warm:1.5, vinyl_blank:0.5
+    },
+    jiangyu: {
+      vinyl_record:2, vinyl_blank:1.5, cocktail_set:1.5, art_book:0.5,
+      vintage_cam:0.5, sketch_pen:0.5, hand_warm:1, film_roll:0.5
+    }
+  },
+  // 男主收到礼物后的反应台词（按好感倍率）
+  reactions: {
+    shenyan: {
+      2:   '画册？……你怎么知道我找这本找了三年。林夏，你这个人，比画里更会让人意外。',
+      1.5: '钢笔。是我常用的那种笔尖。你观察得很仔细。',
+      1:   '……谢谢。这东西不算特别，但来自你，就不一样。',
+      0.5: '抱歉，我不太用得上。不过既然是你送的，我收着。'
+    },
+    luci: {
+      2:   '这台相机！我盯它好久了！林夏你怎么跟我想到一块去了！',
+      1.5: '胶卷过期了？挺好，过期胶卷拍出来的人，会更温柔一点。',
+      1:   '嗯，谢啦。回头我给你拍张照当回礼。',
+      0.5: '……这东西我用不上啊，不过心意我领了。'
+    },
+    jiangyu: {
+      2:   '黑胶。B面那首，是我没公开的。你怎么知道？……算了，给你的话，不用知道也知道。',
+      1.5: '空白黑胶？想让我录点什么——歌，还是别的？',
+      '1.5b':'调酒器具。下次你来雾港，我给你调一杯只属于你的。',
+      1:   '……谢谢。我放在吧台最显眼的位置。',
+      0.5: '这东西不太适合我。不过，你送的，我留着。'
+    }
+  },
+  // 玩家金钱（初始）
+  initialCoins: 500
+};
+
+// ===== 心情状态+内心独白 =====
+STORY.moods = {
+  happy:     { id:'happy',     icon:'😊', label:'开心',     hint:'阳光穿过指缝，连呼吸都轻快', tone:'soft' },
+  calm:      { id:'calm',      icon:'😌', label:'平静',     hint:'像深夜的霓城，安静地亮着', tone:'neutral' },
+  tangled:   { id:'tangled',   icon:'😖', label:'纠结',     hint:'两个方向都想要，又都不敢要', tone:'tense' },
+  low:       { id:'low',       icon:'😔', label:'低落',     hint:'今天的云比平时沉一点', tone:'sad' },
+  brave:     { id:'brave',     icon:'😤', label:'决意',     hint:'有些事不能再拖了', tone:'strong' }
+};
+// 不同心情对男主消息语气的影响（仅作为对话分支提示）
+STORY.moodEffects = {
+  // 当玩家处于某心情时，发送特定回复会触发隐藏加成
+  brave:   { flag:'mood_brave',   bonusAffection:0.5 },
+  tangled: { flag:'mood_tangled', bonusPersonality:'emotional' },
+  low:     { flag:'mood_low',     bonusPersonality:'dependent' },
+  happy:   { flag:'mood_happy',   bonusAffection:0.3 },
+  calm:    { flag:'mood_calm',    bonusPersonality:'rational' }
+};
+
+// ===== 塔罗占卜+每日运势 =====
+STORY.tarot = {
+  // 22张大阿尔卡那精选（节选）
+  cards: {
+    fool:        { id:'fool',        name:'愚者',     roman:'0',    upright:'今日宜出发。一个看似冲动的决定，会带来意料之外的相遇。', reversed:'警惕鲁莽。今天的"自由"可能是逃避的借口。', hint:{type:'encounter', value:1} },
+    magician:    { id:'magician',    name:'魔术师',   roman:'I',    upright:'今日宜主动表达。你有让对方意外的能力。', reversed:'警惕花言巧语。今天听到的承诺，要打个问号。', hint:{type:'affection', value:1} },
+    high_priestess:{ id:'high_priestess', name:'女祭司', roman:'II', upright:'今日宜独处。答案藏在安静里。', reversed:'警惕隐瞒。有秘密正在被遮盖。', hint:{type:'memory', value:1} },
+    empress:     { id:'empress',     name:'女皇',     roman:'III',  upright:'今日宜温柔。被你温柔以待的人，会记很久。', reversed:'警惕溺爱。过度的包容也是另一种控制。', hint:{type:'affection', value:0.5} },
+    emperor:     { id:'emperor',     name:'皇帝',     roman:'IV',   upright:'今日宜坚持。你的原则比想象中重要。', reversed:'警惕强势。把别人按在你的剧本里，会失去他们。', hint:{type:'rational', value:1} },
+    lovers:      { id:'lovers',      name:'恋人',     roman:'VI',   upright:'今日宜面对心动。回避比拒绝更伤人。', reversed:'警惕摇摆。三心二意会一无所获。', hint:{type:'affection', value:1.5} },
+    chariot:     { id:'chariot',     name:'战车',     roman:'VII',  upright:'今日宜行动。想见的人，就去见。', reversed:'警惕冲动。冲得太快，会错过细节。', hint:{type:'encounter', value:1} },
+    hermit:      { id:'hermit',      name:'隐者',     roman:'IX',   upright:'今日宜独行。一个人走，也能走到很远。', reversed:'警惕封闭。一个人久了，会忘了被牵手的温度。', hint:{type:'independent', value:1} },
+    wheel:       { id:'wheel',       name:'命运之轮', roman:'X',    upright:'今日宜顺应。转折会自己来，不必硬推。', reversed:'警惕侥幸。运气不会替你做选择。', hint:{type:'luck', value:1} },
+    justice:     { id:'justice',     name:'正义',     roman:'XI',   upright:'今日宜诚实。谎话今晚就会反噬。', reversed:'警惕双重标准。你想要的公平，不一定是别人的。', hint:{type:'rational', value:1.5} },
+    hanged_man:  { id:'hanged_man',  name:'倒吊人',   roman:'XII',  upright:'今日宜换角度看。难受的位置，看得到不一样的真相。', reversed:'警惕牺牲感。你付出的，不一定是对方需要的。', hint:{type:'memory', value:1} },
+    death:       { id:'death',       name:'死神',     roman:'XIII', upright:'今日宜告别。有些东西必须结束，新的才会开始。', reversed:'警惕拖延。不愿结束的关系，会比结束更痛。', hint:{type:'ending_hint', value:1} },
+    star:        { id:'star',        name:'星星',     roman:'XVII', upright:'今日宜相信。你等的那束光，正在路上。', reversed:'警惕空洞的期待。希望也需要落地。', hint:{type:'luck', value:1.5} },
+    moon:        { id:'moon',        name:'月亮',     roman:'XVIII',upright:'今日宜留意梦。梦在替你说白天不敢说的话。', reversed:'警惕幻觉。你以为看见的，可能只是你想看见的。', hint:{type:'dream', value:1} },
+    sun:         { id:'sun',         name:'太阳',     roman:'XIX',  upright:'今日宜真诚地笑。你笑起来，比那幅画好看。', reversed:'警惕强颜欢笑。撑不住的时候，可以不笑。', hint:{type:'affection', value:1} },
+    world:       { id:'world',       name:'世界',     roman:'XXI',  upright:'今日宜完成。一件未完成的事，今天可以画上句号。', reversed:'警惕半途而废。终点比起点更需要耐心。', hint:{type:'ending_hint', value:1.5} }
+  }
+};
+
+// ===== 成就系统+真结局解锁 =====
+STORY.achievements = {
+  // 对话类
+  first_reply:   { id:'first_reply',   name:'初次回应',     icon:'💬', desc:'第一次回复男主消息', condition: s => Object.values(s.conversations).some(c=>c.messages.some(m=>m.from==='me')) },
+  perfect_listen:{ id:'perfect_listen',name:'完美倾听者',   icon:'👂', desc:'听完所有电话通话', condition: s => s.callLog.filter(c=>c.status==='answered').length >= 3 },
+  no_reply:      { id:'no_reply',      name:'已读不回',     icon:'😶', desc:'让一个男主等待回复超过30秒', condition: s => s.flags.followup_triggered === true },
+  // 社交类
+  moment_star:   { id:'moment_star',   name:'动态之星',     icon:'🌟', desc:'发动态并收到3个以上角色互动', condition: s => s.moments.filter(m=>m.author==='me' && (m.likes||[]).length >= 3).length >= 1 },
+  group_active:  { id:'group_active',  name:'群聊活跃',     icon:'👥', desc:'在群聊里发过3条以上消息', condition: s => {
+    let cnt = 0;
+    for(const gid in s.groups){ cnt += (s.groups[gid].messages||[]).filter(m=>m.from==='me').length; }
+    return cnt >= 3;
+  }},
+  // 探索类
+  explorer:      { id:'explorer',      name:'霓城漫游人',   icon:'🗺️', desc:'前往过所有5个地点', condition: s => {
+    const visited = new Set(Object.keys(s.visitedEncounters).map(k=>k.split('_')[0]));
+    return ['home','gallery','bar','park','studio'].some(()=>true) && s.flags.visited_all_locations === true;
+  }},
+  memory_keeper: { id:'memory_keeper', name:'记忆收藏家',   icon:'🖼️', desc:'解锁3张以上相册照片', condition: s => s.photos.length >= 3 },
+  dream_walker:  { id:'dream_walker',  name:'梦境行者',     icon:'🌙', desc:'收集3个以上梦境碎片', condition: s => s.dreamShards.length >= 3 },
+  tarot_believer:{ id:'tarot_believer',name:'占卜信徒',     icon:'🔮', desc:'连续3天抽塔罗', condition: s => (s.tarotHistory||[]).length >= 3 },
+  gift_giver:    { id:'gift_giver',    name:'心意传递',     icon:'🎁', desc:'送出第一份礼物', condition: s => (s.gifts||[]).length >= 1 },
+  mood_explorer: { id:'mood_explorer', name:'情绪光谱',     icon:'🎭', desc:'体验过4种以上不同心情', condition: s => {
+    const set = new Set((s.moodHistory||[]).map(m=>m.mood));
+    return set.size >= 4;
+  }},
+  // 剧情类
+  flashback_seen:{ id:'flashback_seen',name:'回望五年前',   icon:'⏳', desc:'触发闪回/前传章节', condition: s => Object.keys(s.flashbacksSeen||{}).length >= 1 },
+  invitation_accepted:{ id:'invitation_accepted', name:'赴约之人', icon:'💌', desc:'接受过一次邀约', condition: s => Object.values(s.resolvedInvitations||{}).some(v=>v==='accepted') },
+  // 隐藏成就
+  three_routes:  { id:'three_routes',  name:'心三向',       icon:'💗', desc:'(隐藏) 同时被三位男主的好感度推到5以上', condition: s => s.affection.shenyan>=5 && s.affection.luci>=5 && s.affection.jiangyu>=5 },
+  solo_path:     { id:'solo_path',     name:'独行侠',       icon:'🌑', desc:'(隐藏) 选择"谁都不回"路线', condition: s => s.route === 'solo' }
+};
+// 真结局解锁条件：成就数 ≥ 8 且路线为 solo
+STORY.trueEndingUnlockCondition = s => {
+  const total = Object.keys(STORY.achievements).length;
+  const unlocked = Object.keys(s.achievements||{}).length;
+  return unlocked >= Math.ceil(total * 0.6) && s.route === 'solo';
+};
+
 if (typeof window !== 'undefined') window.STORY = STORY;

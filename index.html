@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>霓虹心事 · 林夏的手机 · v0.0.8</title>
-<meta name="version" content="v0.0.8">
+<title>霓虹心事 · 林夏的手机 · v0.0.9</title>
+<meta name="version" content="v0.0.9">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -76,6 +76,20 @@
         </button>
         <button class="app-icon" data-app="contacts">
           <span class="app-emoji">📇</span><span class="app-name">通讯录</span>
+        </button>
+        <button class="app-icon" data-app="shop">
+          <span class="app-emoji">🎁</span><span class="app-name">礼物商城</span>
+          <span class="app-badge" id="badge-shop" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="mood">
+          <span class="app-emoji">🎭</span><span class="app-name">心情</span>
+        </button>
+        <button class="app-icon" data-app="tarot">
+          <span class="app-emoji">🔮</span><span class="app-name">塔罗</span>
+        </button>
+        <button class="app-icon" data-app="achievements">
+          <span class="app-emoji">🏆</span><span class="app-name">成就</span>
+          <span class="app-badge" id="badge-achievements" hidden>0</span>
         </button>
       </div>
       <div class="home-dock">
@@ -299,6 +313,48 @@
         <h1>主页</h1>
       </header>
       <div class="char-profile-body" id="char-profile-body"></div>
+    </section>
+
+    <!-- 礼物商城App -->
+    <section id="shop-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>礼物商城</h1>
+        <div class="shop-coins" id="shop-coins">💰 500</div>
+      </header>
+      <div class="shop-tabs">
+        <button class="shop-tab active" data-shop-tab="store">商店</button>
+        <button class="shop-tab" data-shop-tab="inventory">背包</button>
+        <button class="shop-tab" data-shop-tab="gifts">已送出</button>
+      </div>
+      <div class="shop-content" id="shop-content"></div>
+    </section>
+
+    <!-- 心情App -->
+    <section id="mood-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>心情</h1>
+      </header>
+      <div class="mood-content" id="mood-content"></div>
+    </section>
+
+    <!-- 塔罗App -->
+    <section id="tarot-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>塔罗占卜</h1>
+      </header>
+      <div class="tarot-content" id="tarot-content"></div>
+    </section>
+
+    <!-- 成就App -->
+    <section id="achievements-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>成就</h1>
+      </header>
+      <div class="achievements-content" id="achievements-content"></div>
     </section>
 
     <!-- 闪回/前传章节屏 -->

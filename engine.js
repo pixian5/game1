@@ -95,7 +95,21 @@ class PhoneEngine {
       voicemails: [],           // {id, from, text, time, eventId, heard, callbackEvent}
       // 闪回/前传章节
       flashbacksSeen: {},       // {fbId: true}
-      flashbackShards: []       // 闪回收集的碎片
+      flashbackShards: [],      // 闪回收集的碎片
+      // 礼物商城+喜好系统
+      coins: 500,               // 玩家金钱
+      inventory: [],            // 已购未送出礼物 [{id, ts}]
+      gifts: [],                // 已送出礼物 [{to, itemId, mult, ts, day}]
+      // 心情状态+内心独白
+      mood: 'calm',             // 当前心情 id
+      moodHistory: [],          // 历史心情 [{mood, day, ts}]
+      diary: [],                // 内心独白 [{text, mood, day, ts}]
+      // 塔罗占卜+每日运势
+      tarotHistory: [],         // [{day, cardId, reversed}]
+      lastTarotDay: 0,          // 上次抽塔罗的游戏内日期
+      todayFortune: null,       // {cardId, reversed, text}
+      // 成就系统
+      achievements: {}          // {achId: true}
     };
   }
   on(event, fn){ (this.listeners[event] ||= []).push(fn); return fn; }
@@ -115,6 +129,10 @@ class PhoneEngine {
     const list = this.listeners[event] || [];
     for(const fn of list){
       try { fn(payload); } catch(e){ console.error('[emit]', event, e); }
+    }
+    // stateChange 时统一检查成就（避免 30+ 处重复调用）
+    if(event === 'stateChange' && this.story && this.story.achievements){
+      try { this.checkAchievements(); } catch(_) {}
     }
   }
   // 统一应用 effects：避免 30+ 处复制粘贴
@@ -140,6 +158,9 @@ class PhoneEngine {
   newGame(){
     this._clearAllTimers();
     this.state = this.defaultState();
+    // 初始金币和心情从 story 配置读取
+    if(this.story.shop) this.state.coins = this.story.shop.initialCoins || 500;
+    if(this.story.moods) this.state.mood = 'calm';
     // 初始：苏苏发来欢迎消息
     this.scheduleEvent('intro_susu');
     this.emit('stateChange', this.state);
@@ -189,8 +210,10 @@ class PhoneEngine {
   advanceToNextDay(hour=9){
     this.state.day++;
     this.state.minute = hour*60;
+    this._resetDailyFortune();
     this.emit('timeChange', this.getTime());
     this._runPostTimeAdvanceChecks();
+    this.checkAchievements();
   }
   _runPostTimeAdvanceChecks(){
     this.checkTimeEvents();
@@ -366,6 +389,8 @@ class PhoneEngine {
               }
               this.emit('conversationUpdate', {id:msg.from, conv});
               this.emit('messageReceived', {from:msg.from, text:fu.text, conv, isFollowup:true});
+              // 标记已触发过 followup，用于成就判定
+              this.state.flags.followup_triggered = true;
               this.emit('stateChange', this.state);
             }
           }, (fu.delay || 30) * 1000);
@@ -726,6 +751,15 @@ class PhoneEngine {
     this.emit('stateChange', this.state);
     // 推进时间30分钟
     this.advanceTime(30);
+    // 检查是否已访问所有地点（成就判定）
+    const allLocs = Object.keys(this.story.locations);
+    const visitedCount = allLocs.filter(l => l === this.state.currentLocation || true).length;
+    // 简化：只要所有 location 都至少 currentLocation 过一次（这里用 flags 累计）
+    if(!this.state.flags._visited_set) this.state.flags._visited_set = {};
+    this.state.flags._visited_set[locId] = true;
+    if(allLocs.every(l => this.state.flags._visited_set[l])){
+      this.state.flags.visited_all_locations = true;
+    }
     // 尝试触发偶遇
     return this.tryEncounter(locId);
   }
@@ -1076,6 +1110,179 @@ class PhoneEngine {
     this.emit('ending', this.story.endings[endingId]);
   }
 
+  // ===== 礼物商城+喜好系统 =====
+  buyGift(itemId){
+    const item = this.story.shop.items[itemId];
+    if(!item) return {ok:false, reason:'物品不存在'};
+    if(this.state.coins < item.price) return {ok:false, reason:'金币不足'};
+    this.state.coins -= item.price;
+    this.state.inventory.push({id:itemId, ts:Date.now()});
+    this.emit('stateChange', this.state);
+    this.checkAchievements();
+    return {ok:true, item};
+  }
+  giveGift(toCharId, itemId){
+    const item = this.story.shop.items[itemId];
+    if(!item) return {ok:false, reason:'物品不存在'};
+    // 从背包中移除一件
+    const invIdx = this.state.inventory.findIndex(g=>g.id===itemId);
+    if(invIdx < 0) return {ok:false, reason:'背包里没有这件礼物'};
+    this.state.inventory.splice(invIdx, 1);
+    const prefs = this.story.shop.preferences[toCharId] || {};
+    const mult = prefs[itemId] !== undefined ? prefs[itemId] : 1;
+    // 基础好感 = 物品价格/50，乘以喜好倍率
+    const baseAff = Math.max(1, Math.round(item.price / 50));
+    const gain = Math.round(baseAff * mult);
+    if(this.state.affection[toCharId] !== undefined){
+      this.state.affection[toCharId] += gain;
+    }
+    const giftRec = {to:toCharId, itemId, mult, gain, ts:Date.now(), day:this.state.day};
+    this.state.gifts.push(giftRec);
+    // 触发男主反应消息
+    const reactions = (this.story.shop.reactions || {})[toCharId] || {};
+    let reactionText = reactions[mult] || reactions[1] || '……谢谢。';
+    // 江屿 1.5 的两种情况（黑胶 vs 调酒器具）
+    if(toCharId === 'jiangyu' && mult === 1.5){
+      reactionText = itemId === 'cocktail_set' ? (reactions['1.5b'] || reactions['1.5']) : reactions['1.5'];
+    }
+    const conv = this.state.conversations[toCharId];
+    if(conv){
+      this._setTimeout(()=>{
+        conv.messages.push({
+          from: toCharId,
+          text: reactionText,
+          time: this.getTime().time,
+          ts: Date.now(),
+          isGiftReaction: true,
+          giftItem: itemId,
+          giftMult: mult
+        });
+        conv.unread++;
+        this.emit('conversationUpdate', {id:toCharId, conv});
+        this.emit('messageReceived', {from:toCharId, text:reactionText, conv, isGiftReaction:true});
+      }, 800);
+    }
+    this.emit('giftGiven', {to:toCharId, itemId, mult, gain, reaction:reactionText});
+    this.emit('stateChange', this.state);
+    this.checkAchievements();
+    return {ok:true, mult, gain, reaction:reactionText};
+  }
+
+  // ===== 心情状态+内心独白 =====
+  setMood(moodId){
+    if(!this.story.moods[moodId]) return false;
+    this.state.mood = moodId;
+    this.state.moodHistory.push({mood:moodId, day:this.state.day, ts:Date.now()});
+    // 应用心情效果：写入对应 flag
+    const eff = this.story.moodEffects[moodId];
+    if(eff){
+      if(eff.flag) this.state.flags[eff.flag] = true;
+      if(eff.bonusPersonality){
+        this.state.personality[eff.bonusPersonality] = (this.state.personality[eff.bonusPersonality]||0) + 1;
+      }
+    }
+    this.emit('moodChanged', {mood:moodId, moodInfo:this.story.moods[moodId]});
+    this.emit('stateChange', this.state);
+    this.checkAchievements();
+    return true;
+  }
+  addDiary(text){
+    if(!text || !text.trim()) return false;
+    this.state.diary.push({
+      text: text.trim(),
+      mood: this.state.mood,
+      day: this.state.day,
+      time: this.getTime().time,
+      ts: Date.now()
+    });
+    // 内心独白影响性格画像（写下来 = 自省 = 理性+1）
+    this.state.personality.rational = (this.state.personality.rational||0) + 1;
+    this.emit('diaryAdded', this.state.diary[this.state.diary.length-1]);
+    this.emit('stateChange', this.state);
+    return true;
+  }
+
+  // ===== 塔罗占卜+每日运势 =====
+  drawTarot(){
+    // 每天只能抽一次
+    if(this.state.lastTarotDay === this.state.day && this.state.todayFortune){
+      return {ok:false, reason:'今日已抽过', fortune:this.state.todayFortune};
+    }
+    const cards = Object.values(this.story.tarot.cards);
+    if(cards.length === 0) return {ok:false, reason:'无牌组'};
+    const card = cards[Math.floor(Math.random() * cards.length)];
+    const reversed = Math.random() < 0.35;  // 35% 概率逆位
+    const text = reversed ? card.reversed : card.upright;
+    const fortune = {cardId:card.id, name:card.name, roman:card.roman, reversed, text, hint:card.hint, day:this.state.day};
+    this.state.todayFortune = fortune;
+    this.state.lastTarotDay = this.state.day;
+    this.state.tarotHistory.push({day:this.state.day, cardId:card.id, reversed, ts:Date.now()});
+    // 写入运势 flag
+    if(card.hint){
+      this.state.flags['tarot_' + card.hint.type] = card.hint.value;
+    }
+    this.emit('tarotDrawn', fortune);
+    this.emit('stateChange', this.state);
+    this.checkAchievements();
+    return {ok:true, fortune};
+  }
+  // 跨天重置每日运势（由 advanceToNextDay 调用）
+  _resetDailyFortune(){
+    if(this.state.todayFortune && this.state.todayFortune.day !== this.state.day){
+      this.state.todayFortune = null;
+    }
+  }
+
+  // ===== 成就系统 =====
+  checkAchievements(){
+    if(!this.story.achievements) return [];
+    const newly = [];
+    for(const [id, ach] of Object.entries(this.story.achievements)){
+      if(this.state.achievements[id]) continue;
+      try {
+        if(ach.condition(this.state)){
+          this.state.achievements[id] = true;
+          newly.push(id);
+        }
+      } catch(_) {}
+    }
+    if(newly.length > 0){
+      this.emit('achievementsUnlocked', newly.map(id=>this.story.achievements[id]));
+    }
+    return newly;
+  }
+  isTrueEndingUnlocked(){
+    try {
+      return this.story.trueEndingUnlockCondition(this.state);
+    } catch(_) { return false; }
+  }
+  // 获取已解锁成就详情列表
+  getUnlockedAchievements(){
+    const list = [];
+    for(const [id, ach] of Object.entries(this.story.achievements||{})){
+      if(this.state.achievements[id]){
+        list.push({...ach, unlocked:true});
+      }
+    }
+    return list;
+  }
+  // 获取未解锁成就（隐藏成就的 desc 显示为 ???）
+  getLockedAchievements(){
+    const list = [];
+    for(const [id, ach] of Object.entries(this.story.achievements||{})){
+      if(!this.state.achievements[id]){
+        const isHidden = ach.desc.startsWith('(隐藏)');
+        list.push({
+          id, icon: isHidden ? '❓' : ach.icon,
+          name: isHidden ? '???' : ach.name,
+          desc: isHidden ? '（隐藏成就）' : ach.desc,
+          unlocked:false
+        });
+      }
+    }
+    return list;
+  }
+
   // ===== 存档 =====
   static SAVE_VERSION = 1;
   save(slot){
@@ -1119,7 +1326,17 @@ class PhoneEngine {
       calendar: data.state.calendar || [],
       dreamShards: data.state.dreamShards || [],
       memoryShards: data.state.memoryShards || [],
-      flashbackShards: data.state.flashbackShards || []
+      flashbackShards: data.state.flashbackShards || [],
+      coins: data.state.coins !== undefined ? data.state.coins : def.coins,
+      inventory: data.state.inventory || [],
+      gifts: data.state.gifts || [],
+      mood: data.state.mood || def.mood,
+      moodHistory: data.state.moodHistory || [],
+      diary: data.state.diary || [],
+      tarotHistory: data.state.tarotHistory || [],
+      lastTarotDay: data.state.lastTarotDay || 0,
+      todayFortune: data.state.todayFortune || null,
+      achievements: data.state.achievements || {}
     };
     this.emit('stateChange', this.state);
     this.emit('timeChange', this.getTime());

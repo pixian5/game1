@@ -418,6 +418,68 @@ async function run(){
     `场景数:${fb1?.scenes.length||0}`);
   check('闪回有奖励', fb1 && fb1.reward && (fb1.reward.photo || fb1.reward.flag));
 
+  // ===== v0.0.9 新玩法验证 =====
+  console.log('\n=== v0.0.9 新玩法验证 ===');
+  console.log('[J] 礼物商城+喜好系统');
+  check('商品库有8件物品', STORY.shop && Object.keys(STORY.shop.items).length >= 8,
+    `物品数:${STORY.shop?Object.keys(STORY.shop.items).length:0}`);
+  check('3位男主有喜好表', STORY.shop && Object.keys(STORY.shop.preferences).length >= 3,
+    `男主数:${STORY.shop?Object.keys(STORY.shop.preferences).length:0}`);
+  check('初始金币为500', engine.state.coins === 500, `金币:${engine.state.coins}`);
+  // 购买测试
+  const beforeCoins = engine.state.coins;
+  const buyR = engine.buyGift('art_book');
+  check('购买礼物成功', buyR.ok, `原因:${buyR.reason||'ok'}`);
+  check('购买后金币减少', engine.state.coins === beforeCoins - 280, `金币:${engine.state.coins}`);
+  check('背包有1件礼物', engine.state.inventory.length === 1, `背包:${engine.state.inventory.length}`);
+  // 送礼测试
+  const affBefore = engine.state.affection.shenyan;
+  const giveR = engine.giveGift('shenyan', 'art_book');
+  check('送礼成功', giveR.ok, `原因:${giveR.reason||'ok'}`);
+  check('沈砚之收到画册好感倍率为2', giveR.mult === 2, `倍率:${giveR.mult}`);
+  check('送礼后好感增加', engine.state.affection.shenyan > affBefore,
+    `前:${affBefore} 后:${engine.state.affection.shenyan}`);
+  check('已送出礼物记录数+1', engine.state.gifts.length === 1, `礼物数:${engine.state.gifts.length}`);
+
+  console.log('[K] 心情状态+内心独白');
+  check('有5种心情', STORY.moods && Object.keys(STORY.moods).length >= 5,
+    `心情数:${STORY.moods?Object.keys(STORY.moods).length:0}`);
+  const moodR = engine.setMood('brave');
+  check('切换心情成功', moodR === true);
+  check('当前心情为brave', engine.state.mood === 'brave', `心情:${engine.state.mood}`);
+  check('心情历史有记录', engine.state.moodHistory.length >= 1, `历史:${engine.state.moodHistory.length}`);
+  // 内心独白
+  const diaryR = engine.addDiary('今天我决定面对自己的心');
+  check('写日记成功', diaryR === true);
+  check('日记已保存', engine.state.diary.length === 1, `日记数:${engine.state.diary.length}`);
+  check('写日记增加理性+1', engine.state.personality.rational >= 1, `理性:${engine.state.personality.rational}`);
+
+  console.log('[L] 塔罗占卜+每日运势');
+  check('塔罗牌组≥15张', STORY.tarot && Object.keys(STORY.tarot.cards).length >= 15,
+    `牌数:${STORY.tarot?Object.keys(STORY.tarot.cards).length:0}`);
+  const tarotR = engine.drawTarot();
+  check('抽牌成功', tarotR.ok, `原因:${tarotR.reason||'ok'}`);
+  check('今日运势已记录', engine.state.todayFortune !== null, `运势:${engine.state.todayFortune?'有':'无'}`);
+  check('塔罗历史有1条', engine.state.tarotHistory.length === 1, `历史:${engine.state.tarotHistory.length}`);
+  const tarotR2 = engine.drawTarot();
+  check('同日再次抽牌被拒绝', tarotR2.ok === false, `原因:${tarotR2.reason||'ok'}`);
+
+  console.log('[M] 成就系统+真结局解锁');
+  check('成就总数≥10', STORY.achievements && Object.keys(STORY.achievements).length >= 10,
+    `成就数:${STORY.achievements?Object.keys(STORY.achievements).length:0}`);
+  // 因购买礼物送礼，应解锁 gift_giver 成就
+  check('送出礼物解锁成就', engine.state.achievements.gift_giver === true,
+    `成就:${engine.state.achievements.gift_giver?'已解锁':'未解锁'}`);
+  // 因切换心情，应解锁 mood_explorer?（需4种以上，目前只切1次）
+  const unlockedCnt = Object.keys(engine.state.achievements).length;
+  check('至少解锁1个成就', unlockedCnt >= 1, `已解锁:${unlockedCnt}`);
+  const unlockedList = engine.getUnlockedAchievements();
+  check('getUnlockedAchievements返回详情', unlockedList.length >= 1, `列表:${unlockedList.length}`);
+  const lockedList = engine.getLockedAchievements();
+  check('getLockedAchievements返回未解锁', lockedList.length >= 1, `列表:${lockedList.length}`);
+  // 真结局解锁检查函数存在
+  check('isTrueEndingUnlocked函数可调用', typeof engine.isTrueEndingUnlocked === 'function');
+
   // 总结
   console.log('\n=== 总结 ===');
   const passed = results.filter(r=>r.pass).length;
