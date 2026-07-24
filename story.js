@@ -1,129 +1,47 @@
 /* ===== 霓虹心事 · 剧情数据 ===== */
-/* 角色立绘：用 SVG 绘制，避免外部图片依赖 */
+/* 角色立绘：极简纯色块 + 大字角色名 + 字符画标识（无外部图片依赖） */
 
-// 沈砚之 - 黑发金丝眼镜 深蓝西装
-const SPRITE_SHENYAN = (mood='neutral') => {
-  const eyeY = mood==='angry'?158:mood==='smile'?156:160;
-  const mouth = mood==='smile'?'<path d="M82 188 Q100 198 118 188" stroke="#7a3a4a" stroke-width="2" fill="none"/>'
-    : mood==='angry'?'<path d="M82 192 L118 188" stroke="#7a3a4a" stroke-width="2" fill="none"/>'
-    : '<line x1="86" y1="190" x2="114" y2="190" stroke="#7a3a4a" stroke-width="2"/>';
-  const brow = mood==='angry'?'<path d="M75 145 L100 152 M125 152 L100 152" stroke="#1a1018" stroke-width="2.5" fill="none"/>'
-    :'<path d="M78 148 Q100 144 122 148" stroke="#1a1018" stroke-width="2" fill="none"/>';
-  return `<svg viewBox="0 0 200 320" xmlns="http://www.w3.org/2000/svg">
+// 通用立绘生成器：纯色块 + 角色名 + 心境词 + 字符画标识
+function _sprite(opts, mood='neutral'){
+  const {name, color, color2, symbol, moodMap} = opts;
+  const moodText = moodMap[mood] || moodMap.neutral;
+  return `<svg viewBox="0 0 200 360" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMax meet">
     <defs>
-      <linearGradient id="sySuit" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#2a2f5a"/><stop offset="1" stop-color="#15182e"/>
-      </linearGradient>
-      <linearGradient id="syHair" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#1a1418"/><stop offset="1" stop-color="#0a0608"/>
+      <linearGradient id="g_${color.replace('#','')}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${color}" stop-opacity="0.95"/>
+        <stop offset="1" stop-color="${color2}" stop-opacity="0.85"/>
       </linearGradient>
     </defs>
-    <ellipse cx="100" cy="315" rx="70" ry="8" fill="rgba(0,0,0,0.5)"/>
-    <path d="M40 320 L50 230 Q60 200 100 200 Q140 200 150 230 L160 320 Z" fill="url(#sySuit)"/>
-    <path d="M85 220 L100 250 L115 220 L110 200 L90 200 Z" fill="#f4e8d8"/>
-    <path d="M88 220 L100 240 L112 220 Z" fill="#1a1f3a"/>
-    <rect x="92" y="232" width="16" height="3" fill="#c9a86a"/>
-    <ellipse cx="100" cy="160" rx="42" ry="50" fill="#f4e8d8"/>
-    <path d="M58 150 Q60 110 100 105 Q140 110 142 150 Q138 130 100 125 Q62 130 58 150 Z" fill="url(#syHair)"/>
-    <path d="M58 150 Q55 175 60 195 L66 180 Q60 165 62 150 Z" fill="url(#syHair)"/>
-    <path d="M142 150 Q145 175 140 195 L134 180 Q140 165 138 150 Z" fill="url(#syHair)"/>
-    ${brow}
-    <circle cx="85" cy="${eyeY}" r="7" fill="#fff"/>
-    <circle cx="115" cy="${eyeY}" r="7" fill="#fff"/>
-    <circle cx="85" cy="${eyeY}" r="3.5" fill="#5a3a8a"/>
-    <circle cx="115" cy="${eyeY}" r="3.5" fill="#5a3a8a"/>
-    <circle cx="78" cy="${eyeY-2}" r="6" fill="none" stroke="#c9a86a" stroke-width="1.2"/>
-    <circle cx="122" cy="${eyeY-2}" r="6" fill="none" stroke="#c9a86a" stroke-width="1.2"/>
-    <line x1="72" y1="${eyeY-2}" x2="68" y2="${eyeY-2}" stroke="#c9a86a" stroke-width="1.2"/>
-    <line x1="128" y1="${eyeY-2}" x2="132" y2="${eyeY-2}" stroke="#c9a86a" stroke-width="1.2"/>
-    <line x1="78" y1="${eyeY-2}" x2="86" y2="${eyeY-2}" stroke="#c9a86a" stroke-width="1"/>
-    <line x1="114" y1="${eyeY-2}" x2="122" y2="${eyeY-2}" stroke="#c9a86a" stroke-width="1"/>
-    ${mouth}
-    <ellipse cx="68" cy="175" rx="6" ry="4" fill="#ff8aa8" opacity="0.4"/>
-    <ellipse cx="132" cy="175" rx="6" ry="4" fill="#ff8aa8" opacity="0.4"/>
+    <rect x="20" y="40" width="160" height="300" rx="6" fill="url(#g_${color.replace('#','')})" stroke="${color}" stroke-width="1.5" stroke-opacity="0.6"/>
+    <rect x="20" y="40" width="160" height="300" rx="6" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+    <text x="100" y="110" text-anchor="middle" font-family="monospace" font-size="34" fill="rgba(255,255,255,0.85)" letter-spacing="2">${symbol}</text>
+    <line x1="50" y1="150" x2="150" y2="150" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+    <text x="100" y="220" text-anchor="middle" font-family="serif" font-size="42" font-weight="700" fill="#ffffff" letter-spacing="8">${name}</text>
+    <line x1="50" y1="260" x2="150" y2="260" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+    <text x="100" y="300" text-anchor="middle" font-family="serif" font-size="18" fill="rgba(255,255,255,0.7)" letter-spacing="6">${moodText}</text>
+    <text x="100" y="330" text-anchor="middle" font-family="monospace" font-size="10" fill="rgba(255,255,255,0.35)" letter-spacing="3">— NEON —</text>
   </svg>`;
-};
+}
 
-// 陆辞 - 栗色卷发 雀斑 绿T恤
-const SPRITE_LUCI = (mood='neutral') => {
-  const mouth = mood==='smile'?'<path d="M82 188 Q100 200 118 188" stroke="#a04a3a" stroke-width="2" fill="none"/>'
-    : mood==='sad'?'<path d="M82 192 Q100 186 118 192" stroke="#a04a3a" stroke-width="2" fill="none"/>'
-    : '<path d="M86 190 Q100 196 114 190" stroke="#a04a3a" stroke-width="2" fill="none"/>';
-  const eyeY = mood==='sad'?162:158;
-  return `<svg viewBox="0 0 200 320" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="luShirt" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#3a7a4a"/><stop offset="1" stop-color="#1f4a2a"/>
-      </linearGradient>
-      <linearGradient id="luHair" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#8a5a2a"/><stop offset="1" stop-color="#5a3a1a"/>
-      </linearGradient>
-    </defs>
-    <ellipse cx="100" cy="315" rx="70" ry="8" fill="rgba(0,0,0,0.5)"/>
-    <path d="M40 320 L50 230 Q60 200 100 200 Q140 200 150 230 L160 320 Z" fill="url(#luShirt)"/>
-    <path d="M75 210 L100 250 L125 210 L120 200 L80 200 Z" fill="#f4e8d8"/>
-    <rect x="95" y="225" width="20" height="22" fill="#1a1a1a" rx="2"/>
-    <circle cx="105" cy="230" r="6" fill="#2a2a2a" stroke="#444" stroke-width="1"/>
-    <rect x="103" y="232" width="4" height="12" fill="#444"/>
-    <ellipse cx="100" cy="160" rx="42" ry="50" fill="#f4d8c0"/>
-    <path d="M55 145 Q52 100 100 100 Q148 100 145 145 Q150 130 148 115 Q140 90 100 88 Q60 90 52 115 Q50 130 55 145 Z" fill="url(#luHair)"/>
-    <path d="M55 145 Q52 160 55 180 Q58 165 60 150 Z" fill="url(#luHair)"/>
-    <path d="M145 145 Q148 160 145 180 Q142 165 140 150 Z" fill="url(#luHair)"/>
-    <path d="M70 130 Q75 125 82 130 M88 122 Q95 118 102 122 M108 128 Q115 124 122 128 M128 134 Q133 130 138 134" stroke="#5a3a1a" stroke-width="2" fill="none" opacity="0.6"/>
-    <path d="M78 145 Q82 142 86 145 M114 145 Q118 142 122 145" stroke="#1a1018" stroke-width="2" fill="none"/>
-    <circle cx="85" cy="${eyeY}" r="6" fill="#fff"/>
-    <circle cx="115" cy="${eyeY}" r="6" fill="#fff"/>
-    <circle cx="85" cy="${eyeY}" r="3" fill="#3a6a3a"/>
-    <circle cx="115" cy="${eyeY}" r="3" fill="#3a6a3a"/>
-    <circle cx="86" cy="${eyeY-1}" r="1" fill="#fff"/>
-    <circle cx="116" cy="${eyeY-1}" r="1" fill="#fff"/>
-    <g fill="#a86040" opacity="0.5">
-      <circle cx="78" cy="170" r="1"/><circle cx="82" cy="173" r="1"/><circle cx="86" cy="170" r="1"/>
-      <circle cx="114" cy="170" r="1"/><circle cx="118" cy="173" r="1"/><circle cx="122" cy="170" r="1"/>
-    </g>
-    ${mouth}
-    <ellipse cx="68" cy="175" rx="6" ry="4" fill="#ff8aa8" opacity="0.5"/>
-    <ellipse cx="132" cy="175" rx="6" ry="4" fill="#ff8aa8" opacity="0.5"/>
-  </svg>`;
-};
+// 沈砚之 - 深蓝紫 ◑ 眼镜符号
+const SPRITE_SHENYAN = (mood='neutral') => _sprite({
+  name:'沈砚之', color:'#2a2f5a', color2:'#15182e', symbol:'▣ - ▣',
+  moodMap:{neutral:'· 沉静 ·', smile:'· 温润 ·', sad:'· 黯然 ·', angry:'· 冷厉 ·'}
+}, mood);
 
-// 江屿 - 银白长发挑染紫 黑衬衫 耳钉
-const SPRITE_JIANGYU = (mood='neutral') => {
-  const mouth = mood==='smile'?'<path d="M88 190 Q100 196 112 190" stroke="#5a3a4a" stroke-width="2" fill="none"/>'
-    : mood==='sad'?'<path d="M86 194 Q100 188 114 194" stroke="#5a3a4a" stroke-width="2" fill="none"/>'
-    : '<line x1="90" y1="192" x2="110" y2="192" stroke="#5a3a4a" stroke-width="2"/>';
-  return `<svg viewBox="0 0 200 320" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="jyShirt" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#1a1a22"/><stop offset="1" stop-color="#0a0a12"/>
-      </linearGradient>
-      <linearGradient id="jyHair" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#e8e0ea"/><stop offset="0.6" stop-color="#b8b0c4"/><stop offset="1" stop-color="#7a6a9a"/>
-      </linearGradient>
-    </defs>
-    <ellipse cx="100" cy="315" rx="70" ry="8" fill="rgba(0,0,0,0.5)"/>
-    <path d="M40 320 L50 230 Q60 200 100 200 Q140 200 150 230 L160 320 Z" fill="url(#jyShirt)"/>
-    <path d="M80 220 L100 260 L120 220 L115 200 L85 200 Z" fill="#e8e0d4"/>
-    <ellipse cx="100" cy="160" rx="42" ry="50" fill="#e8d8c8"/>
-    <path d="M52 140 Q48 90 100 85 Q152 90 148 140 Q155 200 150 240 Q145 220 142 180 Q140 130 100 122 Q60 130 58 180 Q55 220 50 240 Q45 200 52 140 Z" fill="url(#jyHair)"/>
-    <path d="M140 100 Q150 105 148 130 Q145 115 138 110 Z" fill="#7a3a8a"/>
-    <path d="M52 140 Q48 165 52 195 Q56 175 58 150 Z" fill="url(#jyHair)"/>
-    <path d="M145 140 Q150 175 146 205 Q142 180 140 150 Z" fill="url(#jyHair)"/>
-    <path d="M82 130 Q80 160 78 195 M118 130 Q120 160 122 195" stroke="#7a6a9a" stroke-width="1" fill="none" opacity="0.4"/>
-    <path d="M76 148 Q82 144 88 148 M112 148 Q118 144 124 148" stroke="#2a1820" stroke-width="2" fill="none"/>
-    <circle cx="85" cy="158" r="6" fill="#fff"/>
-    <circle cx="115" cy="158" r="6" fill="#fff"/>
-    <circle cx="85" cy="158" r="3" fill="#6a4a8a"/>
-    <circle cx="115" cy="158" r="3" fill="#6a4a8a"/>
-    <circle cx="86" cy="157" r="1" fill="#fff"/>
-    <circle cx="116" cy="157" r="1" fill="#fff"/>
-    <circle cx="60" cy="160" r="2.5" fill="#7a5cff"/>
-    <line x1="62" y1="160" x2="58" y2="160" stroke="#39d6ff" stroke-width="1"/>
-    ${mouth}
-    <ellipse cx="68" cy="175" rx="5" ry="3" fill="#ff8aa8" opacity="0.3"/>
-    <ellipse cx="132" cy="175" rx="5" ry="3" fill="#ff8aa8" opacity="0.3"/>
-  </svg>`;
-};
+// 陆辞 - 森绿 ◉ 相机符号
+const SPRITE_LUCI = (mood='neutral') => _sprite({
+  name:'陆 辞', color:'#2a5a3a', color2:'#143018', symbol:'[__○__]',
+  moodMap:{neutral:'· 阳光 ·', smile:'· 灿烂 ·', sad:'· 怅然 ·', angry:'· 沉脸 ·'}
+}, mood);
+
+// 江屿 - 暗银紫 ♪ 音符符号
+const SPRITE_JIANGYU = (mood='neutral') => _sprite({
+  name:'江 屿', color:'#4a3a5a', color2:'#241a30', symbol:'♪ ~ ♫',
+  moodMap:{neutral:'· 沉默 ·', smile:'· 微光 ·', sad:'· 忧郁 ·', angry:'· 嘶哑 ·'}
+}, mood);
+
+
 
 const STORY = {
   characters: {
@@ -442,7 +360,7 @@ const STORY = {
         {type:'talk', speaker:'jiangyu', text:'所以你第一次走进来的时候，我吓了一跳。'},
         {type:'talk', speaker:'jiangyu', text:'对不起。吓到你了。'},
         {type:'talk', speaker:'linxia', text:'……没事。'},
-        {type:'goto', next:'common_7'}
+        {type:'goto', next:'common_6c'}
       ]
     },
     'common_6b': {
@@ -452,6 +370,22 @@ const STORY = {
         {type:'talk', speaker:'jiangyu', text:'……谢谢。', mood:'sad'},
         {type:'narration', text:'他似乎松了口气。'},
         {type:'talk', speaker:'jiangyu', text:'你这种人，不多见。'},
+        {type:'goto', next:'common_6c'}
+      ]
+    },
+    'common_6c': {
+      bg:'street', chapter:'第一章 · 间奏', date:'7月21日 18:30',
+      steps:[
+        {type:'narration', text:'离开幕式只剩一天。我一个人在霓城的街上走着，理清这一周。'},
+        {type:'narration', text:'霓城的晚高峰，人流像潮水。我逆着走，没人认识我。'},
+        {type:'talk', speaker:'linxia', text:'（沈砚之，是我老板，也是最先让我心动的人。）'},
+        {type:'talk', speaker:'linxia', text:'（陆辞，是我九年前的故人，他的眼神里有我读不懂的东西。）'},
+        {type:'talk', speaker:'linxia', text:'（江屿，他看我的时候，像在看一个很远很远的人。）'},
+        {type:'narration', text:'路灯一盏盏亮起，霓城开始它真正的呼吸。'},
+        {type:'talk', speaker:'linxia', text:'（明天开幕式，他们会都在。）'},
+        {type:'talk', speaker:'linxia', text:'（我得想清楚，自己要的是什么。）'},
+        {type:'narration', text:'我停下脚步，望着街对面巨大的电子屏。屏上正放着一条广告——"砚美术馆，光与影的几何，明晚开幕。"'},
+        {type:'talk', speaker:'linxia', text:'……走吧。回家。'},
         {type:'goto', next:'common_7'}
       ]
     },
@@ -636,7 +570,7 @@ const STORY = {
         {type:'talk', speaker:'shenyan', text:'我承认，一开始，是因为你像她们。'},
         {type:'talk', speaker:'shenyan', text:'但相处下来，我发现你不是任何人的替身。'},
         {type:'talk', speaker:'shenyan', text:'你比她们，都鲜活。'},
-        {type:'goto', next:'route_shenyan_end_check'}
+        {type:'goto', next:'route_shenyan_4'}
       ]
     },
     'route_shenyan_3b': {
@@ -648,6 +582,86 @@ const STORY = {
         {type:'talk', speaker:'shenyan', text:'留下来，做我的模特。', mood:'smile'},
         {type:'talk', speaker:'shenyan', text:'我会画一辈子的你。'},
         {type:'narration', text:'我没察觉，他说的"留下"，是什么意思。'},
+        {type:'goto', next:'route_shenyan_4'}
+      ]
+    },
+    'route_shenyan_4': {
+      bg:'gallery', chapter:'沈砚之线 · 四', date:'8月3日 20:00',
+      steps:[
+        {type:'narration', text:'南方。私人藏家的晚宴在一座临海别墅。'},
+        {type:'narration', text:'沈砚之一路牵着我的手，礼貌而笃定，像在牵一件即将展出的作品。'},
+        {type:'talk', speaker:'shenyan', text:'这位是周先生，国内最重要的当代艺术藏家之一。', sprite:'shenyan', mood:'smile'},
+        {type:'narration', text:'他侧身，把我"递"到周先生面前。'},
+        {type:'talk', speaker:'shenyan', text:'林夏，我新来的策展人。灵气得很。', mood:'smile'},
+        {type:'narration', text:'周先生的目光从我脸滑到我锁骨，又落回脸。'},
+        {type:'talk', speaker:'narrator', text:'"确实，确实。沈先生眼光一向好。"'},
+        {type:'talk', speaker:'linxia', text:'（……他在介绍我，还是在展示我？）'},
+        {type:'narration', text:'我想退后半步，沈砚之的手却稳稳按在我腰后。'},
+        {type:'talk', speaker:'shenyan', text:'林夏下个月会独立策一个青年艺术家单元，周先生有兴趣看看吗？', mood:'neutral'},
+        {type:'narration', text:'他替我做了主，语气里没有商量的余地。'},
+        {type:'choice', prompt:'晚宴上你感到被"展示"的不适。你的反应是？', options:[
+          {text:'配合他，回去再说', hint:'向 BAD END 倾斜', effects:{affection:{shenyan:1}, flags:{shenyan_obey:1}}, next:'route_shenyan_5'},
+          {text:'当场岔开话题，夺回主动', hint:'向 GOOD END 倾斜', effects:{affection:{shenyan:2}, flags:{shenyan_resist:1}}, next:'route_shenyan_5'}
+        ]}
+      ]
+    },
+    'route_shenyan_5': {
+      bg:'rain', chapter:'沈砚之线 · 五', date:'8月3日 23:40',
+      steps:[
+        {type:'narration', text:'回程的车上，雨下得很大。'},
+        {type:'narration', text:'沈砚之靠在后座，闭着眼，领带松开一半。'},
+        {type:'talk', speaker:'shenyan', text:'……你今天，不太高兴。', sprite:'shenyan', mood:'sad'},
+        {type:'talk', speaker:'linxia', text:'我以为我是来协助策展的。'},
+        {type:'talk', speaker:'shenyan', text:'你是。'},
+        {type:'talk', speaker:'linxia', text:'可你介绍我的时候，像在介绍一只花瓶。'},
+        {type:'narration', text:'他沉默良久，雨打在车窗上。'},
+        {type:'talk', speaker:'shenyan', text:'对不起。', mood:'sad'},
+        {type:'talk', speaker:'shenyan', text:'我从小被教，人脉要这样经营。我忘了你不是我。'},
+        {type:'narration', text:'他摘下眼镜，揉了揉眉心。第一次，他显得不那么完美。'},
+        {type:'talk', speaker:'shenyan', text:'家里逼我接手美术馆，逼我相亲，逼我活成一个"沈砚之"。', mood:'sad'},
+        {type:'talk', speaker:'shenyan', text:'只有画画的时候，只有……遇见你的时候，我才是我自己。', mood:'sad'},
+        {type:'narration', text:'我心软了一瞬。'},
+        {type:'talk', speaker:'linxia', text:'（他也有他的牢笼。）'},
+        {type:'goto', next:'route_shenyan_6'}
+      ]
+    },
+    'route_shenyan_6': {
+      bg:'apartment', chapter:'沈砚之线 · 六', date:'8月15日 09:00',
+      steps:[
+        {type:'narration', text:'那之后，我们的关系近了一层。'},
+        {type:'narration', text:'可我也渐渐发现，他的"近"，是另一种包裹。'},
+        {type:'narration', text:'早上发来："今天别穿那件白衬衫，不适合你。"'},
+        {type:'narration', text:'中午："陆辞约你吃饭？推了吧，我给你订了餐厅。"'},
+        {type:'narration', text:'晚上："这么晚还在雾港？那种地方，不适合你。"'},
+        {type:'talk', speaker:'linxia', text:'（他不是在爱我。他是在重塑我。）'},
+        {type:'narration', text:'镜子里的我，开始穿他选的衣服，说他会笑的话。'},
+        {type:'talk', speaker:'linxia', text:'我还是我吗？', mood:'sad'},
+        {type:'narration', text:'手机响了。是陆辞。'},
+        {type:'talk', speaker:'luci', text:'林夏，你最近怎么了？消息也不回。', sprite:'luci', mood:'sad'},
+        {type:'talk', speaker:'luci', text:'我给你打了五个电话，都是沈砚之接的。他说你忙。', mood:'sad'},
+        {type:'narration', text:'我怔住。我根本没收到过那些电话。'},
+        {type:'choice', prompt:'你意识到沈砚之在替你"过滤"外界。你的反应是？', options:[
+          {text:'立刻去找陆辞问清楚', hint:'决心破局 → 对峙', effects:{affection:{}, flags:{shenyan_awaken:1}}, next:'route_shenyan_7'},
+          {text:'替沈砚之解释，继续逃避', hint:'滑向 BAD END', effects:{affection:{}, flags:{shenyan_deny:1}}, next:'route_shenyan_end_check'}
+        ]}
+      ]
+    },
+    'route_shenyan_7': {
+      bg:'cafe', chapter:'沈砚之线 · 七', date:'8月15日 14:00',
+      steps:[
+        {type:'narration', text:'我冲到巷口咖啡馆。陆辞已经在了，看见我，眼眶有点红。'},
+        {type:'talk', speaker:'luci', text:'你瘦了。', mood:'sad', sprite:'luci'},
+        {type:'talk', speaker:'linxia', text:'陆辞，对不起。'},
+        {type:'talk', speaker:'luci', text:'我不需要对不起。我需要你告诉我，你还活着。', mood:'sad'},
+        {type:'narration', text:'他把那五通被拦截的通话记录翻给我看。'},
+        {type:'talk', speaker:'luci', text:'林夏，你认得出来这是谁的手笔吗？', mood:'neutral'},
+        {type:'talk', speaker:'linxia', text:'……我认得。'},
+        {type:'narration', text:'我捧着热可可，棉花糖化了，甜得发苦。'},
+        {type:'talk', speaker:'luci', text:'你不用现在做决定。但你得知道——', mood:'sad'},
+        {type:'talk', speaker:'luci', text:'无论你选谁，都不能选一个让你"消失"的人。', mood:'sad'},
+        {type:'narration', text:'我看着窗外的霓城，第一次，看清了自己这两个月走过的路。'},
+        {type:'talk', speaker:'linxia', text:'谢谢你，陆辞。', mood:'sad'},
+        {type:'talk', speaker:'linxia', text:'（……该回去了。回去，跟他说清楚。）'},
         {type:'goto', next:'route_shenyan_end_check'}
       ]
     },
@@ -749,7 +763,7 @@ const STORY = {
         {type:'narration', text:'风把他的卷发吹乱，他没去理。'},
         {type:'talk', speaker:'luci', text:'我知道我们认识太久，突然说这个，可能让你为难。'},
         {type:'talk', speaker:'luci', text:'但我不想再憋着了。', mood:'sad'},
-        {type:'goto', next:'route_luci_end_check'}
+        {type:'goto', next:'route_luci_4'}
       ]
     },
     'route_luci_3b': {
@@ -761,7 +775,83 @@ const STORY = {
         {type:'talk', speaker:'luci', text:'嗯。挺漂亮的。', mood:'sad'},
         {type:'narration', text:'他笑了一下，笑得很苦。'},
         {type:'talk', speaker:'luci', text:'那我……下次再说吧。'},
-        {type:'goto', next:'route_luci_end_check'}
+        {type:'goto', next:'route_luci_4'}
+      ]
+    },
+    'route_luci_4': {
+      bg:'gallery', chapter:'陆辞线 · 四', date:'7月27日 10:00',
+      steps:[
+        {type:'narration', text:'告白之后，我们谁都没再提那晚的事。'},
+        {type:'narration', text:'美术馆里碰见，他笑着点头，我也笑着点头，像两个排练好的演员。'},
+        {type:'talk', speaker:'luci', text:'片子我放你桌上了。', mood:'neutral', sprite:'luci'},
+        {type:'talk', speaker:'linxia', text:'好。'},
+        {type:'talk', speaker:'luci', text:'嗯。'},
+        {type:'narration', text:'他转身走的时候，我看见他攥紧了相机带子。'},
+        {type:'talk', speaker:'linxia', text:'（他在等我回应。可我不知道怎么回应。）'},
+        {type:'narration', text:'九年太重了。重到我怕一接手，就还不起。'},
+        {type:'choice', prompt:'面对他的克制与等待，你的态度是？', options:[
+          {text:'主动找他打破僵局', hint:'向 GOOD END 倾斜', effects:{affection:{luci:2}, flags:{luci_brave:1}}, next:'route_luci_5'},
+          {text:'继续装作无事发生', hint:'向 BAD END 倾斜', effects:{affection:{luci:1}, flags:{luci_hide:1}}, next:'route_luci_5'}
+        ]}
+      ]
+    },
+    'route_luci_5': {
+      bg:'studio', chapter:'陆辞线 · 五', date:'8月2日 16:00',
+      steps:[
+        {type:'narration', text:'我去他工作室送还一卷胶卷。他不在。'},
+        {type:'narration', text:'桌上摊着一本旧相册，黑色封皮，边角磨白。'},
+        {type:'talk', speaker:'linxia', text:'（这是……）'},
+        {type:'narration', text:'我翻开。第一页，是高一军训时的我，晒得发红，在笑。'},
+        {type:'narration', text:'第二页，高二运动会，我跑过终点，他拍的是我冲线的侧脸。'},
+        {type:'narration', text:'第三页、第四页、第五页……全是我。'},
+        {type:'narration', text:'吃饭的我、发呆的我、被老师点名皱眉的我、毕业典礼上哭的我。'},
+        {type:'talk', speaker:'linxia', text:'（他……拍了九年。）'},
+        {type:'narration', text:'最后一页夹着一张字条，墨水褪了色：'},
+        {type:'narration', text:'"今天她又穿了那件白裙子。我没敢上前。也许明天。"'},
+        {type:'narration', text:'字条背面，密密麻麻写着同一句话，写了整整一页——'},
+        {type:'narration', text:'"明天就告白。明天就告白。明天就告白。"'},
+        {type:'talk', speaker:'linxia', text:'……', mood:'sad'},
+        {type:'narration', text:'相册啪地合上。我捂住嘴。'},
+        {type:'goto', next:'route_luci_6'}
+      ]
+    },
+    'route_luci_6': {
+      bg:'cafe', chapter:'陆辞线 · 六', date:'8月10日 19:30',
+      steps:[
+        {type:'narration', text:'八天后，陆辞约我在巷口咖啡馆。'},
+        {type:'narration', text:'他难得穿了衬衫，头发也梳了，像是去赴什么约。'},
+        {type:'talk', speaker:'luci', text:'林夏，有件事想跟你说。', mood:'sad', sprite:'luci'},
+        {type:'talk', speaker:'luci', text:'米兰那边的工作室邀我过去驻半年。机会难得。'},
+        {type:'talk', speaker:'linxia', text:'米兰？'},
+        {type:'talk', speaker:'luci', text:'下个月的飞机。', mood:'sad'},
+        {type:'narration', text:'他搅着咖啡，没看我。'},
+        {type:'talk', speaker:'luci', text:'我知道这时间不对。但我想，也许离远一点，对我们都好。', mood:'sad'},
+        {type:'talk', speaker:'luci', text:'你不用回答我。我只是……来道个别。'},
+        {type:'narration', text:'他起身，把一个牛皮纸信封推到我面前。'},
+        {type:'talk', speaker:'luci', text:'这个，等我走了再看。', mood:'sad'},
+        {type:'choice', prompt:'他就要走了。这一刻，你的选择是？', options:[
+          {text:'喊住他，不让他走', hint:'走向 GOOD END', effects:{affection:{}, flags:{luci_stop:1}}, next:'route_luci_end_check'},
+          {text:'看着他离开，没开口', hint:'走向 BAD END', effects:{affection:{}, flags:{luci_letgo:1}}, next:'route_luci_7'}
+        ]}
+      ]
+    },
+    'route_luci_7': {
+      bg:'rain', chapter:'陆辞线 · 七', date:'8月10日 22:00',
+      steps:[
+        {type:'narration', text:'他走出咖啡馆，没打伞。雨很快把他淋透。'},
+        {type:'narration', text:'我坐在原位，看着窗外他的背影一点点消失在街角。'},
+        {type:'talk', speaker:'linxia', text:'（九年。他等了我九年。）'},
+        {type:'talk', speaker:'linxia', text:'（我却连一句"别走"都没说出口。）', mood:'sad'},
+        {type:'narration', text:'我拆开那个信封。'},
+        {type:'narration', text:'里面是一张机票——去米兰的，日期是下个月，名字写着：林夏。'},
+        {type:'narration', text:'背面一行字："如果你愿意，我们一起走。不愿意，就当我没来过。"'},
+        {type:'talk', speaker:'linxia', text:'……', mood:'sad'},
+        {type:'narration', text:'我冲出咖啡馆，跑进雨里。'},
+        {type:'narration', text:'街角空空荡荡。他已经不在了。'},
+        {type:'choice', prompt:'雨水模糊了视线。你的最后选择是？', options:[
+          {text:'追去他家，敲他的门', hint:'走向 GOOD END', effects:{affection:{}, flags:{luci_chase:1}}, next:'route_luci_end_check'},
+          {text:'站在雨里，直到天亮', hint:'走向 BAD END', effects:{affection:{}, flags:{luci_giveup:1}}, next:'route_luci_end_check'}
+        ]}
       ]
     },
     'route_luci_end_check': {
@@ -862,7 +952,7 @@ const STORY = {
         {type:'talk', speaker:'linxia', text:'但我没放弃。我来了霓城，遇见了你。'},
         {type:'talk', speaker:'jiangyu', text:'……', mood:'smile'},
         {type:'narration', text:'他第一次，对着我笑了。'},
-        {type:'goto', next:'route_jiangyu_end_check'}
+        {type:'goto', next:'route_jiangyu_4'}
       ]
     },
     'route_jiangyu_3b': {
@@ -873,7 +963,84 @@ const STORY = {
         {type:'talk', speaker:'jiangyu', text:'但有些痛，陪也陪不好。'},
         {type:'narration', text:'他站起来，背对着我。'},
         {type:'talk', speaker:'jiangyu', text:'对不起，让你白跑一趟。'},
-        {type:'goto', next:'route_jiangyu_end_check'}
+        {type:'goto', next:'route_jiangyu_4'}
+      ]
+    },
+    'route_jiangyu_4': {
+      bg:'rain', chapter:'江屿线 · 四', date:'8月5日 09:00',
+      steps:[
+        {type:'narration', text:'清晨，他敲我的门。一身黑，手里一束白菊。'},
+        {type:'talk', speaker:'jiangyu', text:'今天，能陪我去个地方吗。', mood:'sad', sprite:'jiangyu'},
+        {type:'talk', speaker:'linxia', text:'好。'},
+        {type:'narration', text:'车开到郊外一座小墓园。墓碑上刻着：林夏之墓。'},
+        {type:'talk', speaker:'linxia', text:'……她也叫林夏。', mood:'sad'},
+        {type:'talk', speaker:'jiangyu', text:'我妹妹。十四年前的夏天，白血病。', mood:'sad'},
+        {type:'narration', text:'他把白菊放好，蹲下，像在跟一个小孩说话。'},
+        {type:'talk', speaker:'jiangyu', text:'小夏，哥带了个人来看你。她跟你一样倔。', mood:'sad'},
+        {type:'talk', speaker:'jiangyu', text:'她叫林夏。是另一个，让我想写歌的人。'},
+        {type:'narration', text:'风吹过墓园，白菊轻轻颤。'},
+        {type:'talk', speaker:'jiangyu', text:'我以前不敢来。今天，想带你一起。', mood:'sad'},
+        {type:'talk', speaker:'linxia', text:'……我很荣幸。', mood:'sad'},
+        {type:'goto', next:'route_jiangyu_5'}
+      ]
+    },
+    'route_jiangyu_5': {
+      bg:'bar', chapter:'江屿线 · 五', date:'8月9日 23:30',
+      steps:[
+        {type:'narration', text:'四天后，是前鼓手阿哲的忌日。'},
+        {type:'narration', text:'我到"雾港"时，吧台后空着。江屿坐在角落，地上滚着空酒瓶。'},
+        {type:'talk', speaker:'jiangyu', text:'……你来了。', mood:'sad', sprite:'jiangyu'},
+        {type:'talk', speaker:'linxia', text:'你喝了多少？'},
+        {type:'talk', speaker:'jiangyu', text:'不够多。', mood:'sad'},
+        {type:'narration', text:'他抬头，眼眶通红。'},
+        {type:'talk', speaker:'jiangyu', text:'三年了。我妈说，该放下了。', mood:'sad'},
+        {type:'talk', speaker:'jiangyu', text:'可我一闭上眼，就看见他笑着回头跟我说："江屿，最后一首了！"'},
+        {type:'talk', speaker:'jiangyu', text:'然后舞台就塌了。', mood:'sad'},
+        {type:'narration', text:'他抱住自己，肩膀发抖。'},
+        {type:'talk', speaker:'jiangyu', text:'我活着，有什么用。', mood:'sad'},
+        {type:'choice', prompt:'他在崩溃的边缘。你的反应是？', options:[
+          {text:'抱住他，什么都不说', hint:'向 GOOD END 倾斜', effects:{affection:{jiangyu:2}, flags:{jiangyu_hold:1}}, next:'route_jiangyu_6'},
+          {text:'让他一个人静一静', hint:'向 BAD END 倾斜', effects:{affection:{jiangyu:1}, flags:{jiangyu_leave:1}}, next:'route_jiangyu_6'}
+        ]}
+      ]
+    },
+    'route_jiangyu_6': {
+      bg:'studio', chapter:'江屿线 · 六', date:'8月12日 14:00',
+      steps:[
+        {type:'narration', text:'忌日之后，江屿把排练室的钥匙给了我一把。'},
+        {type:'narration', text:'他说："你在我才敢进去。"'},
+        {type:'narration', text:'今天我们去整理阿哲留下的东西。纸箱里是旧谱子、鼓槌、一件洗褪色的乐队T恤。'},
+        {type:'talk', speaker:'jiangyu', text:'这是他最后写的东西。', mood:'sad', sprite:'jiangyu'},
+        {type:'narration', text:'他抽出一张皱巴巴的纸，上面是阿哲的笔迹。'},
+        {type:'narration', text:'是一首歌的副歌，只写了四行，后面是空白。'},
+        {type:'talk', speaker:'jiangyu', text:'他没写完，就……', mood:'sad'},
+        {type:'narration', text:'我接过那张纸，看见空白处，有江屿后来用铅笔轻轻补的一行字：'},
+        {type:'narration', text:'"剩下的，等我敢唱了，我替你写。"'},
+        {type:'talk', speaker:'linxia', text:'江屿……'},
+        {type:'talk', speaker:'jiangyu', text:'我想把它写完。', mood:'sad'},
+        {type:'talk', speaker:'jiangyu', text:'可我每次写到副歌，就写不下去。'},
+        {type:'choice', prompt:'他终于想写完了。你要怎么帮他？', options:[
+          {text:'陪他一起，一句一句写', hint:'走向 GOOD END', effects:{affection:{}, flags:{jiangyu_write:1}}, next:'route_jiangyu_7'},
+          {text:'让他自己慢慢来，别催', hint:'走向 BAD END', effects:{affection:{}, flags:{jiangyu_wait:1}}, next:'route_jiangyu_7'}
+        ]}
+      ]
+    },
+    'route_jiangyu_7': {
+      bg:'bar', chapter:'江屿线 · 七', date:'9月10日 21:00',
+      steps:[
+        {type:'narration', text:'一个月后。江屿说，他在"雾港"约了个小场子，想试试登台。'},
+        {type:'narration', text:'只请了我一个人。'},
+        {type:'talk', speaker:'jiangyu', text:'我可能唱不完。', mood:'sad', sprite:'jiangyu'},
+        {type:'talk', speaker:'jiangyu', text:'但我想试。'},
+        {type:'narration', text:'他抱着那把落了三年灰的吉他，坐到小舞台中央。'},
+        {type:'narration', text:'灯光调得很暗。他试了一个和弦，手指在抖。'},
+        {type:'talk', speaker:'jiangyu', text:'……我唱不下去的时候，你在就行。', mood:'sad'},
+        {type:'narration', text:'我坐在吧台最角落，朝他点了点头。'},
+        {type:'narration', text:'他闭上眼，弦音落下。是那首《夏》。'},
+        {type:'choice', prompt:'他唱到副歌前，停了。这一刻，你的选择是？', options:[
+          {text:'站起来，走到台前', hint:'走向 GOOD END', effects:{affection:{}, flags:{jiangyu_stand:1}}, next:'route_jiangyu_end_check'},
+          {text:'安静等他自己开口', hint:'走向 BAD END', effects:{affection:{}, flags:{jiangyu_silent:1}}, next:'route_jiangyu_end_check'}
+        ]}
       ]
     },
     'route_jiangyu_end_check': {
@@ -936,7 +1103,62 @@ const STORY = {
       ]
     },
     'route_solo_2': {
-      bg:'gallery', chapter:'独行 · 二', date:'一年后',
+      bg:'gallery', chapter:'独行 · 二', date:'7月26日 10:30',
+      steps:[
+        {type:'narration', text:'第二天，我到美术馆，三个人都来了。'},
+        {type:'narration', text:'沈砚之站在展厅中央，看见我，眉头几不可察地皱了一下。'},
+        {type:'talk', speaker:'shenyan', text:'昨晚的消息，你没回。', mood:'neutral', sprite:'shenyan'},
+        {type:'talk', speaker:'linxia', text:'太累了，睡了。'},
+        {type:'talk', speaker:'shenyan', text:'……以后早些休息。', mood:'smile'},
+        {type:'narration', text:'他没追问，转身走了。'},
+        {type:'narration', text:'陆辞端着相机过来，欲言又止。'},
+        {type:'talk', speaker:'luci', text:'林夏，昨晚……没事吧？', mood:'sad', sprite:'luci'},
+        {type:'talk', speaker:'linxia', text:'没事。最近有点忙。'},
+        {type:'talk', speaker:'luci', text:'哦。那、有事随时叫我。', mood:'sad'},
+        {type:'narration', text:'江屿没出现。只在吧台留了一杯冰好的"夏"，附一张纸条：'},
+        {type:'narration', text:'"睡不着的时候，喝这个。不用回。"'},
+        {type:'talk', speaker:'linxia', text:'（他们都对我好。）'},
+        {type:'talk', speaker:'linxia', text:'（可我现在，只想把自己理清楚。）'},
+        {type:'goto', next:'route_solo_3'}
+      ]
+    },
+    'route_solo_3': {
+      bg:'gallery', chapter:'独行 · 三', date:'8月20日 15:00',
+      steps:[
+        {type:'narration', text:'我推掉了他们所有的私下邀约，把精力全砸进工作。'},
+        {type:'narration', text:'馆长交给我一个棘手的案子：一位已故摄影师的遗作展，家属和画廊在版权上撕得不可开交。'},
+        {type:'talk', speaker:'linxia', text:'（这种展，做好了能立住名声。做砸了，我就完了。）'},
+        {type:'narration', text:'我连熬了三个通宵，方案改到第十一稿。'},
+        {type:'narration', text:'第四个通宵的凌晨三点，我在办公室睡着了。'},
+        {type:'narration', text:'醒来时，身上盖着一件男式外套。是沈砚之的。'},
+        {type:'talk', speaker:'shenyan', text:'你这种拼命法，是想让我心疼，还是想让我心疼死。', mood:'sad', sprite:'shenyan'},
+        {type:'talk', speaker:'linxia', text:'……我只是想靠自己。'},
+        {type:'talk', speaker:'shenyan', text:'我知道。', mood:'sad'},
+        {type:'talk', speaker:'shenyan', text:'所以我没替你做。只给你盖了件衣服。', mood:'smile'},
+        {type:'narration', text:'他第一次，没有"替我安排"。'},
+        {type:'talk', speaker:'linxia', text:'（……他也在学。）'},
+        {type:'goto', next:'route_solo_4'}
+      ]
+    },
+    'route_solo_4': {
+      bg:'cafe', chapter:'独行 · 四', date:'9月1日 19:00',
+      steps:[
+        {type:'narration', text:'遗作展开幕前一周，三个人前后脚来找我。'},
+        {type:'narration', text:'陆辞带着他拍的霓城夜景，说可以作为预热素材。'},
+        {type:'talk', speaker:'luci', text:'不要钱。就想帮你。', mood:'sad', sprite:'luci'},
+        {type:'narration', text:'江屿送来一份手写歌单，是他为这位摄影师生前最喜欢的几首歌重新编的简版。'},
+        {type:'talk', speaker:'jiangyu', text:'展厅背景音。你挑挑。', mood:'sad', sprite:'jiangyu'},
+        {type:'narration', text:'沈砚之则是直接把美术馆最好的展厅时段让给了我。'},
+        {type:'talk', speaker:'shenyan', text:'不用谢。这是你应得的。', mood:'neutral', sprite:'shenyan'},
+        {type:'narration', text:'三个人坐在咖啡馆的不同角落，彼此没说话，却都看着我。'},
+        {type:'choice', prompt:'他们都在等你。你的回应是？', options:[
+          {text:'感谢，但婉拒所有暧昧', hint:'走向真结局', effects:{affection:{}, flags:{solo_independent:1}}, next:'route_solo_5'},
+          {text:'接受帮助，保持距离', hint:'走向真结局', effects:{affection:{}, flags:{solo_accept:1}}, next:'route_solo_5'}
+        ]}
+      ]
+    },
+    'route_solo_5': {
+      bg:'gallery', chapter:'独行 · 终', date:'一年后',
       steps:[
         {type:'narration', text:'一年后。'},
         {type:'narration', text:'我从砚美术馆辞职了。'},
