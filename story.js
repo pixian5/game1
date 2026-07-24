@@ -1086,5 +1086,288 @@ STORY.events['intel_jiangyu_song_reply'] = {
   }}]
 };
 
+// ===== 共同邀约/赴约系统 =====
+// 男主主动发邀约，玩家接受→触发专属赴约剧情；拒绝/超时有后果
+STORY.invitations = {
+  'inv_shenyan_studio': {
+    from:'shenyan',
+    text:'明天晚上，来我私人画室。有幅画，画了三年，想让你看。',
+    location:'gallery', schedule:'明晚 20:00',
+    condition: s => s.day >= 3 && s.affection.shenyan >= 2 && !s.flags.route,
+    acceptEvent:'inv_shenyan_studio_accept',
+    declineEvent:'inv_shenyan_studio_decline',
+    missEvent:'inv_shenyan_studio_miss',
+    affectionOnDecline:{shenyan:-2}, affectionOnMiss:{shenyan:-3},
+    timeoutSec: 120
+  },
+  'inv_luci_school': {
+    from:'luci',
+    text:'周末有空吗？带你重走一遍我们以前的学校。往返四小时，赶得及吃晚饭。',
+    location:'school', schedule:'周六 09:00',
+    condition: s => s.day >= 3 && s.affection.luci >= 3 && !s.flags.route,
+    acceptEvent:'inv_luci_school_accept',
+    declineEvent:'inv_luci_school_decline',
+    missEvent:'inv_luci_school_miss',
+    affectionOnDecline:{luci:-2}, affectionOnMiss:{luci:-3},
+    timeoutSec: 120
+  },
+  'inv_jiangyu_bar': {
+    from:'jiangyu',
+    text:'今晚雾港有我新歌的首唱。来吗？留了你最爱的位置。',
+    location:'bar', schedule:'今晚 21:00',
+    condition: s => s.day >= 3 && s.affection.jiangyu >= 3 && !s.flags.route,
+    acceptEvent:'inv_jiangyu_bar_accept',
+    declineEvent:'inv_jiangyu_bar_decline',
+    missEvent:'inv_jiangyu_bar_miss',
+    affectionOnDecline:{jiangyu:-2}, affectionOnMiss:{jiangyu:-3},
+    timeoutSec: 120
+  }
+};
+
+// 邀约相关事件
+STORY.events['inv_shenyan_studio_accept'] = {
+  type:'advance_time', text:'赴约 · 私人画室', minutes:120,
+  then:'inv_shenyan_studio_scene'
+};
+STORY.events['inv_shenyan_studio_scene'] = {
+  type:'encounter',
+  encounter:{
+    id:'inv_shenyan_studio_scene', char:'shenyan',
+    title:'私人画室',
+    desc:'画室在美术馆顶楼，没有灯，只有月光。\n他指着一幅盖着布的画：\n"这幅，画了三年。"\n"画的是谁？"\n他没回答，把布掀开一角。',
+    choice:{ prompt:'月光下，画布上是一张熟悉的侧脸。',
+      options:[
+        {text:'那是…我？', affection:{shenyan:3}, reply:'"你比自己想象的，更值得被画下来。"', personality:{emotional:2}},
+        {text:'为什么画我？', affection:{shenyan:2}, reply:'"因为我画不出别的。三年了，只画得出你。"', personality:{rational:1}},
+        {text:'我不喜欢被画', affection:{shenyan:-1}, reply:'"……抱歉。我把它收起来。"', personality:{independent:1}}
+      ]
+    }
+  },
+  then:'inv_shenyan_studio_after'
+};
+STORY.events['inv_shenyan_studio_after'] = {
+  type:'photo_unlock', photo:'shenyan_studio'
+};
+STORY.events['inv_shenyan_studio_decline'] = {
+  type:'message_batch', delay:1,
+  messages:[{from:'shenyan', text:'……也好。那幅画，本来也不该被人看见。'}]
+};
+STORY.events['inv_shenyan_studio_miss'] = {
+  type:'message_batch', delay:0,
+  messages:[{from:'shenyan', text:'画室的灯，我替你关了。下次不必再来。'}]
+};
+
+STORY.events['inv_luci_school_accept'] = {
+  type:'advance_time', text:'赴约 · 旧学校', minutes:240,
+  then:'inv_luci_school_scene'
+};
+STORY.events['inv_luci_school_scene'] = {
+  type:'encounter',
+  encounter:{
+    id:'inv_luci_school_scene', char:'luci',
+    title:'九年的旧学校',
+    desc:'校门口的银杏又长高了一截。\n他带你走到当年高一军训的操场：\n"你那时候站这里。我在你后面第三个。"\n"我数过，从那天到今天，九年又一百八十二天。"',
+    choice:{ prompt:'他从相机里抽出一张旧照片——是你高一的侧脸。',
+      options:[
+        {text:'你偷拍我？', affection:{luci:2}, reply:'"不叫偷拍。叫记录。我记录了你九年。"', personality:{emotional:2}},
+        {text:'为什么不说', affection:{luci:3}, reply:'"怕说了，连记录的机会都没了。"', personality:{dependent:1}},
+        {text:'照片给我', affection:{luci:1}, reply:'"都给你。连人一起，都给你。"', personality:{active:1}}
+      ]
+    }
+  },
+  then:'inv_luci_school_after'
+};
+STORY.events['inv_luci_school_after'] = {
+  type:'photo_unlock', photo:'luci_school'
+};
+STORY.events['inv_luci_school_decline'] = {
+  type:'message_batch', delay:1,
+  messages:[{from:'luci', text:'没事。学校而已，下次还能去。其实也没有下次了。'}]
+};
+STORY.events['inv_luci_school_miss'] = {
+  type:'message_batch', delay:0,
+  messages:[{from:'luci', text:'我在校门口等了两小时。银杏叶落了一地。没事，我先回了。'}]
+};
+
+STORY.events['inv_jiangyu_bar_accept'] = {
+  type:'advance_time', text:'赴约 · 雾港首唱', minutes:90,
+  then:'inv_jiangyu_bar_scene'
+};
+STORY.events['inv_jiangyu_bar_scene'] = {
+  type:'encounter',
+  encounter:{
+    id:'inv_jiangyu_bar_scene', char:'jiangyu',
+    title:'雾港 · 首唱夜',
+    desc:'酒吧灯光调到最暗。\n他抱着吉他上台，没看任何人，只看了角落的你一眼。\n"这首新歌，叫《夏》。写给一个名字里带夏的人。"\n副歌唱到一半，他停了：\n"林夏。这首歌的最后一句，我写不出来。"',
+    choice:{ prompt:'全场安静下来，等你的回应。',
+      options:[
+        {text:'我来写最后一句', affection:{jiangyu:3}, reply:'"……好。你写。我唱。"', personality:{active:2, emotional:1}},
+        {text:'不需要最后一句', affection:{jiangyu:2}, reply:'"也对。没结局的歌，才听得最久。"', personality:{rational:1}},
+        {text:'让我回去想想', affection:{jiangyu:1}, reply:'"不急。我等了三年，不差这一晚。"', personality:{passive:1}}
+      ]
+    }
+  },
+  then:'inv_jiangyu_bar_after'
+};
+STORY.events['inv_jiangyu_bar_after'] = {
+  type:'music_unlock', music:'xia'
+};
+STORY.events['inv_jiangyu_bar_decline'] = {
+  type:'message_batch', delay:1,
+  messages:[{from:'jiangyu', text:'……好。位置我撤了。'}]
+};
+STORY.events['inv_jiangyu_bar_miss'] = {
+  type:'message_batch', delay:0,
+  messages:[{from:'jiangyu', text:'歌唱完了。没人坐那个位置。'}]
+};
+
+// 新增赴约照片（供相册解锁）
+STORY.photos['shenyan_studio'] = {
+  title:'私人画室',
+  caption:'月光从天窗落下来，照在那幅盖了三年的画上。\n画布上是我的侧脸——比我自己记得的，更年轻，也更倔强。\n他站在画前，像站在一段没说出口的话前。',
+  art:'studio'
+};
+STORY.photos['luci_school'] = {
+  title:'九年的旧学校',
+  caption:'操场边的银杏又长高了。\n他给我看高一那张偷拍：短发、晒黑、笑得没心没肺。\n"九年又一百八十二天。"他说。\n原来被人默默记得，是这种感觉。',
+  art:'school'
+};
+
+// ===== 多人聊天群 =====
+STORY.groups = {
+  'group_neon': {
+    name:'霓城小分队',
+    members:['susu','shenyan','luci','jiangyu'],
+    bio:'苏苏拉的秘密群，名为"霓城小分队"，实则盯梢林夏感情动向。',
+    trigger: s => s.day >= 3 && !s.flags.group_created_group_neon,
+    createEvent: 'susu_create_group'
+  }
+};
+// 群聊触发事件（在第三天开幕前由苏苏发起）
+STORY.events['susu_create_group'] = {
+  type:'group_message_batch', delay:1,
+  groupId:'group_neon',
+  messages:[
+    {from:'susu', text:'各位！欢迎来到霓城小分队！本群宗旨：保护林夏，监督各位男士！'},
+    {from:'susu', text:'沈砚之先生，听说你让林夏盯开幕式？'},
+    {from:'shenyan', text:'……苏苏，这个群为什么有我。'},
+    {from:'luci', text:'哈哈哈哈沈砚之被点名了'},
+    {from:'jiangyu', text:'……'},
+    {from:'susu', text:'林夏不在群里的时候，你们别想偷偷对她怎么样！我都盯着！', choice:{
+      prompt:'苏苏@你：夏夏你也说句话！',
+      options:[
+        {text:'你们几个怎么回事', effects:{affection:{shenyan:1,luci:1,jiangyu:1}, flags:{group_intro:1}, thenEvent:'group_neon_react1'}, hint:'全员 +1'},
+        {text:'苏苏你又搞事', effects:{affection:{}, flags:{group_intro:2}, thenEvent:'group_neon_react2'}, hint:'中立'},
+        {text:'（潜水围观）', effects:{affection:{shenyan:-1,luci:-1}, flags:{group_intro:3}, thenEvent:'group_neon_react3'}, hint:'沈陆 -1'}
+      ]
+    }}
+  ]
+};
+STORY.events['group_neon_react1'] = {
+  type:'group_message_batch', delay:0, groupId:'group_neon',
+  messages:[
+    {from:'shenyan', text:'没什么事。工作群而已。'},
+    {from:'luci', text:'工作群？沈总你骗谁呢哈哈哈哈'},
+    {from:'jiangyu', text:'林夏，别被他们带偏。'}
+  ]
+};
+STORY.events['group_neon_react2'] = {
+  type:'group_message_batch', delay:0, groupId:'group_neon',
+  messages:[
+    {from:'susu', text:'搞事？我这是正义监督！'},
+    {from:'luci', text:'林夏你学坏了，跟苏苏一个调调'},
+    {from:'shenyan', text:'……'}
+  ]
+};
+STORY.events['group_neon_react3'] = {
+  type:'group_message_batch', delay:0, groupId:'group_neon',
+  messages:[
+    {from:'susu', text:'？？？林夏你潜水？'},
+    {from:'luci', text:'她不想理我们'},
+    {from:'shenyan', text:'正常。'}
+  ]
+};
+
+// ===== 男主朋友圈/社交主页 =====
+STORY.profiles = {
+  shenyan: {
+    bio:'砚美术馆主理人。寡言。画过一幅画，画了三年。',
+    tags:['#美术馆', '#沉默的人', '#控制欲'],
+    relations:[
+      {to:'luci', hint:'不喜欢他拍你。看他的眼神像在估价。'},
+      {to:'jiangyu', hint:'没说过话，但江屿唱《夏》那晚，他离场了。'}
+    ]
+  },
+  luci: {
+    bio:'自由摄影师。九年没换过镜头盖。相机里全是同一个人。',
+    tags:['#摄影师', '#九年', '#青梅竹马'],
+    relations:[
+      {to:'shenyan', hint:'给他拍过封面。后来说"看人的眼神像在估价"，再没合作。'},
+      {to:'jiangyu', hint:'雾港的常客。江屿喝多了会跟他借相机。'}
+    ]
+  },
+  jiangyu: {
+    bio:'雾港调酒师。前渡鸦乐队主唱。有一首写了三年没写完的歌。',
+    tags:['#调酒师', '#前乐队', '#未完的歌'],
+    relations:[
+      {to:'shenyan', hint:'美术馆开幕那天，他没去。说"那种地方不欢迎我"。'},
+      {to:'luci', hint:'跟陆辞喝过几次酒。陆辞说他"心里有人，唱不出来"。'}
+    ]
+  },
+  susu: {
+    bio:'大学闺蜜。情报王。霓城小分队群主。',
+    tags:['#闺蜜', '#八卦', '#情报网'],
+    relations:[
+      {to:'shenyan', hint:'朋友在美术馆实习，能搞到内部消息。'},
+      {to:'luci', hint:'追过陆辞的摄影展，被陆辞婉拒"我只拍一个人"。'},
+      {to:'jiangyu', hint:'雾港常客，跟江屿混得很熟。'}
+    ]
+  }
+};
+
+// ===== 闪回/前传章节 =====
+// 通过特定条件触发，进入独立时间线，揭示五年前的过去
+STORY.flashbacks = {
+  'fb_highschool_luci': {
+    title:'闪回 · 五年前的军训操场',
+    trigger: s => s.affection.luci >= 4 && s.flags.intel_luci_milan && !s.flags.fb_highschool_luci,
+    desc:'你看着陆辞发来的旧照片，眼前模糊起来。\n蝉鸣声突然变得很近。你回到了高一军训的那个下午。',
+    scenes:[
+      {text:'九月。操场。烈日。\n教官在喊"向右看齐"。\n你站第三排，身后第四排有个男生，总在偷拍。'},
+      {text:'休息时他递来一瓶水：\n"嘿。我叫陆辞。三班的。你呢？"\n你说了名字。\n他笑："林夏。夏天的夏。好名字。我记住了。"'},
+      {text:'那天傍晚，他在你课本里夹了一张纸条：\n"明天就告白。明天就告白。明天就告白。"\n——他练了九年的告白。', choice:{
+        prompt:'回忆到这里，你想：',
+        options:[
+          {text:'原来他从高一就喜欢我', personality:{emotional:2, dependent:1}, shard:'高一的纸条'},
+          {text:'我那时怎么没发现', personality:{rational:1, passive:1}, shard:'错过的夏天'},
+          {text:'把这张纸条忘掉', personality:{independent:2}, shard:'被遗忘的告白'}
+        ]
+      }}
+    ],
+    reward:{photo:'luci_album', flag:'fb_highschool_luci'},
+    then:null
+  },
+  'fb_highschool_jiangyu': {
+    title:'闪回 · 五年前的天台',
+    trigger: s => s.affection.jiangyu >= 4 && s.flags.want_listen && !s.flags.fb_highschool_jiangyu,
+    desc:'江屿唱《夏》的那个夜晚，你突然想起来了——\n五年前，你听过同样的副歌。在另一座天台。',
+    scenes:[
+      {text:'高二夏天。隔壁学校的天台。\n一个抱吉他的男生在唱副歌，唱到"夏"字就停。\n你路过，停下来听。'},
+      {text:'他回头看见你：\n"嘿。这首歌的副歌我写不出来。你叫什么？"\n你说："林夏。"\n他愣住，然后笑了：\n"……原来夏字是这样写的。"', choice:{
+        prompt:'你想起来了。',
+        options:[
+          {text:'原来《夏》真的是写给我的', personality:{emotional:2}, shard:'天台的副歌'},
+          {text:'只是巧合，别多想', personality:{rational:2}, shard:'理性的距离'},
+          {text:'我想去问他', personality:{active:2}, shard:'想问的话'}
+        ]
+      }}
+    ],
+    reward:{photo:'rooftop_night', flag:'fb_highschool_jiangyu'},
+    then:null
+  }
+};
+
+// 闪回触发检查（由 engine.checkFlashbacks 调用）
+// 闪回完成后的回调事件（可选）
 
 if (typeof window !== 'undefined') window.STORY = STORY;

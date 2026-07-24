@@ -11,9 +11,13 @@
     calendar:$('calendar-app'), music:$('music-app'),
     notes:$('notes-app'), profile:$('profile-app'),
     dream:$('dream-screen'), ending:$('ending-screen'),
-    map:$('map-app'), encounter:$('encounter-screen')
+    map:$('map-app'), encounter:$('encounter-screen'),
+    groups:$('groups-app'), groupChat:$('group-chat-screen'),
+    contacts:$('contacts-app'), charProfile:$('char-profile-screen'),
+    flashback:$('flashback-screen')
   };
   let currentConvId = null;
+  let currentGroupId = null;
   let timeoutTimer = null;
   let selectedMomentArt = '';
 
@@ -153,7 +157,7 @@
   function openApp(app){
     switch(app){
       case 'messages': renderConvList(); showScreen('messages'); break;
-      case 'phone': renderCallLog(); showScreen('phone'); break;
+      case 'phone': renderCallLog(); renderVoicemails(); showScreen('phone'); break;
       case 'moments': renderMoments(); showScreen('moments'); break;
       case 'album': renderAlbum(); showScreen('album'); break;
       case 'calendar': renderCalendar(); showScreen('calendar'); break;
@@ -161,6 +165,8 @@
       case 'notes': renderNotes(); showScreen('notes'); break;
       case 'profile': renderProfile(); showScreen('profile'); break;
       case 'map': renderMap(); showScreen('map'); break;
+      case 'groups': renderGroupList(); showScreen('groups'); break;
+      case 'contacts': renderContacts(); showScreen('contacts'); break;
     }
   }
 
@@ -1124,6 +1130,325 @@
     }
     content.innerHTML = html;
   }
+
+  // ===== 语音信箱 =====
+  function renderVoicemails(){
+    const list = $('voicemail-list');
+    list.innerHTML = '';
+    if(engine.state.voicemails.length === 0){
+      list.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--ink-mute);font-size:13px;">暂无语音信箱</div>';
+      return;
+    }
+    engine.state.voicemails.forEach(vm=>{
+      const char = STORY.characters[vm.from] || {name:'未知',avatar:'?',bg:'#3a3a5a'};
+      const item = document.createElement('div');
+      item.className = 'voicemail-item' + (vm.heard ? '' : ' unheard');
+      item.innerHTML = `
+        <div class="vm-icon">${char.avatar}</div>
+        <div class="vm-info">
+          <div class="vm-name">${char.name}</div>
+          <div class="vm-text">${vm.text}</div>
+          <div class="vm-meta">第${vm.day}天 ${vm.time}</div>
+          <div class="vm-actions">
+            <button class="vm-btn" data-vm-play="${vm.id}">▶ 播放</button>
+            ${vm.callbackEvent ? `<button class="vm-btn callback" data-vm-callback="${vm.id}">回拨</button>` : ''}
+          </div>
+        </div>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  // 电话 tabs 切换
+  document.addEventListener('click', e=>{
+    const tab = e.target.closest('[data-phone-tab]');
+    if(tab){
+      const tabName = tab.dataset.phoneTab;
+      document.querySelectorAll('.phone-tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelectorAll('[data-phone-panel]').forEach(p=>{
+        p.hidden = p.dataset.phonePanel !== tabName;
+      });
+      return;
+    }
+    const playBtn = e.target.closest('[data-vm-play]');
+    if(playBtn){
+      engine.playVoicemail(playBtn.dataset.vmPlay);
+      toast('语音已播放');
+      renderVoicemails();
+      return;
+    }
+    const cbBtn = e.target.closest('[data-vm-callback]');
+    if(cbBtn){
+      engine.callbackVoicemail(cbBtn.dataset.vmCallback);
+      toast('正在回拨…');
+      renderVoicemails();
+      return;
+    }
+  });
+
+  // ===== 多人聊天群 =====
+  function renderGroupList(){
+    const list = $('group-list');
+    list.innerHTML = '';
+    const groups = engine.state.groups;
+    const entries = Object.entries(groups);
+    if(entries.length === 0){
+      list.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--ink-mute);font-size:13px;">还没有群聊</div>';
+      return;
+    }
+    entries.forEach(([id, g])=>{
+      const last = g.messages[g.messages.length-1];
+      const item = document.createElement('div');
+      item.className = 'conv-item' + (g.unread>0?' unread':'');
+      item.dataset.group = id;
+      const preview = last ? (STORY.characters[last.from]?.name || '') + ': ' + last.text : '暂无消息';
+      item.innerHTML = `
+        <div class="group-avatar">群</div>
+        <div class="group-info">
+          <div class="conv-top">
+            <span class="conv-name">${g.name}</span>
+            <span class="conv-time">${last?.time || ''}</span>
+          </div>
+          <div class="group-preview">${g.typing?'<span style="color:var(--accent)">正在输入…</span>':preview}</div>
+        </div>
+        ${g.unread>0?`<span class="conv-unread">${g.unread}</span>`:''}
+      `;
+      list.appendChild(item);
+    });
+    updateGroupBadge();
+  }
+  function updateGroupBadge(){
+    let total = 0;
+    Object.values(engine.state.groups).forEach(g=> total += g.unread);
+    const badge = $('badge-groups');
+    if(total > 0){ badge.textContent = total; badge.hidden = false; }
+    else { badge.hidden = true; }
+  }
+  function openGroupChat(groupId){
+    currentGroupId = groupId;
+    const g = engine.state.groups[groupId];
+    if(!g) return;
+    $('group-chat-name').textContent = g.name;
+    $('group-chat-members').textContent = g.members.length + ' 位成员';
+    renderGroupChatBody(groupId);
+    engine.markGroupRead(groupId);
+    updateGroupBadge();
+    $('group-chat-input-bar').hidden = true;
+    showScreen('groupChat');
+    if(g.pendingChoice){
+      setTimeout(()=> showGroupChoice(groupId, g.pendingChoice), 400);
+    }
+    setTimeout(()=>{
+      const body = $('group-chat-body');
+      body.scrollTop = body.scrollHeight;
+    }, 50);
+  }
+  function renderGroupChatBody(groupId){
+    const g = engine.state.groups[groupId];
+    const body = $('group-chat-body');
+    body.innerHTML = '';
+    g.messages.forEach(m=>{
+      const div = document.createElement('div');
+      if(m.from === 'me'){
+        div.className = 'msg send';
+        div.textContent = m.text;
+      } else {
+        div.className = 'msg recv';
+        const char = STORY.characters[m.from];
+        const tag = document.createElement('span');
+        tag.className = 'speaker-tag ' + m.from;
+        tag.textContent = char?.name || m.from;
+        div.appendChild(tag);
+        div.appendChild(document.createTextNode(m.text));
+      }
+      const time = document.createElement('span');
+      time.className = 'time';
+      time.textContent = m.time || '';
+      div.appendChild(time);
+      body.appendChild(div);
+    });
+    if(g.typing){
+      const t = document.createElement('div');
+      t.className = 'typing-indicator';
+      t.innerHTML = '<span></span><span></span><span></span>';
+      body.appendChild(t);
+    }
+    body.scrollTop = body.scrollHeight;
+  }
+  function showGroupChoice(groupId, choice){
+    const bar = $('group-chat-input-bar');
+    bar.hidden = false;
+    $('group-chat-prompt').textContent = choice.prompt;
+    const opts = $('group-chat-options');
+    opts.innerHTML = '';
+    choice.options.forEach((opt, i)=>{
+      const btn = document.createElement('button');
+      btn.className = 'chat-opt';
+      btn.innerHTML = opt.text + (opt.hint?` <span style="color:var(--ink-mute);font-size:11px">(${opt.hint})</span>`:'');
+      btn.dataset.groupOpt = i;
+      opts.appendChild(btn);
+    });
+  }
+
+  // 群聊事件绑定
+  engine.on('groupCreated', ()=>{ updateGroupBadge(); });
+  engine.on('groupUpdate', ({id, group})=>{
+    updateGroupBadge();
+    if(screens.groups.classList.contains('active')) renderGroupList();
+    if(currentGroupId === id && screens.groupChat.classList.contains('active')){
+      renderGroupChatBody(id);
+      $('group-chat-members').textContent = group.members.length + ' 位成员';
+    }
+  });
+  engine.on('groupMessageReceived', ({groupId, from})=>{
+    const char = STORY.characters[from];
+    if(char) showNotif(from, char.name + '在群里发了消息');
+  });
+
+  // 群聊点击委托
+  document.body.addEventListener('click', e=>{
+    const gBtn = e.target.closest('[data-group]');
+    if(gBtn){ openGroupChat(gBtn.dataset.group); return; }
+    const gOpt = e.target.closest('[data-group-opt]');
+    if(gOpt && currentGroupId){
+      const idx = parseInt(gOpt.dataset.groupOpt);
+      const g = engine.state.groups[currentGroupId];
+      if(g && g.pendingChoice){
+        const opt = g.pendingChoice.options[idx];
+        if(opt){
+          engine.sendGroupMessage(currentGroupId, opt.text, opt.effects);
+          g.pendingChoice = null;
+          $('group-chat-input-bar').hidden = true;
+        }
+      }
+      return;
+    }
+    const contactBtn = e.target.closest('[data-contact]');
+    if(contactBtn){ openCharProfile(contactBtn.dataset.contact); return; }
+  });
+
+  // ===== 通讯录/社交主页 =====
+  function renderContacts(){
+    const list = $('contacts-list');
+    list.innerHTML = '';
+    Object.entries(STORY.characters).forEach(([id, char])=>{
+      if(id === 'linxia') return;
+      const profile = STORY.profiles?.[id];
+      const item = document.createElement('div');
+      item.className = 'contact-item';
+      item.dataset.contact = id;
+      item.innerHTML = `
+        <div class="contact-avatar" style="background:${char.bg}">${char.avatar}</div>
+        <div class="contact-info">
+          <div class="contact-name">${char.name}</div>
+          <div class="contact-desc">${profile?.bio || char.desc || ''}</div>
+        </div>
+      `;
+      list.appendChild(item);
+    });
+  }
+  function openCharProfile(charId){
+    const char = STORY.characters[charId];
+    const profile = STORY.profiles?.[charId];
+    if(!char || !profile) return;
+    const body = $('char-profile-body');
+    let html = `
+      <div class="char-profile-header">
+        <div class="char-profile-avatar" style="background:${char.bg}">${char.avatar}</div>
+        <div class="char-profile-name">${char.name}</div>
+        <div class="char-profile-bio">${profile.bio}</div>
+        <div class="char-profile-tags">
+          ${profile.tags.map(t=>`<span class="char-profile-tag">${t}</span>`).join('')}
+        </div>
+      </div>
+    `;
+    if(profile.relations && profile.relations.length > 0){
+      html += `<div class="char-profile-section-title">关系网</div><div class="char-profile-relations">`;
+      profile.relations.forEach(r=>{
+        const relChar = STORY.characters[r.to];
+        html += `
+          <div class="char-profile-relation">
+            <div class="char-profile-relation-name">${relChar?.name || r.to}</div>
+            <div class="char-profile-relation-hint">${r.hint}</div>
+          </div>
+        `;
+      });
+      html += '</div>';
+    }
+    html += `<div class="char-profile-section-title">好感度</div>`;
+    html += `<div class="char-profile-relation"><div class="char-profile-relation-hint">当前好感度：${engine.state.affection[charId] || 0}</div></div>`;
+    body.innerHTML = html;
+    showScreen('charProfile');
+  }
+
+  // ===== 闪回/前传章节 =====
+  let currentFlashback = null;
+  function showFlashback(fbId, fb){
+    currentFlashback = {fbId, fb, choices:[]};
+    $('flashback-title').textContent = fb.title;
+    const scenesEl = $('flashback-scenes');
+    scenesEl.innerHTML = '';
+    fb.scenes.forEach((sc, i)=>{
+      const div = document.createElement('div');
+      div.className = 'flashback-scene';
+      div.textContent = sc.text;
+      scenesEl.appendChild(div);
+    });
+    // 最后一个场景有 choice
+    const lastScene = fb.scenes[fb.scenes.length-1];
+    const optsEl = $('flashback-options');
+    optsEl.innerHTML = '';
+    if(lastScene.choice){
+      lastScene.choice.options.forEach((opt, i)=>{
+        const btn = document.createElement('button');
+        btn.className = 'dream-opt';
+        btn.innerHTML = opt.text + (opt.shard?` <span style="color:#c8a84a;font-size:11px">✦ ${opt.shard}</span>`:'');
+        btn.dataset.fbOpt = i;
+        optsEl.appendChild(btn);
+      });
+    } else {
+      const btn = document.createElement('button');
+      btn.className = 'dream-opt';
+      btn.textContent = '继续';
+      btn.dataset.fbOpt = '0';
+      optsEl.appendChild(btn);
+    }
+    showScreen('flashback');
+  }
+  engine.on('flashbackStart', ({fbId, fb})=>{
+    showFlashback(fbId, fb);
+  });
+  document.body.addEventListener('click', e=>{
+    const fbOpt = e.target.closest('[data-fb-opt]');
+    if(fbOpt && currentFlashback){
+      const optIdx = parseInt(fbOpt.dataset.fbOpt);
+      const lastScene = currentFlashback.fb.scenes[currentFlashback.fb.scenes.length-1];
+      const opt = lastScene.choice?.options?.[optIdx];
+      currentFlashback.choices.push({sceneIdx: currentFlashback.fb.scenes.length-1, optIdx});
+      engine.resolveFlashback(currentFlashback.fbId, currentFlashback.choices);
+      toast(opt?.shard ? '收集碎片：' + opt.shard : '回忆结束');
+      currentFlashback = null;
+      setTimeout(()=> showScreen('home'), 1800);
+      return;
+    }
+  });
+
+  // ===== 邀约事件 =====
+  engine.on('invitationReceived', ({id, inv})=>{
+    const char = STORY.characters[inv.from];
+    if(char) showNotif(inv.from, char.name + '发来邀约');
+  });
+  engine.on('invitationResolved', ({id, decision})=>{
+    if(decision === 'accepted') toast('已赴约');
+    else if(decision === 'declined') toast('已拒绝邀约');
+    else if(decision === 'missed') toast('邀约已错过');
+  });
+
+  // ===== 通话未接提醒 =====
+  engine.on('callMissed', (eventId)=>{
+    toast('未接来电');
+  });
 
   // ===== 初始化 =====
   function init(){

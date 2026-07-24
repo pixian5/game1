@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>霓虹心事 · 林夏的手机</title>
+<title>霓虹心事 · 林夏的手机 · v0.0.7</title>
+<meta name="version" content="v0.0.7">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -69,6 +70,13 @@
         <button class="app-icon" data-app="map">
           <span class="app-emoji">🗺️</span><span class="app-name">出行</span>
         </button>
+        <button class="app-icon" data-app="groups">
+          <span class="app-emoji">👥</span><span class="app-name">群聊</span>
+          <span class="app-badge" id="badge-groups" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="contacts">
+          <span class="app-emoji">📇</span><span class="app-name">通讯录</span>
+        </button>
       </div>
       <div class="home-dock">
         <button class="app-icon" data-app="messages"><span class="app-emoji">💬</span></button>
@@ -118,9 +126,14 @@
     <section id="phone-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home">‹</button>
-        <h1>通话记录</h1>
+        <h1>电话</h1>
       </header>
-      <div class="call-list" id="call-list"></div>
+      <div class="phone-tabs">
+        <button class="phone-tab active" data-phone-tab="calls">通话记录</button>
+        <button class="phone-tab" data-phone-tab="voicemail">语音信箱</button>
+      </div>
+      <div class="call-list" id="call-list" data-phone-panel="calls"></div>
+      <div class="voicemail-list" id="voicemail-list" data-phone-panel="voicemail" hidden></div>
     </section>
 
     <!-- 朋友圈App -->
@@ -239,6 +252,63 @@
         <div class="dream-desc" id="encounter-desc"></div>
         <div class="dream-options" id="encounter-options"></div>
         <button class="back-btn" id="encounter-close" data-action="close-encounter" style="position:absolute;top:24px;right:24px;font-size:24px;">✕</button>
+      </div>
+    </section>
+
+    <!-- 群聊列表 -->
+    <section id="groups-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>群聊</h1>
+      </header>
+      <div class="conv-list" id="group-list"></div>
+    </section>
+
+    <!-- 群聊会话 -->
+    <section id="group-chat-screen" class="screen app-screen">
+      <header class="app-header chat-header">
+        <button class="back-btn" data-back="groups">‹</button>
+        <div class="chat-title">
+          <span class="chat-avatar" id="group-chat-avatar" style="background:#3a3a5a">群</span>
+          <div>
+            <div class="chat-name" id="group-chat-name"></div>
+            <div class="chat-status" id="group-chat-members"></div>
+          </div>
+        </div>
+      </header>
+      <div class="chat-body" id="group-chat-body"></div>
+      <div class="chat-input-bar" id="group-chat-input-bar" hidden>
+        <div class="chat-prompt" id="group-chat-prompt"></div>
+        <div class="chat-options" id="group-chat-options"></div>
+      </div>
+    </section>
+
+    <!-- 通讯录/社交主页 -->
+    <section id="contacts-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>通讯录</h1>
+      </header>
+      <div class="contacts-list" id="contacts-list"></div>
+    </section>
+
+    <!-- 角色社交主页详情 -->
+    <section id="char-profile-screen" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="contacts">‹</button>
+        <h1>主页</h1>
+      </header>
+      <div class="char-profile-body" id="char-profile-body"></div>
+    </section>
+
+    <!-- 闪回/前传章节屏 -->
+    <section id="flashback-screen" class="screen overlay-screen">
+      <div class="flashback-bg"></div>
+      <div class="flashback-content">
+        <div class="flashback-label">五年前</div>
+        <div class="flashback-title" id="flashback-title"></div>
+        <div class="flashback-scenes" id="flashback-scenes"></div>
+        <div class="flashback-options" id="flashback-options"></div>
       </div>
     </section>
 

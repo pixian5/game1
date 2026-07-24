@@ -63,7 +63,18 @@ class PhoneEngine {
       // 已触发的回忆
       resolvedMemories: {},
       // 已触发的情报
-      firedIntel: {}
+      firedIntel: {},
+      // 共同邀约/赴约系统
+      invitations: [],          // pending 列表 {id, status, ts}
+      firedInvitations: {},     // 已触发过邀请的 id
+      resolvedInvitations: {},  // {invId: 'accepted'|'declined'|'missed'}
+      // 多人聊天群
+      groups: {},               // {groupId: {name, members, messages, unread, typing}}
+      // 语音信箱
+      voicemails: [],           // {id, from, text, time, eventId, heard, callbackEvent}
+      // 闪回/前传章节
+      flashbacksSeen: {},       // {fbId: true}
+      flashbackShards: []       // 闪回收集的碎片
     };
   }
   on(event, fn){ (this.listeners[event] ||= []).push(fn); }
@@ -107,6 +118,9 @@ class PhoneEngine {
     // 检查时间触发的事件
     this.checkTimeEvents();
     this.checkIntel();
+    this.checkInvitations();
+    this.checkGroups();
+    this.checkFlashbacks();
   }
   // 跳到次日某个时间
   advanceToNextDay(hour=9){
@@ -115,6 +129,9 @@ class PhoneEngine {
     this.emit('timeChange', this.getTime());
     this.checkTimeEvents();
     this.checkIntel();
+    this.checkInvitations();
+    this.checkGroups();
+    this.checkFlashbacks();
   }
 
   // ===== 事件调度 =====
@@ -164,6 +181,21 @@ class PhoneEngine {
       return;
     } else if(evt.type === 'ending'){
       this.triggerEnding(evt.ending);
+      return;
+    } else if(evt.type === 'encounter'){
+      // 赴约/剧情场景：复用偶遇屏，then 在 resolveEncounter 后触发
+      this._pendingEncounterThen = evt.then || null;
+      this.emit('encounterTriggered', {locId:null, enc:evt.encounter});
+      return;
+    } else if(evt.type === 'group_message_batch'){
+      // 多人群聊消息
+      const n = evt.messages.length;
+      evt.messages.forEach((m, i) => this.queueGroupMessage(evt.groupId, m, (evt.delay || 0) + i*0.3));
+      if(evt.then){
+        const lastDelay = (evt.delay || 0) + (n-1)*0.3;
+        const totalDelay = (lastDelay + 2.8) * 1000;
+        setTimeout(()=> this.scheduleEvent(evt.then), totalDelay);
+      }
       return;
     }
     this.afterEvent(evt);
@@ -260,7 +292,7 @@ class PhoneEngine {
         if(effects.affection) Object.keys(effects.affection).forEach(k=> this.state.affection[k] += effects.affection[k]);
         if(effects.flags) Object.keys(effects.flags).forEach(k=> this.state.flags[k] = effects.flags[k]);
         if(effects.personality) Object.keys(effects.personality).forEach(k=> this.state.personality[k] += effects.personality[k]);
-        if(effects.thenEvent) setTimeout(()=> this.scheduleEvent(effects.thenEvent), 900);
+        if(effects.thenEvent) this._dispatchSpecialThen(effects.thenEvent);
       }
       return;
     }
@@ -272,14 +304,32 @@ class PhoneEngine {
       if(effects.affection) Object.keys(effects.affection).forEach(k=> this.state.affection[k] += effects.affection[k]);
       if(effects.flags) Object.keys(effects.flags).forEach(k=> this.state.flags[k] = effects.flags[k]);
       if(effects.personality) Object.keys(effects.personality).forEach(k=> this.state.personality[k] += effects.personality[k]);
-      if(effects.thenEvent) setTimeout(()=> this.scheduleEvent(effects.thenEvent), 900);
+      if(effects.thenEvent) this._dispatchSpecialThen(effects.thenEvent);
     }
+  }
+
+  // 处理特殊 thenEvent（邀约 accept/decline），否则按普通事件触发
+  _dispatchSpecialThen(thenEvent){
+    if(!thenEvent) return;
+    if(thenEvent.startsWith('__inv_accept_')){
+      const invId = thenEvent.slice('__inv_accept_'.length);
+      this.resolveInvitation(invId, 'accepted');
+      return;
+    }
+    if(thenEvent.startsWith('__inv_decline_')){
+      const invId = thenEvent.slice('__inv_decline_'.length);
+      this.resolveInvitation(invId, 'declined');
+      return;
+    }
+    setTimeout(()=> this.scheduleEvent(thenEvent), 900);
   }
 
   // 玩家选择路线（特殊处理：直接触发对应路线的首个事件）
   chooseRoute(route){
     this.state.route = route;
     this.state.flags.route = route;
+    // 进入路线后，未处理的邀约自动判定为 missed
+    this.missPendingInvitations();
     const opt = STORY.routeChoice.options.find(o=>o.route===route);
     if(opt && opt.thenEvent) this.scheduleEvent(opt.thenEvent);
     this.emit('stateChange', this.state);
@@ -297,18 +347,45 @@ class PhoneEngine {
     const evt = this.story.events[eventId];
     if(!evt || evt.type !== 'call') return;
     this.state.firedEvents[eventId] = true;
+    this._pendingCallEventId = eventId;
     this.emit('incomingCall', {
       from: evt.from,
       name: this.story.characters[evt.from].name,
       script: evt.script,
       eventId
     });
+    // 25 秒未接听 → 自动 missed 并留语音信箱
+    if(this._callMissTimer) clearTimeout(this._callMissTimer);
+    this._callMissTimer = setTimeout(()=>{
+      if(this._pendingCallEventId === eventId){
+        this.addCallLog(evt.from, 'missed', '00:00');
+        // 留语音信箱
+        const lastHim = evt.script && [...evt.script].reverse().find(l=>l.who==='him');
+        if(lastHim){
+          this.addVoicemail(evt.from, lastHim.text, eventId, evt.voicemailCallback || null);
+        }
+        if(evt.onMissed) this.scheduleEvent(evt.onMissed);
+        this.emit('callMissed', eventId);
+        this._pendingCallEventId = null;
+      }
+    }, 25000);
   }
   answerCall(eventId){
+    if(this._callMissTimer){ clearTimeout(this._callMissTimer); this._callMissTimer = null; }
+    this._pendingCallEventId = null;
     this.emit('callAnswered', eventId);
   }
   declineCall(eventId){
+    if(this._callMissTimer){ clearTimeout(this._callMissTimer); this._callMissTimer = null; }
+    this._pendingCallEventId = null;
     const evt = this.story.events[eventId];
+    // 留下语音信箱（基于 script 末尾的台词）
+    if(evt && evt.from && evt.script){
+      const lastHim = [...evt.script].reverse().find(l=>l.who==='him');
+      if(lastHim){
+        this.addVoicemail(evt.from, lastHim.text, eventId, evt.voicemailCallback || null);
+      }
+    }
     if(evt && evt.onDecline) this.scheduleEvent(evt.onDecline);
     this.emit('callDeclined', eventId);
   }
@@ -601,6 +678,10 @@ class PhoneEngine {
     }
     this.emit('encounterResolved', {enc, opt});
     this.emit('stateChange', this.state);
+    // 触发 then（赴约场景的后续事件）
+    const thenEvt = enc.then || this._pendingEncounterThen;
+    this._pendingEncounterThen = null;
+    if(thenEvt) setTimeout(()=> this.scheduleEvent(thenEvt), 1000);
   }
 
   // ===== 回忆杀系统 =====
@@ -655,6 +736,233 @@ class PhoneEngine {
         }
       } catch(_) {}
     }
+  }
+
+  // ===== 共同邀约/赴约系统 =====
+  checkInvitations(){
+    if(!this.story.invitations) return;
+    for(const [id, inv] of Object.entries(this.story.invitations)){
+      if(this.state.firedInvitations[id]) continue;
+      try {
+        if(!inv.condition || inv.condition(this.state)){
+          this.state.firedInvitations[id] = true;
+          this.state.invitations.push({id, status:'pending', ts:Date.now()});
+          // 邀约以特殊消息形式送达对应男主会话，附 choice
+          this.queueMessage({
+            from: inv.from,
+            text: inv.text + `\n（${inv.schedule}）`,
+            choice: {
+              prompt: `${this.story.characters[inv.from]?.name||''}在等你回复：`,
+              isInvitation: true, invitationId: id,
+              options:[
+                {text:'好，我去', effects:{thenEvent:'__inv_accept_'+id}, hint:'赴约'},
+                {text:'抱歉，去不了', effects:{thenEvent:'__inv_decline_'+id}, hint:'拒绝'}
+              ]
+            }
+          }, 1);
+          this.emit('invitationReceived', {id, inv});
+        }
+      } catch(_) {}
+    }
+    // 检查超时的 pending 邀约
+    this.state.invitations.forEach(p=>{
+      if(p.status !== 'pending') return;
+      const inv = this.story.invitations[p.id];
+      if(!inv) return;
+      const elapsed = (Date.now() - p.ts)/1000;
+      // 测试环境加速：实际游戏 120s 太长，这里用 60s 作上限，且 advanceTime 会主动判定
+      if(elapsed > (inv.timeoutSec || 120) * 1000){ /* 不靠真实时间触发 */ }
+    });
+  }
+  // 玩家在会话选项里选了"接受/拒绝"
+  resolveInvitation(invId, decision){
+    if(this.state.resolvedInvitations[invId]) return false;
+    const inv = this.story.invitations[invId];
+    if(!inv) return false;
+    this.state.resolvedInvitations[invId] = decision;
+    // 标记 pending 项已完成
+    const p = this.state.invitations.find(x=>x.id===invId);
+    if(p) p.status = decision;
+    if(decision === 'accepted'){
+      this.scheduleEvent(inv.acceptEvent);
+    } else if(decision === 'declined'){
+      if(inv.affectionOnDecline){
+        Object.keys(inv.affectionOnDecline).forEach(k=> this.state.affection[k] += inv.affectionOnDecline[k]);
+      }
+      this.scheduleEvent(inv.declineEvent);
+    } else if(decision === 'missed'){
+      if(inv.affectionOnMiss){
+        Object.keys(inv.affectionOnMiss).forEach(k=> this.state.affection[k] += inv.affectionOnMiss[k]);
+      }
+      this.scheduleEvent(inv.missEvent);
+    }
+    this.emit('invitationResolved', {id:invId, decision});
+    this.emit('stateChange', this.state);
+    return true;
+  }
+  // 检查所有 pending 邀约是否需要判定为 missed（路线选择后未处理的邀约自动 miss）
+  missPendingInvitations(){
+    const missed = [];
+    this.state.invitations.forEach(p=>{
+      if(p.status === 'pending'){
+        const inv = this.story.invitations[p.id];
+        if(inv && !inv.condition(this.state)){
+          // 条件不再满足（如已进入路线），自动 miss
+          this.resolveInvitation(p.id, 'missed');
+          missed.push(p.id);
+        }
+      }
+    });
+    return missed;
+  }
+
+  // ===== 多人聊天群 =====
+  checkGroups(){
+    if(!this.story.groups) return;
+    for(const [id, g] of Object.entries(this.story.groups)){
+      if(this.state.flags['group_created_'+id]) continue;
+      try {
+        if(!g.trigger || g.trigger(this.state)){
+          this.state.flags['group_created_'+id] = true;
+          this.state.groups[id] = {
+            id, name: g.name, members: g.members,
+            messages: [], unread:0, typing:false
+          };
+          this.emit('groupCreated', {id, group:this.state.groups[id]});
+          if(g.createEvent) setTimeout(()=> this.scheduleEvent(g.createEvent), 1500);
+        }
+      } catch(_) {}
+    }
+  }
+  queueGroupMessage(groupId, msg, delay=0){
+    const group = this.state.groups[groupId];
+    if(!group){
+      // 群还没创建，先创建（容错）
+      const gdef = this.story.groups[groupId];
+      if(!gdef) return;
+      this.state.groups[groupId] = {id:groupId, name:gdef.name, members:gdef.members, messages:[], unread:0, typing:false};
+    }
+    const g = this.state.groups[groupId];
+    setTimeout(()=>{
+      g.typing = true;
+      this.emit('groupUpdate', {id:groupId, group:g});
+      const typingTime = Math.min(2200, Math.max(700, msg.text.length * 50));
+      setTimeout(()=>{
+        g.typing = false;
+        g.messages.push({
+          from: msg.from,
+          text: msg.text,
+          time: this.getTime().time,
+          ts: Date.now()
+        });
+        g.unread++;
+        this.emit('groupUpdate', {id:groupId, group:g});
+        this.emit('groupMessageReceived', {groupId, from:msg.from, text:msg.text, group:g});
+        // 群内选项
+        if(msg.choice){
+          g.pendingChoice = msg.choice;
+          this.emit('choicePrompt', {convId:'group:'+groupId, choice:msg.choice, conv:g});
+        }
+        if(msg.then) setTimeout(()=> this.scheduleEvent(msg.then), 600);
+      }, typingTime);
+    }, delay*1000);
+  }
+  // 玩家在群里选择
+  sendGroupMessage(groupId, text, effects){
+    const g = this.state.groups[groupId];
+    if(!g) return;
+    g.messages.push({from:'me', text, time:this.getTime().time, ts:Date.now()});
+    this.emit('groupUpdate', {id:groupId, group:g});
+    if(effects){
+      if(effects.affection) Object.keys(effects.affection).forEach(k=> this.state.affection[k] += effects.affection[k]);
+      if(effects.flags) Object.keys(effects.flags).forEach(k=> this.state.flags[k] = effects.flags[k]);
+      if(effects.personality) Object.keys(effects.personality).forEach(k=> this.state.personality[k] += effects.personality[k]);
+      if(effects.thenEvent) setTimeout(()=> this.scheduleEvent(effects.thenEvent), 900);
+    }
+  }
+  markGroupRead(groupId){
+    const g = this.state.groups[groupId];
+    if(g) g.unread = 0;
+    this.emit('stateChange', this.state);
+  }
+
+  // ===== 语音信箱（未接来电） =====
+  addVoicemail(from, text, eventId, callbackEvent){
+    const vm = {
+      id: 'vm_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
+      from, text, eventId, callbackEvent,
+      time: this.getTime().time,
+      day: this.state.day,
+      heard: false
+    };
+    this.state.voicemails.unshift(vm);
+    this.emit('voicemailReceived', vm);
+    this.emit('stateChange', this.state);
+    return vm.id;
+  }
+  playVoicemail(vmId){
+    const vm = this.state.voicemails.find(v=>v.id===vmId);
+    if(!vm) return false;
+    vm.heard = true;
+    this.emit('voicemailPlayed', vm);
+    this.emit('stateChange', this.state);
+    return true;
+  }
+  // 回拨：触发 callbackEvent（如果有）
+  callbackVoicemail(vmId){
+    const vm = this.state.voicemails.find(v=>v.id===vmId);
+    if(!vm || !vm.callbackEvent) return false;
+    vm.heard = true;
+    this.scheduleEvent(vm.callbackEvent);
+    this.emit('voicemailCallback', vm);
+    this.emit('stateChange', this.state);
+    return true;
+  }
+
+  // ===== 闪回/前传章节 =====
+  checkFlashbacks(){
+    if(!this.story.flashbacks) return;
+    for(const [id, fb] of Object.entries(this.story.flashbacks)){
+      if(this.state.flashbacksSeen[id]) continue;
+      try {
+        if(!fb.trigger || fb.trigger(this.state)){
+          this.state.flashbacksSeen[id] = true;
+          this.triggerFlashback(id);
+        }
+      } catch(_) {}
+    }
+  }
+  triggerFlashback(fbId){
+    const fb = this.story.flashbacks[fbId];
+    if(!fb) return false;
+    this.emit('flashbackStart', {fbId, fb});
+    return true;
+  }
+  resolveFlashback(fbId, sceneChoices){
+    const fb = this.story.flashbacks[fbId];
+    if(!fb) return;
+    // sceneChoices: [{sceneIdx, optIdx}]
+    if(sceneChoices){
+      sceneChoices.forEach(sc=>{
+        const scene = fb.scenes[sc.sceneIdx];
+        const opt = scene.choice?.options?.[sc.optIdx];
+        if(opt){
+          if(opt.personality){
+            Object.keys(opt.personality).forEach(k=> this.state.personality[k] += opt.personality[k]);
+          }
+          if(opt.shard){
+            this.state.flashbackShards.push({fbId, shard:opt.shard, meaning:opt.meaning||null});
+          }
+        }
+      });
+    }
+    if(fb.reward){
+      if(fb.reward.photo) this.unlockPhoto(fb.reward.photo);
+      if(fb.reward.flag) this.state.flags[fb.reward.flag] = true;
+    }
+    this.emit('flashbackResolved', {fbId, fb});
+    this.emit('stateChange', this.state);
+    if(fb.then) setTimeout(()=> this.scheduleEvent(fb.then), 800);
   }
 
   // ===== 时间推进动画 =====

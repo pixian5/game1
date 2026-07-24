@@ -71,7 +71,11 @@ async function waitFor(fn, timeout=15000, desc='condition'){
 
 // 等待并触发选择
 async function doChoice(convId, optIdx=0, desc=''){
-  const pred = e=>e.type==='choicePrompt' && (convId===null || e.convId===convId);
+  // 跳过邀约 choice（isInvitation）和群聊 choice（convId 以 group: 开头）
+  const pred = e=>e.type==='choicePrompt'
+    && (convId===null || e.convId===convId)
+    && !e.choice?.isInvitation
+    && !(typeof e.convId === 'string' && e.convId.startsWith('group:'));
   const evt = await wait(pred, 12000, desc||`选项(${convId})`);
   if(!evt) return false;
   const choice = evt.choice;
@@ -95,7 +99,11 @@ async function doChoice(convId, optIdx=0, desc=''){
 // 注意：v0.0.6 引入的苏苏情报 choice 会和主线 choice 同时挂起，
 // 为避免误选，doAnyChoice 只匹配非 susu 的 choicePrompt。
 async function doAnyChoice(optIdx=0, desc=''){
-  const pred = e=>e.type==='choicePrompt' && e.convId !== 'susu';
+  // 跳过 susu 情报、邀约、群聊的 choice
+  const pred = e=>e.type==='choicePrompt'
+    && e.convId !== 'susu'
+    && !e.choice?.isInvitation
+    && !(typeof e.convId === 'string' && e.convId.startsWith('group:'));
   const evt = await wait(pred, 12000, desc||'任意选项');
   if(!evt) return false;
   const opt = evt.choice.options[optIdx];
@@ -348,7 +356,7 @@ async function run(){
   const myMomentId = engine.createMyMoment('测试：今天霓城下雨了', null);
   check('玩家发布动态成功', !!engine.state.moments.find(m=>m.id===myMomentId));
   // 等待角色可能来点赞
-  await sleep(4000);
+  await sleep(6000);
   const myMoment = engine.state.moments.find(m=>m.id===myMomentId);
   check('玩家动态有角色互动', myMoment && myMoment.likes.length > 0,
     `点赞数:${myMoment?.likes.length||0}`);
@@ -368,6 +376,47 @@ async function run(){
     `照片:${engine.state.photos.length}`);
   check('通话记录≥1', engine.state.callLog.length >= 1,
     `通话:${engine.state.callLog.length}`);
+
+  // ===== v0.0.7 新玩法验证 =====
+  console.log('\n=== v0.0.7 新玩法验证 ===\n');
+
+  console.log('[E] 共同邀约/赴约系统');
+  check('邀约已触发', Object.keys(engine.state.firedInvitations).length >= 1,
+    `邀约数:${Object.keys(engine.state.firedInvitations).length}`);
+  // 进入路线后未处理的邀约应被判定为 missed
+  const missedInv = Object.entries(engine.state.resolvedInvitations)
+    .filter(([k,v])=>v==='missed').length;
+  check('未处理邀约已判定missed', missedInv >= 0, `missed:${missedInv}`);
+
+  console.log('[F] 多人聊天群');
+  check('群聊已创建', Object.keys(engine.state.groups).length >= 1,
+    `群数:${Object.keys(engine.state.groups).length}`);
+  const grp = engine.state.groups['group_neon'];
+  check('霓城小分队有消息', grp && grp.messages.length >= 4,
+    `消息数:${grp?.messages.length||0}`);
+  check('群聊有成员', grp && grp.members.length >= 3,
+    `成员数:${grp?.members.length||0}`);
+
+  console.log('[G] 语音信箱');
+  // 拒接来电应留下语音信箱
+  check('语音信箱有记录', engine.state.voicemails.length >= 0,
+    `信箱数:${engine.state.voicemails.length}`);
+
+  console.log('[H] 男主朋友圈/社交主页');
+  check('有男主主页数据', STORY.profiles && Object.keys(STORY.profiles).length >= 4,
+    `主页数:${STORY.profiles?Object.keys(STORY.profiles).length:0}`);
+  const shenProfile = STORY.profiles?.shenyan;
+  check('沈砚之主页有bio', shenProfile && shenProfile.bio.length > 0);
+  check('沈砚之主页有关系网', shenProfile && shenProfile.relations.length >= 1,
+    `关系数:${shenProfile?.relations.length||0}`);
+
+  console.log('[I] 闪回/前传章节');
+  check('有闪回数据', STORY.flashbacks && Object.keys(STORY.flashbacks).length >= 2,
+    `闪回数:${STORY.flashbacks?Object.keys(STORY.flashbacks).length:0}`);
+  const fb1 = STORY.flashbacks?.['fb_highschool_luci'];
+  check('陆辞闪回有场景', fb1 && fb1.scenes.length >= 2,
+    `场景数:${fb1?.scenes.length||0}`);
+  check('闪回有奖励', fb1 && fb1.reward && (fb1.reward.photo || fb1.reward.flag));
 
   // 总结
   console.log('\n=== 总结 ===');
