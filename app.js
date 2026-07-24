@@ -181,11 +181,10 @@
     if($('choice-layer').hidden === false) return; // 选项时不响应
     if($('quick-menu').hidden === false) return;
     if($('log-panel').hidden === false) return;
-    if(isTyping){
-      finishTyping();
-    } else {
-      engine.next();
-    }
+    // 若正在打字，先瞬间补全当前句，再立即推进到下一句
+    // 这样一次点击即切换，避免"先完成打字再点一次"的延迟感
+    if(isTyping) finishTyping();
+    engine.next();
   }
 
   $('dialog-box').addEventListener('click', handleAdvance);
