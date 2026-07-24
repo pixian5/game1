@@ -580,6 +580,102 @@ async function run(){
   check('接听后不会触发 callMissed', missed === false);
   check('接听后 pending 已清空', engineCall._pendingCallEventId === null);
 
+  // ===== v0.0.12 新玩法验证 =====
+  console.log('\n=== v0.0.12 新玩法验证 ===');
+  console.log('[S] 收集柜+隐藏彩蛋');
+  check('收集品≥10件', STORY.collectibles && Object.keys(STORY.collectibles).length >= 10,
+    `物品数:${STORY.collectibles?Object.keys(STORY.collectibles).length:0}`);
+  check('收集品分6类', STORY.collectibles && new Set(Object.values(STORY.collectibles).map(c=>c.cat)).size >= 6,
+    `分类数:${STORY.collectibles?new Set(Object.values(STORY.collectibles).map(c=>c.cat)).size:0}`);
+  check('彩蛋≥6个', STORY.easterEggs && Object.keys(STORY.easterEggs).length >= 6,
+    `彩蛋数:${STORY.easterEggs?Object.keys(STORY.easterEggs).length:0}`);
+  // 收集测试
+  const beforeColl = engine.state.collected.length;
+  const collR = engine.collectItem('postcard_neon');
+  check('收集物品成功', collR === true);
+  check('已收集列表+1', engine.state.collected.length === beforeColl + 1, `数:${engine.state.collected.length}`);
+  check('重复收集被拒绝', engine.collectItem('postcard_neon') === false);
+  check('收集不存在的物品返回false', engine.collectItem('nonexistent_xyz') === false);
+
+  console.log('[T] 解谜玩法+线索本');
+  check('谜题≥3个', STORY.puzzles && Object.keys(STORY.puzzles).length >= 3,
+    `谜题数:${STORY.puzzles?Object.keys(STORY.puzzles).length:0}`);
+  // 每个谜题至少4条线索
+  const allPuzzlesHave4Clues = Object.values(STORY.puzzles||{}).every(p => p.clues.length >= 4);
+  check('每个谜题≥4条线索', allPuzzlesHave4Clues);
+  // 发现线索
+  engine.discoverClue('clue_1');
+  check('发现线索后状态更新', engine.state.discoveredClues.clue_1 === true);
+  // 错误答案
+  const wrongR = engine.attemptPuzzle('puzzle_shenyan_office', '9999');
+  check('错误答案返回solved=false', wrongR.solved === false);
+  check('错误答案后尝试次数+1', wrongR.attemptCount === 1, `次数:${wrongR.attemptCount}`);
+  // 正确答案
+  const rightR = engine.attemptPuzzle('puzzle_shenyan_office', '1402');
+  check('正确答案返回solved=true', rightR.solved === true);
+  check('解谜后发放奖励collectible', engine.state.collected.includes('memento_pen'));
+  check('解谜后flag已设置', engine.state.flags.shenyan_office_unlocked === true);
+  check('解谜后好感增加', engine.state.affection.shenyan > 0);
+  // 重复提交已解开的谜题
+  const reR = engine.attemptPuzzle('puzzle_shenyan_office', '1402');
+  check('已解开的谜题不可重复提交', reR.ok === false && reR.solved === true);
+  // getAllPuzzles返回正确状态
+  const allP = engine.getAllPuzzles();
+  check('getAllPuzzles返回所有谜题', allP.length >= 3, `数:${allP.length}`);
+  const solvedP = allP.find(p=>p.id === 'puzzle_shenyan_office');
+  check('getAllPuzzles标记已解开', solvedP && solvedP.solved === true);
+
+  console.log('[U] 季节系统+节日事件');
+  check('有4个季节', STORY.seasons && Object.keys(STORY.seasons.seasonInfo).length === 4);
+  check('节日≥8个', STORY.seasons && Object.keys(STORY.seasons.holidays).length >= 8,
+    `节日数:${STORY.seasons?Object.keys(STORY.seasons.holidays).length:0}`);
+  // 季节判定
+  check('7月判定为夏天', STORY.seasons.getSeason(7) === 'summer');
+  check('10月判定为秋天', STORY.seasons.getSeason(10) === 'autumn');
+  check('12月判定为冬天', STORY.seasons.getSeason(12) === 'winter');
+  check('3月判定为春天', STORY.seasons.getSeason(3) === 'spring');
+  // 获取当前季节
+  const curSeason = engine.getCurrentSeason();
+  check('getCurrentSeason返回季节信息', curSeason && curSeason.name && curSeason.icon);
+  // 节日检查（7月15日是抵达霓城纪念日）
+  // 由于游戏起始日为7月15日，测试前置流程可能已触发过该节日，故直接检查数据
+  check('7月15日有抵达霓城纪念日', STORY.seasons.holidays['7-15'] && STORY.seasons.holidays['7-15'].id === 'arrive_day');
+  const todayHoliday = engine.checkHoliday();
+  // 若未触发则触发，若已触发则返回null（均正常）
+  check('checkHoliday返回值合法', todayHoliday === null || todayHoliday.id === 'arrive_day');
+  // 同一天再次检查不重复触发
+  const againHoliday = engine.checkHoliday();
+  check('同一天不重复触发节日', againHoliday === null);
+  // 即将到来节日
+  const upcoming = engine.getUpcomingHolidays(60);
+  check('getUpcomingHolidays返回列表', Array.isArray(upcoming));
+
+  console.log('[V] 男主视角+反向剧情');
+  check('3位男主有视角数据', STORY.malePerspectives && Object.keys(STORY.malePerspectives).length >= 3,
+    `视角数:${STORY.malePerspectives?Object.keys(STORY.malePerspectives).length:0}`);
+  // 每个视角至少3个场景
+  const allHave3Scenes = Object.values(STORY.malePerspectives||{}).every(p => p.scenes.length >= 3);
+  check('每个视角≥3个场景', allHave3Scenes);
+  // 每个视角有真相结局
+  const allHaveTruth = Object.values(STORY.malePerspectives||{}).every(p => p.truthEnding && p.truthEnding.text);
+  check('每个视角有真相结局', allHaveTruth);
+  // 未通关时视角锁定
+  const perspectives = engine.getAllPerspectives();
+  check('getAllPerspectives返回3条', perspectives.length === 3, `数:${perspectives.length}`);
+  // 模拟通关解锁
+  engine.state.endingSeen.shenyan_good = true;
+  check('通关后沈砚之视角解锁', engine.isPerspectiveUnlocked('shenyan') === true);
+  // 标记场景已看
+  engine.markPerspectiveSceneSeen('shenyan', 'mps_1');
+  check('标记场景后perspectivesSeen更新', engine.state.perspectivesSeen.shenyan.mps_1 === true);
+  // 看完所有场景解锁真相结局
+  engine.markPerspectiveSceneSeen('shenyan', 'mps_2');
+  engine.markPerspectiveSceneSeen('shenyan', 'mps_3');
+  check('看完所有场景后truthEndingSeen=true', engine.state.truthEndingsSeen.shenyan === true);
+  check('isTruthEndingSeen返回true', engine.isTruthEndingSeen('shenyan') === true);
+  // 终极真结局检查
+  check('isUltimateTruthEndingUnlocked函数可调用', typeof engine.isUltimateTruthEndingUnlocked === 'function');
+
   // 总结
   console.log('\n=== 总结 ===');
   const passed = results.filter(r=>r.pass).length;

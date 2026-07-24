@@ -855,4 +855,115 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--ink
 .ach-notif{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#fbbf24,#ff5fa8);color:#1a0a2e;padding:10px 18px;border-radius:24px;font-size:13px;font-weight:600;z-index:2000;box-shadow:0 6px 24px rgba(255,189,79,0.4);animation:achNotifSlide 0.4s ease;}
 @keyframes achNotifSlide{from{transform:translate(-50%,-30px);opacity:0;}to{transform:translate(-50%,0);opacity:1;}}
 
+/* ===== v0.0.10 新玩法：收集柜 / 线索本 / 节日 / 男主视角 ===== */
+
+/* 收集柜 */
+.collection-tabs{display:flex;overflow-x:auto;border-bottom:0.5px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.2);padding:0 6px;}
+.collection-tab{padding:10px 12px;font-size:12px;color:var(--ink-mute);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;}
+.collection-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.collection-content{flex:1;overflow-y:auto;padding:14px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.coll-card{background:rgba(255,255,255,0.04);border-radius:14px;padding:14px 10px;text-align:center;border:0.5px solid rgba(255,255,255,0.06);position:relative;}
+.coll-card.locked{opacity:0.4;filter:grayscale(0.8);}
+.coll-card-icon{font-size:36px;margin-bottom:6px;}
+.coll-card-name{font-size:12px;color:var(--ink);font-weight:600;margin-bottom:4px;line-height:1.3;}
+.coll-card-desc{font-size:10px;color:var(--ink-mute);line-height:1.4;}
+.coll-card-how{font-size:9px;color:var(--accent2);margin-top:6px;padding-top:6px;border-top:0.5px solid rgba(255,255,255,0.05);}
+.collection-eggs-section{padding:12px 14px;border-top:0.5px solid rgba(255,255,255,0.06);}
+.coll-eggs-title{font-size:12px;color:var(--ink-mute);letter-spacing:0.1em;margin-bottom:10px;text-transform:uppercase;}
+.coll-egg{display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:10px;margin-bottom:6px;font-size:12px;}
+.coll-egg.locked{opacity:0.4;}
+.coll-egg-icon{font-size:18px;}
+.coll-egg-info{flex:1;}
+.coll-egg-name{color:var(--ink);font-weight:600;font-size:12px;}
+.coll-egg-desc{color:var(--ink-mute);font-size:10px;margin-top:2px;}
+
+/* 线索本 */
+.puzzles-content{flex:1;overflow-y:auto;padding:14px;}
+.puzzle-card{background:linear-gradient(135deg,rgba(122,92,255,0.1),rgba(255,95,168,0.05));border-radius:14px;padding:14px;margin-bottom:12px;border:0.5px solid rgba(122,92,255,0.2);cursor:pointer;}
+.puzzle-card.solved{background:linear-gradient(135deg,rgba(74,222,128,0.1),rgba(255,189,79,0.05));border-color:rgba(74,222,128,0.3);}
+.puzzle-card-title{font-size:14px;color:var(--ink);font-weight:600;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;}
+.puzzle-card-status{font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(255,255,255,0.08);color:var(--ink-mute);}
+.puzzle-card-status.solved{background:rgba(74,222,128,0.2);color:#4ade80;}
+.puzzle-card-desc{font-size:12px;color:var(--ink-mute);line-height:1.5;}
+.puzzle-card-meta{font-size:10px;color:var(--ink-mute);margin-top:8px;}
+
+/* 谜题详情 */
+.puzzle-detail-content{flex:1;overflow-y:auto;padding:18px;}
+.pd-desc{font-family:var(--serif);font-size:14px;line-height:1.8;color:#e8d8b8;background:rgba(255,255,255,0.04);padding:14px;border-radius:12px;border-left:2px solid var(--accent2);margin-bottom:18px;}
+.pd-section-title{font-size:12px;color:var(--ink-mute);letter-spacing:0.1em;margin-bottom:10px;text-transform:uppercase;}
+.pd-clue{background:rgba(255,255,255,0.04);border-radius:10px;padding:10px 12px;margin-bottom:8px;border-left:2px solid var(--accent);}
+.pd-clue-text{font-size:13px;color:var(--ink);line-height:1.6;}
+.pd-clue-digit{display:inline-block;background:var(--accent);color:#fff;width:22px;height:22px;border-radius:50%;text-align:center;line-height:22px;font-size:11px;font-weight:700;margin-left:8px;}
+.pd-input-row{display:flex;gap:8px;margin-top:14px;}
+.pd-input{flex:1;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.15);border-radius:10px;padding:12px;color:var(--ink);font-size:18px;text-align:center;letter-spacing:0.4em;font-family:monospace;}
+.pd-input:focus{outline:none;border-color:var(--accent);}
+.pd-submit{padding:0 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;}
+.pd-hint{font-size:11px;color:var(--ink-mute);margin-top:8px;text-align:center;}
+.pd-result{margin-top:14px;padding:12px;border-radius:10px;font-size:13px;text-align:center;}
+.pd-result.success{background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.3);}
+.pd-result.fail{background:rgba(255,95,168,0.1);color:#ff5fa8;border:1px solid rgba(255,95,168,0.3);}
+
+/* 节日App */
+.calendar2-content{flex:1;overflow-y:auto;padding:18px;}
+.cal2-season{background:linear-gradient(135deg,rgba(255,189,79,0.12),rgba(255,95,168,0.08));border-radius:18px;padding:20px;text-align:center;margin-bottom:20px;border:0.5px solid rgba(255,255,255,0.08);}
+.cal2-season-icon{font-size:48px;margin-bottom:8px;}
+.cal2-season-name{font-size:20px;color:var(--ink);font-weight:600;margin-bottom:6px;}
+.cal2-season-desc{font-size:12px;color:var(--ink-mute);font-style:italic;}
+.cal2-today-holiday{background:linear-gradient(135deg,rgba(255,95,168,0.18),rgba(122,92,255,0.1));border-radius:14px;padding:14px;margin-bottom:16px;border:0.5px solid rgba(255,95,168,0.3);}
+.cal2-today-holiday-icon{font-size:24px;}
+.cal2-today-holiday-name{font-size:14px;color:var(--ink);font-weight:600;margin:6px 0;}
+.cal2-today-holiday-text{font-size:12px;color:var(--ink-mute);line-height:1.5;font-family:var(--serif);}
+.cal2-section-title{font-size:12px;color:var(--ink-mute);letter-spacing:0.1em;margin:14px 0 10px;text-transform:uppercase;}
+.cal2-upcoming-item{display:flex;align-items:center;gap:12px;padding:10px 12px;background:rgba(255,255,255,0.04);border-radius:10px;margin-bottom:8px;}
+.cal2-upcoming-icon{font-size:20px;}
+.cal2-upcoming-info{flex:1;}
+.cal2-upcoming-name{font-size:13px;color:var(--ink);font-weight:600;}
+.cal2-upcoming-date{font-size:11px;color:var(--ink-mute);margin-top:2px;}
+.cal2-upcoming-in{font-size:11px;color:var(--accent2);font-weight:600;}
+
+/* 男主视角App */
+.perspective-content{flex:1;overflow-y:auto;padding:14px;}
+.persp-card{background:linear-gradient(135deg,rgba(122,92,255,0.1),rgba(255,95,168,0.05));border-radius:14px;padding:14px;margin-bottom:12px;border:0.5px solid rgba(122,92,255,0.2);}
+.persp-card.locked{opacity:0.55;filter:grayscale(0.6);}
+.persp-card-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.persp-card-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;font-weight:600;}
+.persp-card-title{font-size:14px;color:var(--ink);font-weight:600;}
+.persp-card-status{font-size:11px;color:var(--ink-mute);margin-top:2px;}
+.persp-card-progress{font-size:11px;color:var(--accent2);margin-top:4px;}
+.persp-card-scenes{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
+.persp-scene-item{padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;font-size:12px;color:var(--ink);display:flex;justify-content:space-between;align-items:center;cursor:pointer;border:0.5px solid transparent;}
+.persp-scene-item:hover{background:rgba(255,255,255,0.08);}
+.persp-scene-item.seen{opacity:0.65;}
+.persp-scene-item-title{flex:1;}
+.persp-scene-item-check{font-size:14px;color:#4ade80;}
+.persp-truth-btn{margin-top:10px;width:100%;padding:10px;background:linear-gradient(135deg,#7a5cff,#ff5fa8);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;}
+.persp-truth-btn:disabled{opacity:0.4;cursor:not-allowed;background:#555;}
+.persp-truth-btn.unlocked{animation:truthGlow 2s ease-in-out infinite;}
+@keyframes truthGlow{0%,100%{box-shadow:0 0 8px rgba(122,92,255,0.4);}50%{box-shadow:0 0 20px rgba(255,95,168,0.6);}}
+
+/* 男主视角场景屏 */
+.pscene-content{flex:1;overflow-y:auto;padding:20px;}
+.pscene-time{font-size:11px;color:var(--accent2);letter-spacing:0.1em;margin-bottom:8px;text-transform:uppercase;}
+.pscene-title{font-size:18px;color:var(--ink);font-weight:600;margin-bottom:16px;font-family:var(--serif);}
+.pscene-narration{font-family:var(--serif);font-size:14px;line-height:2;color:#e8d8b8;background:rgba(255,255,255,0.04);padding:14px 16px;border-radius:12px;border-left:2px solid var(--accent);margin-bottom:14px;}
+.pscene-inner{font-style:italic;font-size:13px;color:var(--ink-mute);background:rgba(122,92,255,0.08);padding:12px 14px;border-radius:10px;border-left:2px solid var(--accent2);margin-bottom:18px;}
+.pscene-inner::before{content:'心声 · ';color:var(--accent2);font-weight:600;font-style:normal;}
+.pscene-choice-prompt{font-size:13px;color:var(--ink);margin-bottom:10px;}
+.pscene-options{display:flex;flex-direction:column;gap:8px;}
+.pscene-opt{padding:12px 14px;background:rgba(255,255,255,0.05);border-radius:10px;border:0.5px solid rgba(255,255,255,0.08);cursor:pointer;font-size:13px;color:var(--ink);transition:all 0.2s;}
+.pscene-opt:hover{background:rgba(255,95,168,0.1);border-color:var(--accent);}
+.pscene-opt-inner{font-size:11px;color:var(--accent2);font-style:italic;margin-top:6px;display:block;}
+
+/* 真相结局屏 */
+#truth-ending-screen{background:linear-gradient(180deg,#1a0a2e 0%,#0a0712 100%);}
+.truth-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(122,92,255,0.15),transparent 70%);}
+.truth-content{position:relative;z-index:1;padding:32px 24px;display:flex;flex-direction:column;height:100%;align-items:center;justify-content:center;text-align:center;}
+.truth-title{font-size:22px;color:#e8d8b8;font-family:var(--serif);font-weight:600;margin-bottom:24px;letter-spacing:0.1em;}
+.truth-text{font-family:var(--serif);font-size:14px;line-height:2.2;color:#d8c8b8;white-space:pre-line;max-width:340px;margin-bottom:32px;}
+.truth-close-btn{padding:10px 24px;background:rgba(255,255,255,0.08);color:var(--ink);border:0.5px solid rgba(255,255,255,0.15);border-radius:24px;font-size:13px;cursor:pointer;}
+
+/* 通用彩蛋解锁通知（与成就类似） */
+.egg-notif{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#7a5cff,#4ade80);color:#fff;padding:10px 18px;border-radius:24px;font-size:13px;font-weight:600;z-index:2000;box-shadow:0 6px 24px rgba(122,92,255,0.4);animation:achNotifSlide 0.4s ease;}
+
+
 

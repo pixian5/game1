@@ -16,7 +16,11 @@
     contacts:$('contacts-app'), charProfile:$('char-profile-screen'),
     flashback:$('flashback-screen'),
     shop:$('shop-app'), mood:$('mood-app'),
-    tarot:$('tarot-app'), achievements:$('achievements-app')
+    tarot:$('tarot-app'), achievements:$('achievements-app'),
+    collection:$('collection-app'), puzzles:$('puzzles-app'),
+    puzzleDetail:$('puzzle-detail-screen'), calendar2:$('calendar2-app'),
+    perspective:$('perspective-app'), pscene:$('perspective-scene-screen'),
+    truthEnding:$('truth-ending-screen')
   };
   let currentConvId = null;
   let currentGroupId = null;
@@ -174,6 +178,21 @@
     if(diarySubmit){ handleDiarySubmit(); return; }
     const tarotDraw = e.target.closest('[data-action="draw-tarot"]');
     if(tarotDraw){ handleDrawTarot(); return; }
+    // v0.0.10 新玩法
+    const collTab = e.target.closest('[data-coll-cat]');
+    if(collTab){ renderCollection(collTab.dataset.collCat); return; }
+    const puzzleCardBtn = e.target.closest('[data-puzzle]');
+    if(puzzleCardBtn){ openPuzzleDetail(puzzleCardBtn.dataset.puzzle); return; }
+    const puzzleSubmit = e.target.closest('[data-action="submit-puzzle"]');
+    if(puzzleSubmit){ handlePuzzleSubmit(); return; }
+    const clueDiscover = e.target.closest('[data-clue]');
+    if(clueDiscover){ engine.discoverClue(clueDiscover.dataset.clue); renderPuzzleDetail(currentPuzzleId); return; }
+    const perspSceneBtn = e.target.closest('[data-pscene]');
+    if(perspSceneBtn){ openPerspectiveScene(perspSceneBtn.dataset.pscene); return; }
+    const psceneOpt = e.target.closest('[data-pscene-opt]');
+    if(psceneOpt){ handlePsceneOption(parseInt(psceneOpt.dataset.psceneOpt)); return; }
+    const truthBtn = e.target.closest('[data-action="show-truth"]');
+    if(truthBtn){ showTruthEnding(truthBtn.dataset.charId); return; }
   });
 
   function openApp(app){
@@ -193,6 +212,10 @@
       case 'mood': renderMood(); showScreen('mood'); break;
       case 'tarot': renderTarot(); showScreen('tarot'); break;
       case 'achievements': renderAchievements(); showScreen('achievements'); break;
+      case 'collection': renderCollection('all'); showScreen('collection'); break;
+      case 'puzzles': renderPuzzles(); showScreen('puzzles'); break;
+      case 'calendar2': renderCalendar2(); showScreen('calendar2'); break;
+      case 'perspective': renderPerspective(); showScreen('perspective'); break;
     }
   }
 
@@ -1843,6 +1866,298 @@
     if(screens.achievements && screens.achievements.classList.contains('active')){
       renderAchievements();
     }
+  });
+
+  // ===== v0.0.10 收集柜 =====
+  let collectionCurrentCat = 'all';
+  function renderCollection(cat){
+    collectionCurrentCat = cat || collectionCurrentCat;
+    document.querySelectorAll('.collection-tab').forEach(t=>{
+      t.classList.toggle('active', t.dataset.collCat === collectionCurrentCat);
+    });
+    const allItems = Object.values(STORY.collectibles || {});
+    const total = allItems.length;
+    const collected = engine.state.collected.length;
+    $('collection-count').textContent = `${collected}/${total}`;
+    const content = $('collection-content');
+    let items = allItems;
+    if(collectionCurrentCat !== 'all') items = items.filter(i=>i.cat === collectionCurrentCat);
+    content.innerHTML = items.map(item=>{
+      const isCollected = engine.state.collected.includes(item.id);
+      return `<div class="coll-card ${isCollected?'':'locked'}">
+        <div class="coll-card-icon">${isCollected ? item.icon : '❓'}</div>
+        <div class="coll-card-name">${isCollected ? escapeHtml(item.name) : '未收集'}</div>
+        <div class="coll-card-desc">${isCollected ? escapeHtml(item.desc) : '等待霓城的某一个瞬间…'}</div>
+        ${isCollected ? `<div class="coll-card-how">${escapeHtml(item.how)}</div>` : ''}
+      </div>`;
+    }).join('');
+    // 隐藏彩蛋
+    const eggsEl = $('collection-eggs');
+    const allEggs = Object.values(STORY.easterEggs || {});
+    eggsEl.innerHTML = allEggs.map(egg=>{
+      const seen = engine.state.easterEggsSeen[egg.id];
+      return `<div class="coll-egg ${seen?'':'locked'}">
+        <div class="coll-egg-icon">${seen ? egg.icon : '🔒'}</div>
+        <div class="coll-egg-info">
+          <div class="coll-egg-name">${seen ? escapeHtml(egg.name) : '???'}</div>
+          <div class="coll-egg-desc">${seen ? escapeHtml(egg.desc) : '尚未触发'}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  engine.on('itemCollected', ({item, itemId})=>{
+    showNotif('susu', `✦ 新收集：${item.name}`);
+    if(screens.collection && screens.collection.classList.contains('active')){
+      renderCollection(collectionCurrentCat);
+    }
+  });
+  engine.on('easterEggUnlocked', (eggs)=>{
+    eggs.forEach(egg=>{
+      const n = document.createElement('div');
+      n.className = 'egg-notif';
+      n.textContent = `✦ 彩蛋：${egg.name}`;
+      document.body.appendChild(n);
+      setTimeout(()=> n.remove(), 3000);
+    });
+  });
+
+  // ===== v0.0.10 线索本/解谜 =====
+  let currentPuzzleId = null;
+  function renderPuzzles(){
+    const content = $('puzzles-content');
+    const puzzles = engine.getAllPuzzles();
+    if(puzzles.length === 0){
+      content.innerHTML = '<div class="shop-empty">暂无线索</div>';
+      return;
+    }
+    content.innerHTML = puzzles.map(p=>{
+      const statusCls = p.solved ? 'solved' : '';
+      const statusText = p.solved ? '已解开' : (p.attemptCount > 0 ? `已尝试 ${p.attemptCount} 次` : '未尝试');
+      const discoveredClues = p.clues.filter(c=>c.discovered).length;
+      return `<div class="puzzle-card ${statusCls}" data-puzzle="${p.id}">
+        <div class="puzzle-card-title">
+          <span>${escapeHtml(p.title)}</span>
+          <span class="puzzle-card-status ${p.solved?'solved':''}">${statusText}</span>
+        </div>
+        <div class="puzzle-card-desc">${escapeHtml(p.desc)}</div>
+        <div class="puzzle-card-meta">线索 ${discoveredClues}/${p.clues.length} · 点击进入</div>
+      </div>`;
+    }).join('');
+  }
+  function openPuzzleDetail(puzzleId){
+    currentPuzzleId = puzzleId;
+    renderPuzzleDetail(puzzleId);
+    showScreen('puzzleDetail');
+  }
+  function renderPuzzleDetail(puzzleId){
+    const puzzle = STORY.puzzles?.[puzzleId];
+    if(!puzzle) return;
+    const progress = engine.state.puzzleProgress[puzzleId] || {};
+    $('puzzle-detail-title').textContent = puzzle.title;
+    const content = $('puzzle-detail-content');
+    let html = `<div class="pd-desc">${escapeHtml(puzzle.desc)}</div>`;
+    html += '<div class="pd-section-title">线索</div>';
+    puzzle.clues.forEach(c=>{
+      const discovered = engine.state.discoveredClues[c.id];
+      html += `<div class="pd-clue">
+        <div class="pd-clue-text">
+          ${discovered ? escapeHtml(c.text) : '<span style="color:var(--ink-mute)">未发现线索 · 点击发现</span>'}
+          ${discovered ? `<span class="pd-clue-digit">${c.digit}</span>` : ''}
+        </div>
+        ${!discovered ? `<button data-clue="${c.id}" style="margin-top:6px;padding:4px 10px;font-size:11px;background:rgba(255,255,255,0.05);color:var(--ink-mute);border:0.5px solid rgba(255,255,255,0.1);border-radius:6px;cursor:pointer;">翻开这条线索</button>` : ''}
+      </div>`;
+    });
+    // 输入区
+    if(progress.solved){
+      html += `<div class="pd-result success">✓ ${escapeHtml(puzzle.onSuccess)}</div>`;
+    } else {
+      html += '<div class="pd-section-title" style="margin-top:18px;">输入答案</div>';
+      html += `<div class="pd-input-row">
+        <input type="text" class="pd-input" id="puzzle-answer-input" maxlength="4" placeholder="____" inputmode="numeric">
+        <button class="pd-submit" data-action="submit-puzzle">提交</button>
+      </div>`;
+      html += `<div class="pd-hint">${escapeHtml(puzzle.hint)}</div>`;
+      if(progress.attemptCount > 0){
+        html += `<div class="pd-result fail">✗ ${escapeHtml(puzzle.onFail)}（已尝试 ${progress.attemptCount} 次）</div>`;
+      }
+    }
+    content.innerHTML = html;
+  }
+  function handlePuzzleSubmit(){
+    const input = $('puzzle-answer-input');
+    if(!input || !currentPuzzleId) return;
+    const answer = input.value.trim();
+    if(!answer){ toast('请输入答案'); return; }
+    const r = engine.attemptPuzzle(currentPuzzleId, answer);
+    if(r.solved){
+      toast('谜题已解开');
+    } else {
+      toast(r.message || '答案不对');
+    }
+    renderPuzzleDetail(currentPuzzleId);
+  }
+  engine.on('puzzleSolved', ({puzzleId, puzzle, reward})=>{
+    const n = document.createElement('div');
+    n.className = 'egg-notif';
+    n.textContent = `🔍 谜题解开：${puzzle.title}`;
+    document.body.appendChild(n);
+    setTimeout(()=> n.remove(), 3000);
+  });
+
+  // ===== v0.0.10 节日App =====
+  function renderCalendar2(){
+    const content = $('calendar2-content');
+    const season = engine.getCurrentSeason();
+    const today = engine.getDateLabel();
+    const todayHoliday = STORY.seasons?.holidays[`${today.month}-${today.date}`];
+    let html = `<div class="cal2-season">
+      <div class="cal2-season-icon">${season.icon}</div>
+      <div class="cal2-season-name">${season.name} · ${today.month}月${today.date}日</div>
+      <div class="cal2-season-desc">"${escapeHtml(season.desc)}"</div>
+    </div>`;
+    if(todayHoliday){
+      html += `<div class="cal2-today-holiday">
+        <div class="cal2-today-holiday-icon">${todayHoliday.icon}</div>
+        <div class="cal2-today-holiday-name">${escapeHtml(todayHoliday.name)}</div>
+        <div class="cal2-today-holiday-text">${escapeHtml(todayHoliday.text)}</div>
+      </div>`;
+    } else {
+      html += '<div class="cal2-section-title">今日</div>';
+      html += '<div style="font-size:12px;color:var(--ink-mute);padding:8px 0;">今天没有特别的日子。</div>';
+    }
+    // 即将到来的节日
+    const upcoming = engine.getUpcomingHolidays(30);
+    if(upcoming.length > 0){
+      html += '<div class="cal2-section-title">即将到来</div>';
+      upcoming.forEach(u=>{
+        html += `<div class="cal2-upcoming-item">
+          <div class="cal2-upcoming-icon">${u.holiday.icon}</div>
+          <div class="cal2-upcoming-info">
+            <div class="cal2-upcoming-name">${escapeHtml(u.holiday.name)}</div>
+            <div class="cal2-upcoming-date">${u.date.month}月${u.date.date}日</div>
+          </div>
+          <div class="cal2-upcoming-in">${u.inDays}天后</div>
+        </div>`;
+      });
+    }
+    // 全部节日列表
+    html += '<div class="cal2-section-title">霓城节日历</div>';
+    Object.values(STORY.seasons?.holidays || {}).forEach(h=>{
+      html += `<div class="cal2-upcoming-item">
+        <div class="cal2-upcoming-icon">${h.icon}</div>
+        <div class="cal2-upcoming-info">
+          <div class="cal2-upcoming-name">${escapeHtml(h.name)}</div>
+          <div class="cal2-upcoming-date">${escapeHtml(h.text)}</div>
+        </div>
+      </div>`;
+    });
+    content.innerHTML = html;
+  }
+  engine.on('holidayTriggered', ({holiday, date})=>{
+    showNotif('susu', `今日节日：${holiday.name}`);
+  });
+
+  // ===== v0.0.10 男主视角+反向剧情 =====
+  let currentPerspectiveCharId = null;
+  let currentPsceneId = null;
+  function renderPerspective(){
+    const content = $('perspective-content');
+    const perspectives = engine.getAllPerspectives();
+    if(perspectives.length === 0){
+      content.innerHTML = '<div class="shop-empty">暂无视角</div>';
+      return;
+    }
+    content.innerHTML = perspectives.map(p=>{
+      const char = STORY.characters[p.charId] || {};
+      const lockedCls = p.unlocked ? '' : 'locked';
+      const statusText = p.unlocked
+        ? (p.truthEndingSeen ? '✓ 真相已揭示' : `${p.scenesSeen}/${p.totalScenes} 场景已看`)
+        : '通关对应路线后解锁';
+      let scenesHtml = '';
+      if(p.unlocked){
+        scenesHtml = '<div class="persp-card-scenes">';
+        p.scenes.forEach(s=>{
+          scenesHtml += `<div class="persp-scene-item ${s.seen?'seen':''}" data-pscene="${p.charId}:${s.id}">
+            <span class="persp-scene-item-title">${escapeHtml(s.title)}</span>
+            ${s.seen ? '<span class="persp-scene-item-check">✓</span>' : '<span style="font-size:10px;color:var(--ink-mute)">未看</span>'}
+          </div>`;
+        });
+        scenesHtml += '</div>';
+        // 真相结局按钮
+        const allScenesSeen = p.scenesSeen === p.totalScenes;
+        if(allScenesSeen){
+          scenesHtml += `<button class="persp-truth-btn ${p.truthEndingSeen?'':'unlocked'}" data-action="show-truth" data-char-id="${p.charId}">
+            ${p.truthEndingSeen ? '✓ 重看真相结局' : '✦ 揭示真相结局'}
+          </button>`;
+        }
+      }
+      return `<div class="persp-card ${lockedCls}">
+        <div class="persp-card-header">
+          <div class="persp-card-avatar" style="background:${char.bg||'#333'}">${char.avatar||'?'}</div>
+          <div>
+            <div class="persp-card-title">${escapeHtml(p.title)}</div>
+            <div class="persp-card-status">${statusText}</div>
+          </div>
+        </div>
+        ${scenesHtml}
+      </div>`;
+    }).join('');
+  }
+  function openPerspectiveScene(charSceneId){
+    const [charId, sceneId] = charSceneId.split(':');
+    currentPerspectiveCharId = charId;
+    currentPsceneId = sceneId;
+    const p = STORY.malePerspectives?.[charId];
+    const scene = p?.scenes.find(s=>s.id === sceneId);
+    if(!scene) return;
+    $('pscene-title').textContent = p.title;
+    const content = $('pscene-content');
+    let html = `<div class="pscene-time">${escapeHtml(scene.time)}</div>`;
+    html += `<div class="pscene-title">${escapeHtml(scene.title)}</div>`;
+    html += `<div class="pscene-narration">${escapeHtml(scene.narration)}</div>`;
+    html += `<div class="pscene-inner">${escapeHtml(scene.innerVoice)}</div>`;
+    if(scene.choice){
+      html += `<div class="pscene-choice-prompt">${escapeHtml(scene.choice.prompt)}</div>`;
+      html += '<div class="pscene-options">';
+      scene.choice.options.forEach((opt, i)=>{
+        html += `<div class="pscene-opt" data-pscene-opt="${i}">
+          ${escapeHtml(opt.text)}
+          <span class="pscene-opt-inner">${escapeHtml(opt.inner)}</span>
+        </div>`;
+      });
+      html += '</div>';
+    }
+    content.innerHTML = html;
+    showScreen('pscene');
+  }
+  function handlePsceneOption(idx){
+    const p = STORY.malePerspectives?.[currentPerspectiveCharId];
+    const scene = p?.scenes.find(s=>s.id === currentPsceneId);
+    if(!scene || !scene.choice) return;
+    const opt = scene.choice.options[idx];
+    if(!opt) return;
+    // 标记场景已看
+    engine.markPerspectiveSceneSeen(currentPerspectiveCharId, currentPsceneId);
+    toast('心声：' + opt.inner);
+    // 返回视角列表
+    setTimeout(()=>{
+      renderPerspective();
+      showScreen('perspective');
+    }, 1500);
+  }
+  function showTruthEnding(charId){
+    const p = STORY.malePerspectives?.[charId];
+    if(!p || !p.truthEnding) return;
+    $('truth-title').textContent = p.truthEnding.title;
+    $('truth-text').textContent = p.truthEnding.text;
+    showScreen('truthEnding');
+  }
+  engine.on('truthEndingUnlocked', ({charId, perspective})=>{
+    const n = document.createElement('div');
+    n.className = 'egg-notif';
+    n.textContent = `✦ 真相结局解锁：${perspective.title}`;
+    document.body.appendChild(n);
+    setTimeout(()=> n.remove(), 4000);
   });
 
   // ===== 初始化 =====

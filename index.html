@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>霓虹心事 · 林夏的手机 · v0.0.11</title>
-<meta name="version" content="v0.0.11">
+<title>霓虹心事 · 林夏的手机 · v0.0.12</title>
+<meta name="version" content="v0.0.12">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -90,6 +90,20 @@
         <button class="app-icon" data-app="achievements">
           <span class="app-emoji">🏆</span><span class="app-name">成就</span>
           <span class="app-badge" id="badge-achievements" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="collection">
+          <span class="app-emoji">🗃️</span><span class="app-name">收集柜</span>
+          <span class="app-badge" id="badge-collection" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="puzzles">
+          <span class="app-emoji">🔍</span><span class="app-name">线索本</span>
+        </button>
+        <button class="app-icon" data-app="calendar2">
+          <span class="app-emoji">📅</span><span class="app-name">节日</span>
+        </button>
+        <button class="app-icon" data-app="perspective">
+          <span class="app-emoji">👁️</span><span class="app-name">男主视角</span>
+          <span class="app-badge" id="badge-perspective" hidden>0</span>
         </button>
       </div>
       <div class="home-dock">
@@ -355,6 +369,84 @@
         <h1>成就</h1>
       </header>
       <div class="achievements-content" id="achievements-content"></div>
+    </section>
+
+    <!-- 收集柜App -->
+    <section id="collection-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>收集柜</h1>
+        <div class="shop-coins" id="collection-count">0/0</div>
+      </header>
+      <div class="collection-tabs" id="collection-tabs">
+        <button class="collection-tab active" data-coll-cat="all">全部</button>
+        <button class="collection-tab" data-coll-cat="postcard">明信片</button>
+        <button class="collection-tab" data-coll-cat="stamp">印章</button>
+        <button class="collection-tab" data-coll-cat="evidence">证据</button>
+        <button class="collection-tab" data-coll-cat="recording">录音</button>
+        <button class="collection-tab" data-coll-cat="ticket">票根</button>
+        <button class="collection-tab" data-coll-cat="memento">信物</button>
+      </div>
+      <div class="collection-content" id="collection-content"></div>
+      <div class="collection-eggs-section">
+        <div class="coll-eggs-title">🌙 隐藏彩蛋</div>
+        <div id="collection-eggs"></div>
+      </div>
+    </section>
+
+    <!-- 线索本App -->
+    <section id="puzzles-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>线索本</h1>
+      </header>
+      <div class="puzzles-content" id="puzzles-content"></div>
+    </section>
+
+    <!-- 谜题详情屏 -->
+    <section id="puzzle-detail-screen" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="puzzles">‹</button>
+        <h1 id="puzzle-detail-title">谜题</h1>
+      </header>
+      <div class="puzzle-detail-content" id="puzzle-detail-content"></div>
+    </section>
+
+    <!-- 节日App -->
+    <section id="calendar2-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>霓城时节</h1>
+      </header>
+      <div class="calendar2-content" id="calendar2-content"></div>
+    </section>
+
+    <!-- 男主视角App -->
+    <section id="perspective-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>男主视角</h1>
+      </header>
+      <div class="perspective-content" id="perspective-content"></div>
+    </section>
+
+    <!-- 男主视角场景屏 -->
+    <section id="perspective-scene-screen" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="perspective">‹</button>
+        <h1 id="pscene-title">视角</h1>
+      </header>
+      <div class="pscene-content" id="pscene-content"></div>
+    </section>
+
+    <!-- 男主真相结局屏 -->
+    <section id="truth-ending-screen" class="screen overlay-screen">
+      <div class="truth-bg"></div>
+      <div class="truth-content">
+        <div class="truth-title" id="truth-title">真相</div>
+        <div class="truth-text" id="truth-text"></div>
+        <button class="truth-close-btn" data-back="perspective">合上这页</button>
+      </div>
     </section>
 
     <!-- 闪回/前传章节屏 -->

@@ -109,7 +109,16 @@ class PhoneEngine {
       lastTarotDay: 0,          // 上次抽塔罗的游戏内日期
       todayFortune: null,       // {cardId, reversed, text}
       // 成就系统
-      achievements: {}          // {achId: true}
+      achievements: {},          // {achId: true}
+      // v0.0.10 收集柜+隐藏彩蛋
+      collected: [],             // 已收集的道具 id 列表
+      easterEggsSeen: {},        // {eggId: true}
+      // v0.0.10 解谜玩法
+      puzzleProgress: {},        // {puzzleId: {attemptCount, solved, lastAttempt}}
+      discoveredClues: {},       // {clueId: true}
+      // v0.0.10 男主视角
+      perspectivesSeen: {},      // {charId: {sceneId: true}}
+      truthEndingsSeen: {}       // {charId: true}
     };
   }
   on(event, fn){ (this.listeners[event] ||= []).push(fn); return fn; }
@@ -221,6 +230,8 @@ class PhoneEngine {
     this.checkInvitations();
     this.checkGroups();
     this.checkFlashbacks();
+    this.checkHoliday();
+    this.checkEasterEggs();
   }
   _checkTimeEventsForRange(fromDay, fromHour, toDay, toHour){
     // 枚举 (day, hour) 范围内可能被跳过的时间触发事件
@@ -1287,6 +1298,189 @@ class PhoneEngine {
     return list;
   }
 
+  // ===== v0.0.10 收集柜+隐藏彩蛋 =====
+  collectItem(itemId){
+    if(!this.story.collectibles || !this.story.collectibles[itemId]) return false;
+    if(this.state.collected.includes(itemId)) return false;
+    this.state.collected.push(itemId);
+    const item = this.story.collectibles[itemId];
+    this.emit('itemCollected', {item, itemId});
+    this.emit('stateChange', this.state);
+    this.checkAchievements();
+    this.checkEasterEggs();
+    return true;
+  }
+  getCollectedByCategory(cat){
+    return this.state.collected
+      .map(id => this.story.collectibles[id])
+      .filter(c => c && c.cat === cat);
+  }
+  checkEasterEggs(){
+    if(!this.story.easterEggs) return [];
+    const newly = [];
+    for(const [id, egg] of Object.entries(this.story.easterEggs)){
+      if(this.state.easterEggsSeen[id]) continue;
+      try {
+        if(egg.condition(this.state)){
+          this.state.easterEggsSeen[id] = true;
+          newly.push(egg);
+        }
+      } catch(_) {}
+    }
+    if(newly.length > 0){
+      this.emit('easterEggUnlocked', newly);
+    }
+    return newly;
+  }
+  getUnlockedEasterEggs(){
+    return Object.keys(this.state.easterEggsSeen||{})
+      .map(id => this.story.easterEggs?.[id])
+      .filter(Boolean);
+  }
+
+  // ===== v0.0.10 解谜玩法 =====
+  discoverClue(clueId){
+    this.state.discoveredClues[clueId] = true;
+    this.emit('clueDiscovered', {clueId});
+    this.emit('stateChange', this.state);
+  }
+  attemptPuzzle(puzzleId, answer){
+    const puzzle = this.story.puzzles?.[puzzleId];
+    if(!puzzle) return {ok:false, reason:'谜题不存在'};
+    const progress = this.state.puzzleProgress[puzzleId] || {attemptCount:0, solved:false};
+    if(progress.solved) return {ok:false, reason:'已解开', solved:true};
+    progress.attemptCount++;
+    progress.lastAttempt = answer;
+    if(answer === puzzle.answer){
+      progress.solved = true;
+      this.state.puzzleProgress[puzzleId] = progress;
+      // 发放奖励
+      const reward = puzzle.reward || {};
+      if(reward.collectible) this.collectItem(reward.collectible);
+      if(reward.flag) this.state.flags[reward.flag] = true;
+      if(reward.affection){
+        for(const k in reward.affection){
+          if(this.state.affection[k] !== undefined) this.state.affection[k] += reward.affection[k];
+        }
+      }
+      this.emit('puzzleSolved', {puzzleId, puzzle, reward});
+      this.emit('stateChange', this.state);
+      this.checkAchievements();
+      return {ok:true, solved:true, message:puzzle.onSuccess, reward};
+    } else {
+      this.state.puzzleProgress[puzzleId] = progress;
+      this.emit('puzzleFailed', {puzzleId, attempt:answer, attemptCount:progress.attemptCount});
+      this.emit('stateChange', this.state);
+      return {ok:false, solved:false, message:puzzle.onFail, attemptCount:progress.attemptCount};
+    }
+  }
+  isPuzzleSolved(puzzleId){
+    return this.state.puzzleProgress[puzzleId]?.solved === true;
+  }
+  getAllPuzzles(){
+    if(!this.story.puzzles) return [];
+    return Object.values(this.story.puzzles).map(p=>{
+      const progress = this.state.puzzleProgress[p.id] || {};
+      return {
+        ...p,
+        solved: progress.solved === true,
+        attemptCount: progress.attemptCount || 0,
+        clues: p.clues.map(c=>({
+          ...c,
+          discovered: this.state.discoveredClues[c.id] === true
+        }))
+      };
+    });
+  }
+
+  // ===== v0.0.10 季节系统+节日事件 =====
+  getCurrentSeason(){
+    const date = this.getDateLabel();
+    const seasonId = this.story.seasons?.getSeason(date.month) || 'summer';
+    return this.story.seasons?.seasonInfo[seasonId] || {id:seasonId, name:'夏', icon:'☀️', desc:''};
+  }
+  checkHoliday(){
+    if(!this.story.seasons?.holidays) return null;
+    const date = this.getDateLabel();
+    const key = `${date.month}-${date.date}`;
+    const holiday = this.story.seasons.holidays[key];
+    if(!holiday) return null;
+    // 防止同一天重复触发
+    const flagKey = 'holiday_' + holiday.id + '_day' + this.state.day;
+    if(this.state.flags[flagKey]) return null;
+    this.state.flags[flagKey] = true;
+    // 应用效果
+    const eff = holiday.effect || {};
+    if(eff.collectible) this.collectItem(eff.collectible);
+    if(eff.flag) this.state.flags[eff.flag] = true;
+    if(eff.personality){
+      for(const k in eff.personality){
+        if(this.state.personality[k] !== undefined) this.state.personality[k] += eff.personality[k];
+      }
+    }
+    this.emit('holidayTriggered', {holiday, date});
+    this.emit('stateChange', this.state);
+    return holiday;
+  }
+  getUpcomingHolidays(days=7){
+    if(!this.story.seasons?.holidays) return [];
+    const date = this.getDateLabel();
+    const result = [];
+    const start = new Date(2025, date.month-1, date.date);
+    for(let i=1; i<=days; i++){
+      const d = new Date(start);
+      d.setDate(d.getDate() + i);
+      const key = `${d.getMonth()+1}-${d.getDate()}`;
+      const h = this.story.seasons.holidays[key];
+      if(h) result.push({holiday:h, inDays:i, date:{month:d.getMonth()+1, date:d.getDate()}});
+    }
+    return result;
+  }
+
+  // ===== v0.0.10 男主视角+反向剧情 =====
+  isPerspectiveUnlocked(charId){
+    const p = this.story.malePerspectives?.[charId];
+    if(!p) return false;
+    try { return p.unlockCondition(this.state); } catch(_) { return false; }
+  }
+  getAllPerspectives(){
+    if(!this.story.malePerspectives) return [];
+    return Object.values(this.story.malePerspectives).map(p=>{
+      const seen = this.state.perspectivesSeen[p.charId] || {};
+      return {
+        ...p,
+        unlocked: this.isPerspectiveUnlocked(p.charId),
+        scenesSeen: Object.keys(seen).length,
+        totalScenes: p.scenes.length,
+        truthEndingSeen: this.state.truthEndingsSeen[p.charId] === true,
+        scenes: p.scenes.map(s=>({
+          ...s,
+          seen: seen[s.id] === true
+        }))
+      };
+    });
+  }
+  markPerspectiveSceneSeen(charId, sceneId){
+    if(!this.state.perspectivesSeen[charId]) this.state.perspectivesSeen[charId] = {};
+    this.state.perspectivesSeen[charId][sceneId] = true;
+    const p = this.story.malePerspectives?.[charId];
+    if(p){
+      const allSeen = p.scenes.every(s => this.state.perspectivesSeen[charId][s.id]);
+      if(allSeen && !this.state.truthEndingsSeen[charId]){
+        this.state.truthEndingsSeen[charId] = true;
+        this.emit('truthEndingUnlocked', {charId, perspective:p});
+      }
+    }
+    this.emit('stateChange', this.state);
+  }
+  isTruthEndingSeen(charId){
+    return this.state.truthEndingsSeen[charId] === true;
+  }
+  // 是否解锁全部3个男主真相结局（解锁终极真结局）
+  isUltimateTruthEndingUnlocked(){
+    return ['shenyan','luci','jiangyu'].every(c => this.state.truthEndingsSeen[c] === true);
+  }
+
   // ===== 存档 =====
   static SAVE_VERSION = 1;
   save(slot){
@@ -1340,7 +1534,13 @@ class PhoneEngine {
       tarotHistory: data.state.tarotHistory || [],
       lastTarotDay: data.state.lastTarotDay || 0,
       todayFortune: data.state.todayFortune || null,
-      achievements: data.state.achievements || {}
+      achievements: data.state.achievements || {},
+      collected: data.state.collected || [],
+      easterEggsSeen: data.state.easterEggsSeen || {},
+      puzzleProgress: data.state.puzzleProgress || {},
+      discoveredClues: data.state.discoveredClues || {},
+      perspectivesSeen: data.state.perspectivesSeen || {},
+      truthEndingsSeen: data.state.truthEndingsSeen || {}
     };
     this.emit('stateChange', this.state);
     this.emit('timeChange', this.getTime());
