@@ -1,7 +1,6 @@
 /* ===== 霓虹心事 · 手机模拟应用入口 ===== */
 (function(){
   const engine = new PhoneEngine(STORY);
-  if (typeof window !== 'undefined') window.__engine = engine; // debug hook for UI verification
   const $ = id => document.getElementById(id);
   const screens = {
     lock:$('lock-screen'), home:$('home-screen'),
