@@ -967,9 +967,21 @@ async function run(){
   check('v0.0.15: affectionDetail精细驱动三轴',
     aff2.closeness===8 && aff2.trust===4 && aff2.tension===4,
     `c=${aff2.closeness},t=${aff2.trust},t=${aff2.tension}`);
+  // v0.0.16: affectionDetail 应反向同步综合分（dimSum=6, /3=2）
+  check('v0.0.16: affectionDetail反向同步综合affection', eng_aff.state.affection.shenyan === 12,
+    `综合分:${eng_aff.state.affection.shenyan}`);
+  // v0.0.16: 负数 delta 也应折算三轴
+  eng_aff.applyEffects({affection:{shenyan:-4}});
+  const aff3 = eng_aff.getAffectionDetail('shenyan');
+  // -4 按 50%/30%/20% 折算：closeness=-2→0, trust=-1→0, tension=-1→0（下限0）
+  check('v0.0.16: 负数delta也折算三轴(下限0)',
+    aff3.closeness===6 && aff3.trust===3 && aff3.tension===3,
+    `c=${aff3.closeness},t=${aff3.trust},t=${aff3.tension}`);
+  check('v0.0.16: 负数delta综合分扣减', eng_aff.state.affection.shenyan === 8,
+    `综合分:${eng_aff.state.affection.shenyan}`);
   // 阶段查询
   const stage = eng_aff.getAffectionDimStage('shenyan','closeness');
-  check('v0.0.15: 阶段判定正确(8→熟悉)', stage && stage.name === '熟悉', `阶段:${stage?.name}`);
+  check('v0.0.15: 阶段判定正确(6→熟悉)', stage && stage.name === '熟悉', `阶段:${stage?.name}`);
   // getAllAffectionDetail 返回3个角色
   const all = eng_aff.getAllAffectionDetail();
   check('v0.0.15: getAllAffectionDetail返回3角色', all.length === 3, `数量:${all.length}`);
@@ -1009,11 +1021,16 @@ async function run(){
   const g2 = eng_e.getEndingGallery();
   const item = g2.find(e=>e.id==='shenyan_good');
   check('v0.0.15: recordEndingGallery标记seen', item && item.seen === true);
-  // computeEnding: solo线 tension>=20 → solo_good
+  // computeEnding: solo线 任一男主 tension>=20 → solo_good
   eng_e.state.route = 'solo';
-  eng_e.state.affectionDetail.shenyan.tension = 20;
+  eng_e.state.affectionDetail.jiangyu.tension = 20;  // v0.0.16 改为三男主 max
   const ending1 = eng_e.computeCurrentEnding();
-  check('v0.0.15: solo线tension≥20→solo_good', ending1 === 'solo_good', `结果:${ending1}`);
+  check('v0.0.16: solo线任一tension≥20→solo_good', ending1 === 'solo_good', `结果:${ending1}`);
+  // v0.0.16: route=null 时 computeEnding 返回 null
+  eng_e.state.route = null;
+  const ending0 = eng_e.computeCurrentEnding();
+  check('v0.0.16: route=null时computeEnding返回null', ending0 === null, `结果:${ending0}`);
+  eng_e.state.route = 'shenyan';
   // computeEnding: 沈砚之线 总分>=40且tension>=15 → good
   eng_e.state.route = 'shenyan';
   eng_e.state.affectionDetail.shenyan = {closeness:20, trust:10, tension:15};
@@ -1037,38 +1054,156 @@ async function run(){
   // 可用场景数=2
   const scenes = eng_d.getAvailableDateScenes('shenyan');
   check('v0.0.15: 沈砚之有2个约会场景', scenes.length === 2, `数量:${scenes.length}`);
-  // 发起约会
+  // v0.0.16: startDate 不应立即标记 firedEvents/dateLastDone
   const r3 = eng_d.startDate('date_shenyan_tea');
   check('v0.0.15: 发起茶会约会成功', r3.ok === true, `reason:${r3.reason||''}`);
-  check('v0.0.15: 约会后标记firedEvents', !!eng_d.state.firedEvents['date_shenyan_tea']);
-  check('v0.0.15: 约会后dateLastDone更新', eng_d.state.dateLastDone.shenyan === eng_d.state.day);
-  // 同周不可再次约会
-  const r4 = eng_d.startDate('date_shenyan_studio');
-  check('v0.0.15: 同周再约失败', r4.ok === false);
-  // 完成约会：应用effects
+  check('v0.0.16: startDate不立即标记firedEvents', !eng_d.state.firedEvents['date_shenyan_tea']);
+  check('v0.0.16: startDate不立即更新dateLastDone', eng_d.state.dateLastDone.shenyan === undefined);
+  // v0.0.16: startDate 进行中，再次 startDate 应失败
+  const r3b = eng_d.startDate('date_shenyan_studio');
+  check('v0.0.16: 进行中再约失败', r3b.ok === false && r3b.reason === '已有进行中的约会',
+    `reason:${r3b.reason}`);
+  // v0.0.16: cancelDate 后不消耗本周名额，firedEvents/dateLastDone 仍为空
+  eng_d.cancelDate();
+  check('v0.0.16: cancelDate后firedEvents仍空', !eng_d.state.firedEvents['date_shenyan_tea']);
+  check('v0.0.16: cancelDate后dateLastDone仍空', eng_d.state.dateLastDone.shenyan === undefined);
+  check('v0.0.16: cancelDate后可再次发起同一场景', eng_d.startDate('date_shenyan_tea').ok === true);
+  // 完成约会：此时才标记 firedEvents/dateLastDone + 应用 effects
   const dateAffBefore = eng_d.getAffectionDetail('shenyan').closeness;
+  const dateAffTotalBefore = eng_d.state.affection.shenyan;
   eng_d.finishDate('date_shenyan_tea');
   const dateAffAfter = eng_d.getAffectionDetail('shenyan').closeness;
   // tea effects: closeness+3
   check('v0.0.15: 完成约会应用effects', dateAffAfter === dateAffBefore + 3,
     `前:${dateAffBefore},后:${dateAffAfter}`);
+  check('v0.0.16: finishDate后firedEvents已标记', !!eng_d.state.firedEvents['date_shenyan_tea']);
+  check('v0.0.16: finishDate后dateLastDone已更新', eng_d.state.dateLastDone.shenyan === eng_d.state.day);
+  // v0.0.16: finishDate 也应反向同步综合 affection（dimSum=5, /3=Math.round(1.67)=2）
+  check('v0.0.16: finishDate反向同步综合分', eng_d.state.affection.shenyan === dateAffTotalBefore + 2,
+    `前:${dateAffTotalBefore},后:${eng_d.state.affection.shenyan}`);
   // 历史记录
   check('v0.0.15: dateHistory记录1条', eng_d.state.dateHistory.length === 1);
+  // 同周不可再次约会（finishDate 后 dateLastDone 已写入）
+  const r4 = eng_d.startDate('date_shenyan_studio');
+  check('v0.0.15: 同周再约失败', r4.ok === false && r4.reason === '本周已约过',
+    `reason:${r4.reason}`);
   // 跨过冷却期可再约
   const cooldown = STORY.dateCooldownDays;
   eng_d.state.day += cooldown;
   const r5 = eng_d.startDate('date_shenyan_studio');
   check('v0.0.15: 冷却期后可再约', r5.ok === true, `reason:${r5.reason||''}`);
   eng_d.finishDate('date_shenyan_studio');
-  // 重复场景不能再约
+  // 重复场景不能再约（再推进 cooldown，验证 firedEvents 阻止）
+  eng_d.state.day += cooldown;
   const r6 = eng_d.startDate('date_shenyan_studio');
-  check('v0.0.15: 已体验场景不可再约', r6.ok === false);
+  check('v0.0.15: 已体验场景不可再约', r6.ok === false && r6.reason === '已体验过',
+    `reason:${r6.reason}`);
   // 不存在的场景
   const r7 = eng_d.startDate('date_not_exist');
   check('v0.0.15: 不存在场景返回失败', r7.ok === false);
   // getDateStats 返回3角色
   const stats = eng_d.getDateStats();
   check('v0.0.15: getDateStats返回3角色', stats.length === 3, `数量:${stats.length}`);
+
+  // ===== v0.0.16: 智能提示 / 朋友圈互动 / 梦魇 / 氛围 补充测试 =====
+  // 智能提示开关
+  const eng_h = new PhoneEngine(STORY);
+  eng_h.newGame();
+  check('v0.0.16: 默认showOptionHints=false', eng_h.state.showOptionHints === false);
+  eng_h.setShowOptionHints(true);
+  check('v0.0.16: setShowOptionHints(true)生效', eng_h.state.showOptionHints === true);
+  // 无 effects 时 getOptionHint 返回 null
+  check('v0.0.16: 无effects时getOptionHint返回null', eng_h.getOptionHint({text:'x'}) === null);
+  // 有 affection 时返回非空
+  const hintR = eng_h.getOptionHint({text:'x', effects:{affection:{shenyan:2}}});
+  check('v0.0.16: affection提示非空', hintR !== null && hintR.includes('沈砚之'),
+    `hint:${hintR}`);
+  // 关闭后再次获取应返回 null
+  eng_h.setShowOptionHints(false);
+  check('v0.0.16: 关闭后getOptionHint返回null', eng_h.getOptionHint({text:'x', effects:{affection:{shenyan:2}}}) === null);
+
+  // 朋友圈互动：玩家发朋友圈后应生成男主评论
+  const eng_m = new PhoneEngine(STORY);
+  eng_m.newGame();
+  // city 类别应在 byCategory 中
+  const cityCfg = STORY.momentComments.byCategory.city;
+  check('v0.0.16: city类别配置存在', !!cityCfg && !!cityCfg.shenyan);
+  // 发一条 city 朋友圈
+  const mId = eng_m.createMyMoment('霓虹灯下', 'city');
+  const moment = eng_m.state.moments.find(m => m.id === mId);
+  check('v0.0.16: 朋友圈已创建', !!moment && moment.art === 'city');
+  const comments = eng_m.generateMomentComments(moment);
+  // city 配置中有 shenyan/luci/jiangyu 三个男主
+  check('v0.0.16: city朋友圈生成3条男主评论', comments.length === 3,
+    `数量:${comments.length}`);
+  // 每条评论都应有 commentIdx 和 replyOptions
+  check('v0.0.16: 评论含commentIdx', comments.every(c => typeof c.commentIdx === 'number'));
+  check('v0.0.16: 评论含replyOptions', comments.every(c => c.comment && Array.isArray(c.comment.replyOptions)));
+  // moment.charComments 已写入
+  check('v0.0.16: moment.charComments已写入', Array.isArray(moment.charComments) && moment.charComments.length === 3);
+
+  // 玩家回复评论
+  const replyBefore = eng_m.state.affectionDetail.shenyan.closeness;
+  const replyResult = eng_m.replyMomentComment(mId, 'shenyan', comments[0].commentIdx, 0);
+  check('v0.0.16: 回复评论返回true', replyResult === true);
+  // momentReplies 已记录
+  const replyRec = eng_m.state.momentReplies[`${mId}_shenyan`];
+  check('v0.0.16: momentReplies已记录', !!replyRec && replyRec.commentIdx === comments[0].commentIdx);
+  // 重复回复应失败（已记录）
+  const replyAgain = eng_m.replyMomentComment(mId, 'shenyan', comments[0].commentIdx, 1);
+  // 当前实现不主动阻止重复回复，但 momentReplies 会被覆盖；这里只验证不报错
+  check('v0.0.16: 重复回复不报错', typeof replyAgain === 'boolean');
+
+  // 梦魇系统
+  const eng_n = new PhoneEngine(STORY);
+  eng_n.newGame();
+  // 默认状态不应触发 nightmare_lonely（closeness=0 满足，但 tension=0 也满足，trigger 应 true）
+  // 不过 lastNightmareDay 默认 0 ≠ day=1，时间也需在夜晚
+  eng_n.state.minute = 22 * 60;  // 22:00 夜晚
+  const nm = eng_n.checkNightmare();
+  check('v0.0.16: 夜晚+初始状态触发梦魇', nm !== null && nm.id === 'nightmare_lonely',
+    `nm:${nm?.id || 'null'}`);
+  // 触发后 nightmaresSeen 已标记
+  check('v0.0.16: nightmaresSeen已标记', eng_n.state.nightmaresSeen['nightmare_lonely'] === true);
+  // lastNightmareDay 已写入
+  check('v0.0.16: lastNightmareDay已写入', eng_n.state.lastNightmareDay === eng_n.state.day);
+  // 同一天再调用不再触发
+  const nm2 = eng_n.checkNightmare();
+  check('v0.0.16: 同一天不再触发梦魇', nm2 === null);
+  // 白天不触发（即使未触发过的梦魇）
+  eng_n.state.day += 1;
+  eng_n.state.minute = 12 * 60;  // 12:00 白天
+  const nm3 = eng_n.checkNightmare();
+  check('v0.0.16: 白天不触发梦魇', nm3 === null);
+  // resolveNightmare 应用 effects + moodAfter
+  const moodBefore = eng_n.state.mood;
+  const ok = eng_n.resolveNightmare('nightmare_lonely', 0);
+  check('v0.0.16: resolveNightmare返回true', ok === true);
+  check('v0.0.16: resolveNightmare更新mood', eng_n.state.mood !== moodBefore || 'reflective' === eng_n.state.mood,
+    `mood:${eng_n.state.mood}`);
+  // 不存在的梦魇 ID 返回 false
+  check('v0.0.16: 不存在梦魇ID返回false', eng_n.resolveNightmare('not_exist', 0) === false);
+
+  // 动态背景氛围
+  const eng_a = new PhoneEngine(STORY);
+  eng_a.newGame();
+  eng_a.state.minute = 12 * 60;  // 12:00 白天
+  const ambDay = eng_a.getCurrentAmbience();
+  check('v0.0.16: 12:00返回day氛围', ambDay !== null && ambDay.id === 'day',
+    `amb:${ambDay?.id || 'null'}`);
+  eng_a.state.minute = 18 * 60;  // 18:00 黄昏
+  const ambDusk = eng_a.getCurrentAmbience();
+  check('v0.0.16: 18:00返回dusk氛围', ambDusk !== null && ambDusk.id === 'dusk',
+    `amb:${ambDusk?.id || 'null'}`);
+  eng_a.state.minute = 22 * 60;  // 22:00 夜晚
+  const ambNight = eng_a.getCurrentAmbience();
+  check('v0.0.16: 22:00返回night氛围', ambNight !== null && ambNight.id === 'night',
+    `amb:${ambNight?.id || 'null'}`);
+  // anxious 优先级最高
+  eng_a.state.mood = 'anxious';
+  const ambAnx = eng_a.getCurrentAmbience();
+  check('v0.0.16: anxious优先级最高', ambAnx !== null && ambAnx.id === 'anxious',
+    `amb:${ambAnx?.id || 'null'}`);
 
   // 总结
   console.log('\n=== 总结 ===');

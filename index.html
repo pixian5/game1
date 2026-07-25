@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>霓虹心事 · 林夏的手机 · v0.0.15</title>
-<meta name="version" content="v0.0.15">
-<link rel="stylesheet" href="style.css?v=0.0.15">
+<title>霓虹心事 · 林夏的手机 · v0.0.16</title>
+<meta name="version" content="v0.0.16">
+<link rel="stylesheet" href="style.css?v=0.0.16">
 </head>
 <body>
 <div id="phone-frame">
@@ -131,6 +131,14 @@
         <button class="app-icon" data-app="dates">
           <span class="app-emoji">💌</span><span class="app-name">约会</span>
           <span class="app-badge" id="badge-dates" hidden>0</span>
+        </button>
+        <!-- v0.0.16 新玩法 -->
+        <button class="app-icon" data-app="dreams">
+          <span class="app-emoji">🌙</span><span class="app-name">梦魇</span>
+          <span class="app-badge" id="badge-dreams" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="hints">
+          <span class="app-emoji">💡</span><span class="app-name">提示</span>
         </button>
       </div>
       <div class="home-dock">
@@ -581,6 +589,30 @@
       <div class="date-scene-content" id="date-scene-content"></div>
     </section>
 
+    <!-- v0.0.16 梦魇 App -->
+    <section id="dreams-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>梦魇录</h1>
+        <div class="shop-coins" id="dreams-counter">0/0</div>
+      </header>
+      <div class="dreams-content" id="dreams-content"></div>
+    </section>
+
+    <!-- v0.0.16 智能提示设置 App -->
+    <section id="hints-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>智能提示</h1>
+      </header>
+      <div class="hints-content" id="hints-content"></div>
+    </section>
+
+    <!-- v0.0.16 梦魇触发模态 -->
+    <section id="nightmare-screen" class="screen overlay-screen">
+      <div class="nightmare-content" id="nightmare-content"></div>
+    </section>
+
     <!-- 发朋友圈模态框 -->
     <section id="post-moment-screen" class="screen overlay-screen">
       <div class="post-moment-content">
@@ -627,8 +659,8 @@
   </div>
 </div>
 
-<script src="story.js?v=0.0.15"></script>
-<script src="engine.js?v=0.0.15"></script>
-<script src="app.js?v=0.0.15"></script>
+<script src="story.js?v=0.0.16"></script>
+<script src="engine.js?v=0.0.16"></script>
+<script src="app.js?v=0.0.16"></script>
 </body>
 </html>

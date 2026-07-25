@@ -2071,13 +2071,13 @@ STORY.affectionDimStages = {
 
 // ===== v0.0.15 手机主题/壁纸系统 =====
 STORY.themes = {
-  default: { id:'default', name:'霓虹初遇', bg:'#0a0612', accent:'#ff5fa8', wallpaper:'gradient', unlockDesc:'默认主题', unlockCondition: null },
-  starry:  { id:'starry',  name:'星夜', bg:'#0a0a2a', accent:'#7a5cff', wallpaper:'stars', unlockDesc:'收集3张梦境碎片解锁', unlockCondition: s => (s.dreamShards||[]).length >= 3 },
-  sea:     { id:'sea',     name:'海雾', bg:'#0a2a3a', accent:'#4ade80', wallpaper:'waves', unlockDesc:'南方出差剧情解锁', unlockCondition: s => s.flags.shenyan_south === true },
-  sunset:  { id:'sunset',  name:'暮色', bg:'#2a1a0a', accent:'#fbbf24', wallpaper:'sunset', unlockDesc:'天台剧情解锁', unlockCondition: s => !!(s.photos||[]).find(p=>p.id==='rooftop_night') },
-  ink:     { id:'ink',     name:'水墨', bg:'#1a1a1a', accent:'#e5e5e5', wallpaper:'ink', unlockDesc:'体验5种以上心情解锁', unlockCondition: s => (s.moodHistory||[]).length >= 5 },
-  rose:    { id:'rose',    name:'玫瑰', bg:'#2a0a1a', accent:'#ff5fa8', wallpaper:'rose', unlockDesc:'任一男主好感度达12解锁', unlockCondition: s => Object.values(s.affection||{}).some(v=>v>=12) },
-  dark:    { id:'dark',    name:'深夜', bg:'#000000', accent:'#888888', wallpaper:'dark', unlockDesc:'观看任一结局解锁', unlockCondition: s => Object.keys(s.endingSeen||{}).length >= 1 }
+  default: { id:'default', name:'霓虹初遇', bg:'#0a0612', accent:'#ff5fa8', wallpaper:'gradient', wallpaperVar:'linear-gradient(160deg,#1a0a2e 0%,#2a0f4a 40%,#0a0712 100%)', unlockDesc:'默认主题', unlockCondition: null },
+  starry:  { id:'starry',  name:'星夜', bg:'#0a0a2a', accent:'#7a5cff', wallpaper:'stars',  wallpaperVar:'radial-gradient(circle at 30% 20%,#3a2a6a 0%,transparent 40%),radial-gradient(circle at 70% 60%,#5a2a4a 0%,transparent 40%),linear-gradient(160deg,#0a0a2a 0%,#1a1a4a 50%,#050518 100%)', unlockDesc:'收集3张梦境碎片解锁', unlockCondition: s => (s.dreamShards||[]).length >= 3 },
+  sea:     { id:'sea',     name:'海雾', bg:'#0a2a3a', accent:'#4ade80', wallpaper:'waves',  wallpaperVar:'linear-gradient(160deg,#0a2a3a 0%,#1a4a5a 40%,#050f18 100%)', unlockDesc:'南方出差剧情解锁', unlockCondition: s => s.flags.shenyan_south === true },
+  sunset:  { id:'sunset',  name:'暮色', bg:'#2a1a0a', accent:'#fbbf24', wallpaper:'sunset', wallpaperVar:'linear-gradient(160deg,#2a1a0a 0%,#6a3a1a 30%,#fbbf24 70%,#ff5fa8 100%)', unlockDesc:'天台剧情解锁', unlockCondition: s => !!(s.photos||[]).find(p=>p.id==='rooftop_night') },
+  ink:     { id:'ink',     name:'水墨', bg:'#1a1a1a', accent:'#e5e5e5', wallpaper:'ink',    wallpaperVar:'linear-gradient(160deg,#1a1a1a 0%,#3a3a3a 50%,#0a0a0a 100%)', unlockDesc:'体验5种以上心情解锁', unlockCondition: s => (s.moodHistory||[]).length >= 5 },
+  rose:    { id:'rose',    name:'玫瑰', bg:'#2a0a1a', accent:'#ff5fa8', wallpaper:'rose',   wallpaperVar:'linear-gradient(160deg,#2a0a1a 0%,#5a1a3a 40%,#0a0510 100%)', unlockDesc:'任一男主好感度达12解锁', unlockCondition: s => Object.values(s.affection||{}).some(v=>v>=12) },
+  dark:    { id:'dark',    name:'深夜', bg:'#000000', accent:'#888888', wallpaper:'dark',   wallpaperVar:'#000000', unlockDesc:'观看任一结局解锁', unlockCondition: s => Object.keys(s.endingSeen||{}).length >= 1 }
 };
 // 图标主题（与壁纸独立）
 STORY.iconThemes = {
@@ -2112,9 +2112,16 @@ STORY.endingGallery = {
 };
 // 结局判定函数：根据多维 flag 聚合计算实际 endingId
 STORY.computeEnding = function(state, route){
+  if(!route) return null;  // 未进入任何路线
   if(route === 'solo'){
     if(state.flags._solo_hidden) return 'solo_hidden';
-    if(state.affectionDetail && state.affectionDetail.shenyan && state.affectionDetail.shenyan.tension >= 20) return 'solo_good';
+    // solo_good 判定：三男主暧昧度最高者 ≥ 20（曾动心但最终选择独行）
+    const maxTension = Math.max(
+      (state.affectionDetail?.shenyan?.tension)||0,
+      (state.affectionDetail?.luci?.tension)||0,
+      (state.affectionDetail?.jiangyu?.tension)||0
+    );
+    if(maxTension >= 20) return 'solo_good';
     if(state.flags._independent_end) return 'solo_normal';
     return 'solo_bad';
   }
@@ -2177,5 +2184,184 @@ STORY.dateScenes = {
 };
 // 约会冷却：每周1次（每7天）
 STORY.dateCooldownDays = 7;
+
+// ===== v0.0.16 梦魇系统 =====
+// 当任一男主三轴合计过低（<5）且 tension=0 时，夜晚触发梦魇
+// 梦魇影响次日心情：随机扣 1-2 点某项 personality，并标记 flags.nightmare_seen_X
+STORY.nightmares = {
+  nightmare_lonely: {
+    id:'nightmare_lonely',
+    name:'空房间的回音',
+    desc:'梦里你一个人站在空旷的房间，三道门都关着。每扇门后都有一个声音叫你，但你推不开任何一扇。',
+    trigger: s => {
+      // 任一男主 tension=0 且 closeness<3
+      return ['shenyan','luci','jiangyu'].some(cid => {
+        const ad = s.affectionDetail?.[cid];
+        return ad && ad.tension === 0 && ad.closeness < 3;
+      });
+    },
+    effects: { personality: {passive:1, emotional:1}, flags: {nightmare_seen_lonely:1} },
+    moodAfter: 'anxious',
+    dialogue: [
+      {who:'narrator', text:'（夜很深。你做了个梦。）'},
+      {who:'me', text:'……有人吗？'},
+      {who:'narrator', text:'（三道门，三种声音，都听不真切。你醒了，冷汗未干。）'}
+    ],
+    resolve: {
+      prompt:'醒来后你想：',
+      options:[
+        {text:'记录下来，写进日记', effects:{personality:{rational:1}}, moodAfter:'reflective'},
+        {text:'给苏苏发条消息', effects:{personality:{emotional:1}}, moodAfter:'lonely'},
+        {text:'继续睡', effects:{personality:{passive:1}}, moodAfter:'tired'}
+      ]
+    }
+  },
+  nightmare_betrayal: {
+    id:'nightmare_betrayal',
+    name:'熟悉的陌生人',
+    desc:'梦里他对你笑，递来一杯酒。酒杯里映出的却是另一个人的脸。',
+    trigger: s => {
+      // 任一男主 trust < closeness 且 tension >= 10（暧昧却不够信任）
+      return ['shenyan','luci','jiangyu'].some(cid => {
+        const ad = s.affectionDetail?.[cid];
+        return ad && ad.trust < ad.closeness && ad.tension >= 10;
+      });
+    },
+    effects: { personality: {rational:1, emotional:1}, flags: {nightmare_seen_betrayal:1} },
+    moodAfter: 'anxious',
+    dialogue: [
+      {who:'narrator', text:'（梦里他在笑。）'},
+      {who:'him', text:'喝吧。'},
+      {who:'me', text:'……杯子里是谁？'},
+      {who:'narrator', text:'（酒杯映出的不是你的脸。你惊醒。）'}
+    ],
+    resolve: {
+      prompt:'醒来后你决定：',
+      options:[
+        {text:'主动问他过去的事', effects:{personality:{active:1, independent:1}}, moodAfter:'determined'},
+        {text:'先观察一段时间', effects:{personality:{rational:1, passive:1}}, moodAfter:'reflective'},
+        {text:'假装不知道', effects:{personality:{dependent:1}}, moodAfter:'anxious'}
+      ]
+    }
+  }
+};
+
+// ===== v0.0.16 聊天选项智能提示 =====
+// 二周目/观赏模式开启时，显示每个选项的"潜在影响"
+// 提示规则：根据 effects 字段自动生成文案
+STORY.optionHints = {
+  // 通用规则：根据 effects.affection / flags / personality 自动生成
+  generate: function(opt){
+    if(!opt.effects) return null;
+    const parts = [];
+    if(opt.effects.affection){
+      for(const k in opt.effects.affection){
+        const v = opt.effects.affection[k];
+        if(v > 0) parts.push(`${STORY.characters[k]?.name||k} +${v}`);
+        else if(v < 0) parts.push(`${STORY.characters[k]?.name||k} ${v}`);
+      }
+    }
+    if(opt.effects.affectionDetail){
+      for(const k in opt.effects.affectionDetail){
+        const ad = opt.effects.affectionDetail[k];
+        const dims = [];
+        if(ad.closeness) dims.push(`亲密${ad.closeness>0?'+':''}${ad.closeness}`);
+        if(ad.trust) dims.push(`信任${ad.trust>0?'+':''}${ad.trust}`);
+        if(ad.tension) dims.push(`暧昧${ad.tension>0?'+':''}${ad.tension}`);
+        if(dims.length) parts.push(`${STORY.characters[k]?.name||k}(${dims.join('/')})`);
+      }
+    }
+    if(opt.effects.flags){
+      const flagKeys = Object.keys(opt.effects.flags);
+      if(flagKeys.length > 0) parts.push(`解锁 ${flagKeys.length} 个剧情标记`);
+    }
+    if(opt.effects.personality){
+      const ps = [];
+      for(const k in opt.effects.personality){
+        const v = opt.effects.personality[k];
+        if(v > 0) ps.push(k);
+      }
+      if(ps.length) parts.push(`性格+${ps.join('/')}`);
+    }
+    return parts.length > 0 ? parts.join(' · ') : null;
+  }
+};
+
+// ===== v0.0.16 男主朋友圈互动 =====
+// 玩家发朋友圈后，根据内容类别男主会主动评论
+// 玩家可选择回复方式，回复影响三轴好感
+STORY.momentComments = {
+  // 类别 → 男主评论模板
+  byCategory: {
+    city: {  // 城市夜景类
+      shenyan: [
+        {text:'霓虹灯太吵。', effects:{affectionDetail:{shenyan:{tension:1}}}, replyOptions:[
+          {text:'你也来吗？', effects:{affectionDetail:{shenyan:{closeness:1,tension:1}}}},
+          {text:'安静点好。', effects:{affectionDetail:{shenyan:{trust:1}}}},
+          {text:'（不回复）', effects:{}}
+        ]},
+        {text:'光影不错。', effects:{affectionDetail:{shenyan:{trust:1}}}, replyOptions:[
+          {text:'你也喜欢？', effects:{affectionDetail:{shenyan:{closeness:1}}}},
+          {text:'嗯。', effects:{}},
+          {text:'（不回复）', effects:{}}
+        ]}
+      ],
+      luci: [
+        {text:'这角度我熟，是雾港那条巷子？', effects:{affectionDetail:{luci:{closeness:2}}}, replyOptions:[
+          {text:'被你认出来了', effects:{affectionDetail:{luci:{tension:1}}}},
+          {text:'下次带我去拍', effects:{affectionDetail:{luci:{closeness:1,tension:1}}}},
+          {text:'（不回复）', effects:{}}
+        ]}
+      ],
+      jiangyu: [
+        {text:'……灯亮着，没人懂。', effects:{affectionDetail:{jiangyu:{tension:1}}}, replyOptions:[
+          {text:'你在哪？', effects:{affectionDetail:{jiangyu:{closeness:1}}}},
+          {text:'我懂。', effects:{affectionDetail:{jiangyu:{tension:1,trust:1}}}},
+          {text:'（不回复）', effects:{}}
+        ]}
+      ]
+    },
+    rooftop: {  // 天台/夜景
+      shenyan: [
+        {text:'夜风有点凉。', effects:{affectionDetail:{shenyan:{trust:1}}}, replyOptions:[
+          {text:'你也上去过？', effects:{affectionDetail:{shenyan:{closeness:1}}}},
+          {text:'（不回复）', effects:{}}
+        ]}
+      ],
+      jiangyu: [
+        {text:'昨晚那阵风，我也在。', effects:{affectionDetail:{jiangyu:{tension:2}}}, replyOptions:[
+          {text:'我看到你了。', effects:{affectionDetail:{jiangyu:{closeness:1,tension:1}}}},
+          {text:'下次叫我。', effects:{affectionDetail:{jiangyu:{closeness:1}}}},
+          {text:'（不回复）', effects:{}}
+        ]}
+      ]
+    },
+    '': {  // 无配图纯文字
+      susu: [
+        {text:'又emo了？', effects:{}, replyOptions:[
+          {text:'没有啦', effects:{}},
+          {text:'有点', effects:{}}
+        ]}
+      ],
+      luci: [
+        {text:'？', effects:{}, replyOptions:[
+          {text:'没事', effects:{}},
+          {text:'（不回复）', effects:{}}
+        ]}
+      ]
+    }
+  }
+};
+
+// ===== v0.0.16 动态背景氛围 =====
+// 根据时间/心情/天气自动应用氛围层（不改主题，叠加在主题之上）
+STORY.ambiences = {
+  day:     { id:'day',     name:'白昼', wallpaperOverlay:'rgba(255,250,240,0.04)', cond: s => Math.floor(s.minute/60) >= 8 && Math.floor(s.minute/60) < 18 },
+  dusk:    { id:'dusk',    name:'黄昏', wallpaperOverlay:'rgba(251,191,36,0.08)', cond: s => { const h=Math.floor(s.minute/60); return h >= 17 && h < 20; } },
+  night:   { id:'night',   name:'夜晚', wallpaperOverlay:'rgba(0,0,30,0.35)', cond: s => { const h=Math.floor(s.minute/60); return h >= 20 || h < 6; } },
+  dawn:    { id:'dawn',    name:'黎明', wallpaperOverlay:'rgba(255,200,180,0.06)', cond: s => { const h=Math.floor(s.minute/60); return h >= 6 && h < 8; } },
+  rainy:   { id:'rainy',   name:'雨天', wallpaperOverlay:'rgba(80,120,180,0.10)', cond: s => s.flags._weather === 'rainy' },
+  anxious: { id:'anxious', name:'心绪不宁', wallpaperOverlay:'rgba(120,40,80,0.12)', cond: s => s.mood === 'anxious' }
+};
 
 if (typeof window !== 'undefined') window.STORY = STORY;

@@ -14,6 +14,7 @@ class PhoneEngine {
     this._callMissTimers = new Map();  // eventId -> timerId，支持并发通话
     this._pendingCallEventId = null;
     this._pendingEncounterThen = null;
+    this._pendingDate = null;  // v0.0.16: 进行中的约会（不持久化）
   }
   // 统一注册 setTimeout，便于清理
   _setTimeout(fn, delay){
@@ -31,6 +32,7 @@ class PhoneEngine {
     this._callMissTimers.clear();
     this._pendingCallEventId = null;
     this._pendingEncounterThen = null;
+    this._pendingDate = null;
   }
   defaultState(){
     return {
@@ -147,7 +149,14 @@ class PhoneEngine {
       endingGallerySeen: {},     // {endingId: true}
       // v0.0.15 每日约会小剧场
       dateLastDone: {},          // {charId: day}
-      dateHistory: []            // [{charId, sceneId, day, ts}]
+      dateHistory: [],           // [{charId, sceneId, day, ts}]
+      // v0.0.16 梦魇系统
+      nightmaresSeen: {},        // {nightmareId: true}
+      lastNightmareDay: 0,       // 上次梦魇的游戏日
+      // v0.0.16 智能提示开关
+      showOptionHints: false,    // 是否显示选项影响提示
+      // v0.0.16 男主朋友圈互动
+      momentReplies: {}          // {momentId: {charId, commentIdx, replyIdx}}
     };
   }
   on(event, fn){ (this.listeners[event] ||= []).push(fn); return fn; }
@@ -187,27 +196,41 @@ class PhoneEngine {
           const delta = effects.affection[k] || 0;
           this.state.affection[k] += delta;
           affChanged.push(k);
-          // v0.0.15: 旧 effects.affection 按比例自动折算到三轴（50%/30%/20%）
+          // v0.0.15: 旧 effects.affection 按比例自动折算到三轴（50%/30%/20%），正负都折算
           if(this.state.affectionDetail && this.state.affectionDetail[k]){
             const ad = this.state.affectionDetail[k];
-            if(delta > 0){
+            if(delta !== 0){
               ad.closeness += Math.round(delta * 0.5);
               ad.trust += Math.round(delta * 0.3);
               ad.tension += Math.round(delta * 0.2);
+              // 三轴下限为 0，避免负数
+              if(ad.closeness < 0) ad.closeness = 0;
+              if(ad.trust < 0) ad.trust = 0;
+              if(ad.tension < 0) ad.tension = 0;
             }
           }
         }
       }
     }
-    // v0.0.15: 精细驱动三轴
+    // v0.0.15: 精细驱动三轴，并反向同步综合 affection（用于关系阶段/称谓）
     if(effects.affectionDetail){
       for(const k in effects.affectionDetail){
         const delta = effects.affectionDetail[k];
         if(this.state.affectionDetail && this.state.affectionDetail[k]){
           const ad = this.state.affectionDetail[k];
-          if(delta.closeness) ad.closeness += delta.closeness;
-          if(delta.trust) ad.trust += delta.trust;
-          if(delta.tension) ad.tension += delta.tension;
+          let dimSum = 0;
+          if(delta.closeness){ ad.closeness += delta.closeness; dimSum += delta.closeness; }
+          if(delta.trust){ ad.trust += delta.trust; dimSum += delta.trust; }
+          if(delta.tension){ ad.tension += delta.tension; dimSum += delta.tension; }
+          // 三轴下限为 0
+          if(ad.closeness < 0) ad.closeness = 0;
+          if(ad.trust < 0) ad.trust = 0;
+          if(ad.tension < 0) ad.tension = 0;
+          // 反向同步综合分（取三轴合计的 1/3，避免重复加成过度膨胀）
+          if(this.state.affection[k] !== undefined && dimSum !== 0){
+            this.state.affection[k] += Math.round(dimSum / 3);
+            if(this.state.affection[k] < 0) this.state.affection[k] = 0;
+          }
           if(!affChanged.includes(k)) affChanged.push(k);
         }
       }
@@ -287,6 +310,12 @@ class PhoneEngine {
     this.emit('timeChange', this.getTime());
     this._runPostTimeAdvanceChecks();
     this.checkAchievements();
+    // v0.0.16: 跳到夜晚时间时检查梦魇
+    if(hour >= 20 || hour < 6){
+      this.checkNightmare();
+    }
+    // v0.0.16: 时间变化后重新应用氛围
+    this.emit('ambienceChange', this.getCurrentAmbience());
   }
   _runPostTimeAdvanceChecks(){
     this.checkTimeEvents();
@@ -1845,10 +1874,10 @@ class PhoneEngine {
   }
 
   // ===== v0.0.15 每日约会小剧场 =====
-  // 判断男主本周是否可约会（从未约过视为可约）
+  // 判断男主本周是否可约会（从未约过/值为0视为可约）
   canDate(charId){
     const last = this.state.dateLastDone[charId];
-    if(last === undefined || last === null) return true;
+    if(!last) return true;  // 0/undefined/null 都视为未约过
     const cooldown = this.story.dateCooldownDays || 7;
     return (this.state.day - last) >= cooldown;
   }
@@ -1857,7 +1886,8 @@ class PhoneEngine {
     const list = (this.story.dateScenes && this.story.dateScenes[charId]) || [];
     return list.filter(s => !this.state.firedEvents[s.id]);
   }
-  // 发起约会
+  // 发起约会：只做校验和触发模态，不标记 firedEvents/dateLastDone（移到 finishDate）
+  // 但需要占用"本周约会名额"，用 _pendingDate 字段标记"正在进行的约会"
   startDate(sceneId){
     let charId = null, scene = null;
     for(const cid in this.story.dateScenes || {}){
@@ -1867,12 +1897,19 @@ class PhoneEngine {
     if(!scene || !charId) return {ok:false, reason:'场景不存在'};
     if(!this.canDate(charId)) return {ok:false, reason:'本周已约过'};
     if(this.state.firedEvents[sceneId]) return {ok:false, reason:'已体验过'};
-    this.state.firedEvents[sceneId] = true;
-    this.state.dateLastDone[charId] = this.state.day;
+    if(this._pendingDate && this._pendingDate.sceneId){
+      return {ok:false, reason:'已有进行中的约会'};
+    }
+    // 标记进行中（不写入持久化状态，避免存档腐败）
+    this._pendingDate = {charId, sceneId, scene};
     this.emit('dateStarted', {charId, scene});
     return {ok:true, charId, scene};
   }
-  // 完成约会：应用 effects + 解锁照片 + 记录历史
+  // 取消约会：玩家点"先离开"时调用，清理 _pendingDate，不消耗本周名额
+  cancelDate(){
+    this._pendingDate = null;
+  }
+  // 完成约会：应用 effects + 解锁照片 + 记录历史 + 标记 firedEvents/dateLastDone
   finishDate(sceneId){
     let charId = null, scene = null;
     for(const cid in this.story.dateScenes || {}){
@@ -1882,9 +1919,13 @@ class PhoneEngine {
     if(!scene) return false;
     if(scene.effects) this._applyEffects(scene.effects);
     if(scene.unlockPhoto) this.unlockPhoto(scene.unlockPhoto);
+    // 现在才真正标记已完成
+    this.state.firedEvents[sceneId] = true;
+    this.state.dateLastDone[charId] = this.state.day;
     this.state.dateHistory.push({
       charId, sceneId, day:this.state.day, ts:Date.now()
     });
+    this._pendingDate = null;
     this.emit('dateFinished', {charId, scene});
     this.emit('stateChange', this.state);
     return true;
@@ -1892,8 +1933,8 @@ class PhoneEngine {
   getDateStats(){
     const cooldown = this.story.dateCooldownDays || 7;
     return ['shenyan','luci','jiangyu'].map(cid => {
-      const last = this.state.dateLastDone[cid] || 0;
-      const remaining = Math.max(0, cooldown - (this.state.day - last));
+      const last = this.state.dateLastDone[cid];
+      const remaining = last ? Math.max(0, cooldown - (this.state.day - last)) : 0;
       const available = this.getAvailableDateScenes(cid);
       return {
         charId: cid,
@@ -1904,6 +1945,122 @@ class PhoneEngine {
         doneScenes: (this.story.dateScenes?.[cid]||[]).length - available.length
       };
     });
+  }
+
+  // ===== v0.0.16 梦魇系统 =====
+  // 在 advanceToNextDay 后调用：检查是否触发梦魇
+  checkNightmare(){
+    if(this.state.ended) return null;
+    // 同一天不重复触发
+    if(this.state.lastNightmareDay === this.state.day) return null;
+    const nightmares = this.story.nightmares || {};
+    const hour = Math.floor(this.state.minute / 60);
+    // 只在夜晚（20:00-次日6:00）触发
+    if(hour < 20 && hour >= 6) return null;
+    for(const id in nightmares){
+      const nm = nightmares[id];
+      if(this.state.nightmaresSeen[id]) continue;  // 已看过的不重复
+      try {
+        if(nm.trigger(this.state)){
+          this.state.nightmaresSeen[id] = true;
+          this.state.lastNightmareDay = this.state.day;
+          if(nm.effects) this._applyEffects(nm.effects);
+          if(nm.moodAfter) this.state.mood = nm.moodAfter;
+          this.emit('nightmareTriggered', nm);
+          return nm;
+        }
+      } catch(_) {}
+    }
+    return null;
+  }
+  // 解梦：玩家选择后应用 effects + 更新心情
+  resolveNightmare(nightmareId, optIdx){
+    const nm = this.story.nightmares?.[nightmareId];
+    if(!nm || !nm.resolve) return false;
+    const opt = nm.resolve.options[optIdx];
+    if(!opt) return false;
+    if(opt.effects) this._applyEffects(opt.effects);
+    if(opt.moodAfter) this.state.mood = opt.moodAfter;
+    this.emit('nightmareResolved', {nightmareId, optIdx, opt});
+    this.emit('stateChange', this.state);
+    return true;
+  }
+
+  // ===== v0.0.16 智能提示开关 =====
+  setShowOptionHints(on){
+    this.state.showOptionHints = !!on;
+    this.emit('optionHintsToggled', this.state.showOptionHints);
+    this.emit('stateChange', this.state);
+  }
+  // 给 UI 用：获取某个选项的提示文案
+  getOptionHint(opt){
+    if(!this.state.showOptionHints) return null;
+    if(!this.story.optionHints?.generate) return null;
+    try { return this.story.optionHints.generate(opt); } catch(_) { return null; }
+  }
+
+  // ===== v0.0.16 男主朋友圈互动 =====
+  // 玩家发朋友圈后调用：根据配图类别生成男主评论
+  // moment = {id, art, text, ...}
+  generateMomentComments(moment){
+    const cfg = this.story.momentComments?.byCategory || {};
+    const cat = moment.art || '';
+    const charComments = cfg[cat] || cfg[''] || {};
+    const result = [];
+    for(const charId in charComments){
+      const list = charComments[charId];
+      if(!list || list.length === 0) continue;
+      // 随机选一条评论（确定性：用 moment.id 做种子）
+      const seed = (moment.id || '').split('').reduce((a,c)=>a + c.charCodeAt(0), 0);
+      const comment = list[seed % list.length];
+      result.push({charId, comment, commentIdx: seed % list.length});
+      // 同时把评论作为消息加入男主会话
+      const char = this.story.characters[charId];
+      if(char){
+        this.queueMessage({
+          from: charId,
+          text: `[评论了你的朋友圈] ${comment.text}`
+        }, 1.5);
+      }
+      // 应用评论本身的 effects（玩家被动接收）
+      if(comment.effects) this._applyEffects(comment.effects);
+    }
+    // v0.0.16: 直接写入 moment.charComments，便于 UI 读取
+    moment.charComments = result;
+    this.emit('momentCommentsGenerated', {momentId: moment.id, comments: result});
+    return result;
+  }
+  // 玩家回复男主评论：应用 reply effects + 记录
+  replyMomentComment(momentId, charId, commentIdx, replyIdx){
+    const moment = this.state.moments.find(m => m.id === momentId);
+    if(!moment) return false;
+    const cat = moment.art || '';
+    const cfg = this.story.momentComments?.byCategory || {};
+    const charComments = cfg[cat] || cfg[''] || {};
+    const list = charComments[charId] || [];
+    const comment = list[commentIdx];
+    if(!comment) return false;
+    const reply = comment.replyOptions?.[replyIdx];
+    if(!reply) return false;
+    if(reply.effects) this._applyEffects(reply.effects);
+    this.state.momentReplies[`${momentId}_${charId}`] = {commentIdx, replyIdx};
+    this.emit('momentReplySent', {momentId, charId, commentIdx, replyIdx, reply});
+    this.emit('stateChange', this.state);
+    return true;
+  }
+
+  // ===== v0.0.16 动态背景氛围 =====
+  // 根据当前 state 计算应用哪个氛围层
+  getCurrentAmbience(){
+    const list = this.story.ambiences || {};
+    // 优先级：anxious > rainy > night > dusk > dawn > day
+    const priority = ['anxious','rainy','night','dusk','dawn','day'];
+    for(const id of priority){
+      const a = list[id];
+      if(!a) continue;
+      try { if(a.cond(this.state)) return a; } catch(_) {}
+    }
+    return null;
   }
 
   // ===== 存档 =====
@@ -1975,19 +2132,36 @@ class PhoneEngine {
       taskStreakClaimed: data.state.taskStreakClaimed || {},
       watchMode: data.state.watchMode || false,
       watchStrategy: data.state.watchStrategy || 'balanced',
-      // v0.0.15 新字段兜底
-      affectionDetail: data.state.affectionDetail || {
-        shenyan:{closeness:0,trust:0,tension:0},
-        luci:{closeness:0,trust:0,tension:0},
-        jiangyu:{closeness:0,trust:0,tension:0}
-      },
+      // v0.0.15 新字段兜底（按角色级合并，避免旧存档部分角色缺失）
+      affectionDetail: (()=>{
+        const def = {
+          shenyan:{closeness:0,trust:0,tension:0},
+          luci:{closeness:0,trust:0,tension:0},
+          jiangyu:{closeness:0,trust:0,tension:0}
+        };
+        const saved = data.state.affectionDetail || {};
+        const merged = {};
+        for(const cid in def){
+          merged[cid] = {
+            closeness: saved[cid]?.closeness || 0,
+            trust: saved[cid]?.trust || 0,
+            tension: saved[cid]?.tension || 0
+          };
+        }
+        return merged;
+      })(),
       currentTheme: data.state.currentTheme || 'default',
       currentIconTheme: data.state.currentIconTheme || 'default',
       unlockedThemes: data.state.unlockedThemes || {default:true},
       unlockedIconThemes: data.state.unlockedIconThemes || {default:true},
       endingGallerySeen: data.state.endingGallerySeen || {},
       dateLastDone: data.state.dateLastDone || {},
-      dateHistory: data.state.dateHistory || []
+      dateHistory: data.state.dateHistory || [],
+      // v0.0.16 新字段兜底
+      nightmaresSeen: data.state.nightmaresSeen || {},
+      lastNightmareDay: data.state.lastNightmareDay || 0,
+      showOptionHints: data.state.showOptionHints || false,
+      momentReplies: data.state.momentReplies || {}
     };
     // 读档后重新注入 dailyTasks 的 check 函数（JSON 序列化会丢失函数）
     this._rehydrateDailyTaskChecks();

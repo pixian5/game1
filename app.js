@@ -28,7 +28,10 @@
     // v0.0.15 新玩法
     affection:$('affection-app'), themes:$('themes-app'),
     endings:$('endings-app'), dates:$('dates-app'),
-    dateScene:$('date-scene-screen')
+    dateScene:$('date-scene-screen'),
+    // v0.0.16 新玩法
+    dreams:$('dreams-app'), hints:$('hints-app'),
+    nightmare:$('nightmare-screen')
   };
   let currentConvId = null;
   let currentGroupId = null;
@@ -228,6 +231,15 @@
     if(closeDateBtn){ closeDateScene(); return; }
     const finishDateBtn = e.target.closest('[data-action="finish-date"]');
     if(finishDateBtn){ handleFinishDate(finishDateBtn.dataset.finishDate); return; }
+    // v0.0.16 梦魇/提示
+    const nightmareOptBtn = e.target.closest('[data-nightmare-opt]');
+    if(nightmareOptBtn){ handleNightmareOpt(parseInt(nightmareOptBtn.dataset.nightmareOpt)); return; }
+    const closeNightmareBtn = e.target.closest('[data-action="close-nightmare"]');
+    if(closeNightmareBtn){ closeNightmareScreen(); return; }
+    const toggleHintsBtn = e.target.closest('[data-action="toggle-hints"]');
+    if(toggleHintsBtn){ toggleOptionHints(); return; }
+    const momentReplyBtn = e.target.closest('[data-moment-reply]');
+    if(momentReplyBtn){ handleMomentReply(momentReplyBtn.dataset.momentReply); return; }
   });
 
   function openApp(app){
@@ -261,6 +273,9 @@
       case 'themes': renderThemes(); showScreen('themes'); break;
       case 'endings': renderEndings(); showScreen('endings'); break;
       case 'dates': renderDates(); showScreen('dates'); break;
+      // v0.0.16 新玩法
+      case 'dreams': renderDreams(); showScreen('dreams'); break;
+      case 'hints': renderHints(); showScreen('hints'); break;
     }
   }
 
@@ -379,6 +394,25 @@
     // v0.0.15 结局图鉴/约会徽章
     updateEndingsBadge();
     updateDatesBadge();
+    // v0.0.16 梦魇徽章
+    updateDreamsBadge();
+  }
+  function updateDreamsBadge(){
+    const b = $('badge-dreams');
+    if(!b) return;
+    if(!engine.state.nightmaresSeen) return;
+    const seenCount = Object.keys(engine.state.nightmaresSeen).filter(k=>engine.state.nightmaresSeen[k]).length;
+    if(seenCount > 0){
+      b.textContent = seenCount;
+      b.hidden = false;
+    } else {
+      b.hidden = true;
+    }
+    const counter = $('dreams-counter');
+    const total = Object.keys(STORY.nightmares||{}).length;
+    if(counter && total){
+      counter.textContent = `${seenCount}/${total}`;
+    }
   }
   function updateEndingsBadge(){
     const b = $('badge-endings');
@@ -587,7 +621,11 @@
     choice.options.forEach((opt)=>{
       const btn = document.createElement('button');
       btn.className = 'chat-opt';
-      btn.innerHTML = opt.text + (opt.hint?` <span style="color:var(--ink-mute);font-size:11px">(${opt.hint})</span>`:'');
+      // v0.0.16: 当 showOptionHints 开启时，追加智能提示
+      const smartHint = engine.getOptionHint(opt);
+      const hintHtml = opt.hint ? ` <span style="color:var(--ink-mute);font-size:11px">(${escapeHtml(opt.hint)})</span>` : '';
+      const smartHintHtml = smartHint ? ` <span class="chat-opt-smart-hint">💡 ${escapeHtml(smartHint)}</span>` : '';
+      btn.innerHTML = opt.text + hintHtml + smartHintHtml;
       btn.onclick = (e)=>{
         e.stopPropagation();
         if(timeoutTimer){ clearTimeout(timeoutTimer); timeoutTimer = null; }
@@ -1085,16 +1123,41 @@
         const char = STORY.characters[c.from];
         const name = c.from === 'me' ? '我' : (char ? char.name : c.from);
         return `<div class="moment-comment ${c.from==='me'?'me':''} ${c.isReply?'reply':''}">
-          <span class="mc-name">${name}</span>${c.text}
+          <span class="mc-name">${escapeHtml(name)}</span>${escapeHtml(c.text)}
         </div>`;
       }).join('');
       // 评论选项
       let commentOptsHtml = '';
       if(m.commentOptions && !inter.commented){
         commentOptsHtml = `<div class="moment-comment-options" id="opts-${m.id}" hidden>
-          ${m.commentOptions.map((opt,i)=>`<button class="moment-comment-opt" data-moment-comment-opt="${m.id}" data-opt-idx="${i}">${opt.text}</button>`).join('')}
+          ${m.commentOptions.map((opt,i)=>`<button class="moment-comment-opt" data-moment-comment-opt="${m.id}" data-opt-idx="${i}">${escapeHtml(opt.text)}</button>`).join('')}
         </div>`;
       }
+      // v0.0.16: 男主朋友圈互动评论 + 回复选项
+      const charCommentsHtml = (m.charComments || []).map(cc => {
+        const char = STORY.characters[cc.charId];
+        const charName = char ? char.name : cc.charId;
+        const replyKey = `${m.id}_${cc.charId}`;
+        const sentReply = engine.state.momentReplies?.[replyKey];
+        const comment = cc.comment;
+        let replyOptsHtml = '';
+        if(comment.replyOptions && !sentReply){
+          replyOptsHtml = '<div class="moment-reply-options">';
+          comment.replyOptions.forEach((rp, ri) => {
+            replyOptsHtml += `<button class="moment-reply-opt" data-moment-reply="${m.id}|${cc.charId}|${cc.commentIdx}|${ri}">${escapeHtml(rp.text)}</button>`;
+          });
+          replyOptsHtml += '</div>';
+        } else if(sentReply){
+          const sent = comment.replyOptions?.[sentReply.replyIdx];
+          replyOptsHtml = `<div class="moment-reply-options"><span class="moment-reply-opt sent">已回复：${escapeHtml(sent?.text || '')}</span></div>`;
+        }
+        return `<div class="moment-char-comment">
+          <span class="moment-char-comment-name">${escapeHtml(charName)}：</span>
+          <span class="moment-char-comment-text">${escapeHtml(comment.text)}</span>
+          ${replyOptsHtml}
+        </div>`;
+      }).join('');
+      const charCommentsBlock = charCommentsHtml ? `<div class="moment-char-comments">${charCommentsHtml}</div>` : '';
       item.innerHTML = `
         <div class="moment-top">
           <div class="moment-avatar" style="background:${escapeHtml(m.bg)}">${escapeHtml(m.avatar)}</div>
@@ -1111,8 +1174,9 @@
                 ${m.commentOptions && !inter.commented ? `<button class="moment-act-btn" data-moment-comment="${m.id}">💬 评论</button>` : ''}
               </div>
             </div>
-            ${likeNames ? `<div class="moment-likes">♥ ${likeNames}</div>` : ''}
+            ${likeNames ? `<div class="moment-likes">♥ ${escapeHtml(likeNames)}</div>` : ''}
             ${commentsHtml ? `<div class="moment-comments">${commentsHtml}</div>` : ''}
+            ${charCommentsBlock}
             ${commentOptsHtml}
           </div>
         </div>
@@ -1182,7 +1246,10 @@
   function publishMoment(){
     const text = $('post-moment-text').value.trim();
     if(!text){ toast('写点什么吧'); return; }
-    engine.createMyMoment(text, selectedMomentArt || null);
+    const id = engine.createMyMoment(text, selectedMomentArt || null);
+    // v0.0.16: 触发男主朋友圈互动评论
+    const moment = engine.state.moments.find(m => m.id === id);
+    if(moment) engine.generateMomentComments(moment);
     toast('已发表');
     renderMoments();
     showScreen('moments');
@@ -2769,6 +2836,8 @@
     if(!t) return;
     if(t.bg) document.body.style.setProperty('--bg', t.bg);
     if(t.accent) document.body.style.setProperty('--accent', t.accent);
+    // 关键：写入 --wallpaper-1，让锁屏/主屏/背景层真正切换壁纸
+    if(t.wallpaperVar) document.body.style.setProperty('--wallpaper-1', t.wallpaperVar);
   }
 
   // ===== v0.0.15 结局图鉴 App =====
@@ -2891,6 +2960,8 @@
     showScreen('dateScene');
   }
   function closeDateScene(){
+    // 玩家点"先离开"时取消约会，不消耗本周名额
+    if(engine.cancelDate) engine.cancelDate();
     currentDateScene = null;
     showScreen('dates');
   }
@@ -2949,11 +3020,173 @@
     updateDatesBadge();
   });
 
+  // ===== v0.0.16 梦魇 App =====
+  function renderDreams(){
+    const content = $('dreams-content');
+    if(!content) return;
+    const all = Object.values(STORY.nightmares || {});
+    const seen = engine.state.nightmaresSeen || {};
+    let html = `<div class="watch-info" style="margin-bottom:12px;">
+      💡 当三轴好感过低或暧昧却不够信任时，夜晚会触发梦魇。梦魇影响次日心情与性格画像。<br>
+      已触发 ${all.filter(n=>seen[n.id]).length}/${all.length} 个梦魇。
+    </div>`;
+    all.forEach(nm => {
+      const isSeen = !!seen[nm.id];
+      html += `<div class="dream-card ${isSeen?'seen':'unseen'}">
+        <div class="dream-card-status">${isSeen?'已触发':'未触发'}</div>
+        <div class="dream-card-icon">🌙</div>
+        <div class="dream-card-name">${isSeen ? escapeHtml(nm.name) : '???'}</div>
+        <div class="dream-card-desc">${isSeen ? escapeHtml(nm.desc) : '尚未触发此梦魇。'}</div>
+      </div>`;
+    });
+    content.innerHTML = html;
+    updateDreamsBadge();
+  }
+
+  // 梦魇触发模态
+  let currentNightmare = null;
+  function openNightmareScreen(nm){
+    currentNightmare = nm;
+    const content = $('nightmare-content');
+    let html = `<div class="nightmare-title">🌙 ${escapeHtml(nm.name)}</div>`;
+    html += '<div class="nightmare-dialogue">';
+    (nm.dialogue||[]).forEach(d => {
+      const who = d.who === 'me' ? 'me' : (d.who === 'narrator' ? 'narrator' : 'him');
+      html += `<div class="nightmare-dialogue-item ${who}">${escapeHtml(d.text||'')}</div>`;
+    });
+    html += '</div>';
+    if(nm.resolve){
+      html += `<div class="nightmare-prompt">${escapeHtml(nm.resolve.prompt||'你的选择：')}</div>`;
+      html += '<div class="nightmare-options">';
+      nm.resolve.options.forEach((opt, idx) => {
+        html += `<button class="nightmare-opt" data-nightmare-opt="${idx}">${escapeHtml(opt.text)}</button>`;
+      });
+      html += '</div>';
+    } else {
+      html += `<div class="nightmare-options">
+        <button class="nightmare-opt" data-action="close-nightmare">醒来</button>
+      </div>`;
+    }
+    content.innerHTML = html;
+    showScreen('nightmare');
+  }
+  function closeNightmareScreen(){
+    currentNightmare = null;
+    showScreen('home');
+  }
+  function handleNightmareOpt(optIdx){
+    if(!currentNightmare) return;
+    const nm = currentNightmare;
+    engine.resolveNightmare(nm.id, optIdx);
+    toast('梦魇已解');
+    currentNightmare = null;
+    showScreen('home');
+  }
+
+  // ===== v0.0.16 智能提示 App =====
+  function renderHints(){
+    const content = $('hints-content');
+    if(!content) return;
+    const isOn = !!engine.state.showOptionHints;
+    let html = `<div class="hints-status-card">
+      <div class="hints-status-icon">${isOn ? '💡' : '💤'}</div>
+      <div class="hints-status-title">${isOn ? '智能提示 · 开启' : '智能提示 · 关闭'}</div>
+      <div class="hints-status-sub">${isOn ? '选项下方会显示好感度/性格/剧情标记的影响预测' : '开启后，剧情选项会显示潜在影响提示'}</div>
+      <button class="hints-toggle-btn ${isOn?'off':''}" data-action="toggle-hints">${isOn ? '关闭提示' : '开启提示'}</button>
+    </div>`;
+    html += `<div class="hints-example">
+      <div class="hints-example-title">提示样式示例</div>
+      <div class="hints-example-text">沈砚之 +2 · 沈砚之(亲密+1/信任+2) · 解锁 1 个剧情标记 · 性格+active/emotional</div>
+    </div>`;
+    html += `<div class="watch-info" style="margin-top:14px;">
+      💡 适合二周目玩家或想提前规划路线的人。提示文案由选项的 effects 字段自动生成，不会泄露隐藏剧情。<br>
+      · 数字提示：综合好感度增减<br>
+      · 三轴提示：亲密度/信任度/暧昧度<br>
+      · 标记提示：会影响哪些剧情分支<br>
+      · 性格提示：会被记录的性格画像维度
+    </div>`;
+    content.innerHTML = html;
+  }
+  function toggleOptionHints(){
+    engine.setShowOptionHints(!engine.state.showOptionHints);
+    toast(engine.state.showOptionHints ? '智能提示已开启' : '智能提示已关闭');
+    renderHints();
+  }
+
+  // ===== v0.0.16 男主朋友圈互动 UI =====
+  // 在 renderMoments 时为每条朋友圈追加男主评论+回复选项
+  // 这里给 engine.on('momentPosted') 添加触发评论生成的钩子
+  // （renderMoments 内部直接读取 moment.comments 渲染）
+
+  // ===== v0.0.16 引擎事件监听 =====
+  engine.on('nightmareTriggered', (nm)=>{
+    // 顶部通知
+    const n = document.createElement('div');
+    n.className = 'egg-notif';
+    n.textContent = `🌙 梦魇触发：${nm.name}`;
+    document.body.appendChild(n);
+    setTimeout(()=> n.remove(), 4500);
+    // 弹出梦魇模态
+    openNightmareScreen(nm);
+    updateDreamsBadge();
+  });
+  engine.on('nightmareResolved', ()=>{
+    updateDreamsBadge();
+  });
+  engine.on('optionHintsToggled', ()=>{
+    // 重新渲染聊天界面（如果正在显示）
+    if(currentConvId && screens.chat.classList.contains('active')){
+      const conv = engine.state.conversations[currentConvId];
+      if(conv && conv.pendingChoice){
+        showChatChoice(currentConvId, conv.pendingChoice);
+      }
+    }
+  });
+  engine.on('ambienceChange', (amb)=>{
+    applyAmbienceToBody(amb);
+  });
+  engine.on('momentCommentsGenerated', ({momentId, comments})=>{
+    // 把评论写到对应 moment 对象上（供 renderMoments 显示）
+    const moment = engine.state.moments.find(m => m.id === momentId);
+    if(moment){
+      moment.charComments = comments;
+    }
+    if(screens.moments && screens.moments.classList.contains('active')){
+      renderMoments();
+    }
+  });
+  engine.on('momentReplySent', ({momentId, charId})=>{
+    if(screens.moments && screens.moments.classList.contains('active')){
+      renderMoments();
+    }
+    toast('已回复');
+  });
+
+  // 氛围层应用到 body
+  function applyAmbienceToBody(amb){
+    const overlay = amb?.wallpaperOverlay || 'transparent';
+    document.body.style.setProperty('--ambience-overlay', overlay);
+    // 应用到 #phone-frame::before
+    const phoneFrame = document.getElementById('phone-frame');
+    if(phoneFrame){
+      phoneFrame.style.setProperty('--ambience-overlay', overlay);
+    }
+  }
+
+  function handleMomentReply(replyData){
+    // replyData 格式: `${momentId}|${charId}|${commentIdx}|${replyIdx}`
+    const parts = replyData.split('|');
+    if(parts.length !== 4) return;
+    const [momentId, charId, commentIdx, replyIdx] = parts;
+    engine.replyMomentComment(momentId, charId, parseInt(commentIdx), parseInt(replyIdx));
+  }
+
   // ===== 初始化 =====
   function init(){
     updateTimeDisplay();
     engine.newGame();
     applyThemeToBody();
+    applyAmbienceToBody(engine.getCurrentAmbience());
     showScreen('lock');
   }
   init();
