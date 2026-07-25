@@ -945,6 +945,131 @@ async function run(){
   await sleep(2500);
   check('Bug21: 反复横跳后定时器数量未异常增长', timersAfter2 <= 2, `定时器数:${timersAfter2}`);
 
+  // ===== v0.0.15 好感度深度系统测试 =====
+  const eng_aff = new PhoneEngine(STORY);
+  eng_aff.newGame();
+  await sleep(100);
+  // 默认三轴全为0
+  const aff0 = eng_aff.getAffectionDetail('shenyan');
+  check('v0.0.15: 初始三轴全为0', aff0.closeness===0 && aff0.trust===0 && aff0.tension===0,
+    `c=${aff0.closeness},t=${aff0.trust},t=${aff0.tension}`);
+  // 通过 effects.affection 折算三轴
+  eng_aff.applyEffects({affection:{shenyan:10}});
+  const aff1 = eng_aff.getAffectionDetail('shenyan');
+  // 10 按 50%/30%/20% 折算：closeness=5, trust=3, tension=2
+  check('v0.0.15: 旧affection按50/30/20折算三轴',
+    aff1.closeness===5 && aff1.trust===3 && aff1.tension===2,
+    `c=${aff1.closeness},t=${aff1.trust},t=${aff1.tension}`);
+  check('v0.0.15: 综合affection同步增长', eng_aff.state.affection.shenyan === 10);
+  // 通过 effects.affectionDetail 精细驱动
+  eng_aff.applyEffects({affectionDetail:{shenyan:{closeness:3, trust:1, tension:2}}});
+  const aff2 = eng_aff.getAffectionDetail('shenyan');
+  check('v0.0.15: affectionDetail精细驱动三轴',
+    aff2.closeness===8 && aff2.trust===4 && aff2.tension===4,
+    `c=${aff2.closeness},t=${aff2.trust},t=${aff2.tension}`);
+  // 阶段查询
+  const stage = eng_aff.getAffectionDimStage('shenyan','closeness');
+  check('v0.0.15: 阶段判定正确(8→熟悉)', stage && stage.name === '熟悉', `阶段:${stage?.name}`);
+  // getAllAffectionDetail 返回3个角色
+  const all = eng_aff.getAllAffectionDetail();
+  check('v0.0.15: getAllAffectionDetail返回3角色', all.length === 3, `数量:${all.length}`);
+
+  // ===== v0.0.15 主题系统测试 =====
+  const eng_t = new PhoneEngine(STORY);
+  eng_t.newGame();
+  await sleep(100);
+  // 默认主题已解锁
+  check('v0.0.15: 默认主题已解锁', !!eng_t.state.unlockedThemes.default);
+  // 设置未解锁主题应失败
+  const r1 = eng_t.setTheme('starry');
+  check('v0.0.15: 未解锁主题设置失败', r1 === false);
+  // 满足条件后自动解锁
+  eng_t.state.dreamShards = ['d1','d2','d3'];
+  eng_t.checkThemeUnlocks();
+  check('v0.0.15: 满足条件解锁星夜主题', !!eng_t.state.unlockedThemes.starry);
+  // 切换主题
+  const r2 = eng_t.setTheme('starry');
+  check('v0.0.15: 切换已解锁主题成功', r2 === true && eng_t.state.currentTheme === 'starry');
+  // 图标主题解锁
+  eng_t.state.achievements = {a1:true,a2:true,a3:true,a4:true,a5:true};
+  eng_t.checkThemeUnlocks();
+  check('v0.0.15: 5成就解锁线性图标', !!eng_t.state.unlockedIconThemes.outline);
+
+  // ===== v0.0.15 结局图鉴测试 =====
+  const eng_e = new PhoneEngine(STORY);
+  eng_e.newGame();
+  await sleep(100);
+  // 图鉴总数=16
+  const gallery = eng_e.getEndingGallery();
+  check('v0.0.15: 结局图鉴共16项', gallery.length === 16, `数量:${gallery.length}`);
+  // 初始全部未seen
+  check('v0.0.15: 初始结局全部未解锁', gallery.every(e=>!e.seen));
+  // recordEndingGallery 后变seen
+  eng_e.recordEndingGallery('shenyan_good');
+  const g2 = eng_e.getEndingGallery();
+  const item = g2.find(e=>e.id==='shenyan_good');
+  check('v0.0.15: recordEndingGallery标记seen', item && item.seen === true);
+  // computeEnding: solo线 tension>=20 → solo_good
+  eng_e.state.route = 'solo';
+  eng_e.state.affectionDetail.shenyan.tension = 20;
+  const ending1 = eng_e.computeCurrentEnding();
+  check('v0.0.15: solo线tension≥20→solo_good', ending1 === 'solo_good', `结果:${ending1}`);
+  // computeEnding: 沈砚之线 总分>=40且tension>=15 → good
+  eng_e.state.route = 'shenyan';
+  eng_e.state.affectionDetail.shenyan = {closeness:20, trust:10, tension:15};
+  const ending2 = eng_e.computeCurrentEnding();
+  check('v0.0.15: 沈砚之线总分45+tension15→shenyan_good', ending2 === 'shenyan_good', `结果:${ending2}`);
+  // computeEnding: 总分<20 → bad
+  eng_e.state.affectionDetail.shenyan = {closeness:5, trust:2, tension:2};
+  const ending3 = eng_e.computeCurrentEnding();
+  check('v0.0.15: 沈砚之线总分9→shenyan_bad', ending3 === 'shenyan_bad', `结果:${ending3}`);
+  // 隐藏结局优先
+  eng_e.state.flags._shenyan_hidden = true;
+  const ending4 = eng_e.computeCurrentEnding();
+  check('v0.0.15: hidden flag优先→shenyan_hidden', ending4 === 'shenyan_hidden', `结果:${ending4}`);
+
+  // ===== v0.0.15 约会系统测试 =====
+  const eng_d = new PhoneEngine(STORY);
+  eng_d.newGame();
+  await sleep(100);
+  // 初始可约会
+  check('v0.0.15: 初始可约会沈砚之', eng_d.canDate('shenyan') === true);
+  // 可用场景数=2
+  const scenes = eng_d.getAvailableDateScenes('shenyan');
+  check('v0.0.15: 沈砚之有2个约会场景', scenes.length === 2, `数量:${scenes.length}`);
+  // 发起约会
+  const r3 = eng_d.startDate('date_shenyan_tea');
+  check('v0.0.15: 发起茶会约会成功', r3.ok === true, `reason:${r3.reason||''}`);
+  check('v0.0.15: 约会后标记firedEvents', !!eng_d.state.firedEvents['date_shenyan_tea']);
+  check('v0.0.15: 约会后dateLastDone更新', eng_d.state.dateLastDone.shenyan === eng_d.state.day);
+  // 同周不可再次约会
+  const r4 = eng_d.startDate('date_shenyan_studio');
+  check('v0.0.15: 同周再约失败', r4.ok === false);
+  // 完成约会：应用effects
+  const dateAffBefore = eng_d.getAffectionDetail('shenyan').closeness;
+  eng_d.finishDate('date_shenyan_tea');
+  const dateAffAfter = eng_d.getAffectionDetail('shenyan').closeness;
+  // tea effects: closeness+3
+  check('v0.0.15: 完成约会应用effects', dateAffAfter === dateAffBefore + 3,
+    `前:${dateAffBefore},后:${dateAffAfter}`);
+  // 历史记录
+  check('v0.0.15: dateHistory记录1条', eng_d.state.dateHistory.length === 1);
+  // 跨过冷却期可再约
+  const cooldown = STORY.dateCooldownDays;
+  eng_d.state.day += cooldown;
+  const r5 = eng_d.startDate('date_shenyan_studio');
+  check('v0.0.15: 冷却期后可再约', r5.ok === true, `reason:${r5.reason||''}`);
+  eng_d.finishDate('date_shenyan_studio');
+  // 重复场景不能再约
+  const r6 = eng_d.startDate('date_shenyan_studio');
+  check('v0.0.15: 已体验场景不可再约', r6.ok === false);
+  // 不存在的场景
+  const r7 = eng_d.startDate('date_not_exist');
+  check('v0.0.15: 不存在场景返回失败', r7.ok === false);
+  // getDateStats 返回3角色
+  const stats = eng_d.getDateStats();
+  check('v0.0.15: getDateStats返回3角色', stats.length === 3, `数量:${stats.length}`);
+
   // 总结
   console.log('\n=== 总结 ===');
   const passed = results.filter(r=>r.pass).length;

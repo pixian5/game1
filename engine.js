@@ -131,7 +131,23 @@ class PhoneEngine {
       taskStreakClaimed: {},     // 已领取的连胜奖励 {days: true}
       // v0.0.13 观赏模式
       watchMode: false,          // 是否开启观赏模式
-      watchStrategy: 'balanced'  // 观赏策略
+      watchStrategy: 'balanced',  // 观赏策略
+      // v0.0.15 好感度深度系统（三轴）
+      affectionDetail: {         // {charId: {closeness, trust, tension}}
+        shenyan: {closeness:0, trust:0, tension:0},
+        luci:    {closeness:0, trust:0, tension:0},
+        jiangyu: {closeness:0, trust:0, tension:0}
+      },
+      // v0.0.15 主题系统
+      currentTheme: 'default',   // 当前壁纸主题 id
+      currentIconTheme: 'default', // 当前图标主题 id
+      unlockedThemes: {default:true},  // 已解锁主题
+      unlockedIconThemes: {default:true},
+      // v0.0.15 结局图鉴
+      endingGallerySeen: {},     // {endingId: true}
+      // v0.0.15 每日约会小剧场
+      dateLastDone: {},          // {charId: day}
+      dateHistory: []            // [{charId, sceneId, day, ts}]
     };
   }
   on(event, fn){ (this.listeners[event] ||= []).push(fn); return fn; }
@@ -155,6 +171,10 @@ class PhoneEngine {
     // stateChange 时统一检查成就（避免 30+ 处重复调用）
     if(event === 'stateChange' && this.story && this.story.achievements){
       try { this.checkAchievements(); } catch(_) {}
+      // v0.0.15: 主题解锁检查
+      if(this.story.themes || this.story.iconThemes){
+        try { this.checkThemeUnlocks(); } catch(_) {}
+      }
     }
   }
   // 统一应用 effects：避免 30+ 处复制粘贴
@@ -164,8 +184,31 @@ class PhoneEngine {
     if(effects.affection){
       for(const k in effects.affection){
         if(this.state.affection[k] !== undefined){
-          this.state.affection[k] += effects.affection[k];
+          const delta = effects.affection[k] || 0;
+          this.state.affection[k] += delta;
           affChanged.push(k);
+          // v0.0.15: 旧 effects.affection 按比例自动折算到三轴（50%/30%/20%）
+          if(this.state.affectionDetail && this.state.affectionDetail[k]){
+            const ad = this.state.affectionDetail[k];
+            if(delta > 0){
+              ad.closeness += Math.round(delta * 0.5);
+              ad.trust += Math.round(delta * 0.3);
+              ad.tension += Math.round(delta * 0.2);
+            }
+          }
+        }
+      }
+    }
+    // v0.0.15: 精细驱动三轴
+    if(effects.affectionDetail){
+      for(const k in effects.affectionDetail){
+        const delta = effects.affectionDetail[k];
+        if(this.state.affectionDetail && this.state.affectionDetail[k]){
+          const ad = this.state.affectionDetail[k];
+          if(delta.closeness) ad.closeness += delta.closeness;
+          if(delta.trust) ad.trust += delta.trust;
+          if(delta.tension) ad.tension += delta.tension;
+          if(!affChanged.includes(k)) affChanged.push(k);
         }
       }
     }
@@ -1143,6 +1186,8 @@ class PhoneEngine {
   triggerEnding(endingId){
     this.state.ended = true;
     this.state.endingSeen[endingId] = true;
+    // v0.0.15: 同步记录结局图鉴
+    this.recordEndingGallery(endingId);
     // 结局后清理所有定时器，避免幽灵消息
     this._clearAllTimers();
     this.emit('ending', this.story.endings[endingId]);
@@ -1700,6 +1745,167 @@ class PhoneEngine {
     try { return strategy.pick(options); } catch(_) { return 0; }
   }
 
+  // ===== v0.0.15 好感度深度系统 =====
+  getAffectionDetail(charId){
+    const ad = this.state.affectionDetail && this.state.affectionDetail[charId];
+    if(!ad) return {closeness:0, trust:0, tension:0};
+    return {closeness:ad.closeness||0, trust:ad.trust||0, tension:ad.tension||0};
+  }
+  getAffectionDimStage(charId, dimId){
+    const ad = this.getAffectionDetail(charId);
+    const stages = this.story.affectionDimStages?.[dimId] || [];
+    const v = ad[dimId] || 0;
+    for(const s of stages){
+      if(v >= s.min && v <= s.max) return s;
+    }
+    return stages[0] || {name:'-'};
+  }
+  getAllAffectionDetail(){
+    return ['shenyan','luci','jiangyu'].map(cid => ({
+      charId: cid,
+      detail: this.getAffectionDetail(cid),
+      stages: {
+        closeness: this.getAffectionDimStage(cid, 'closeness'),
+        trust: this.getAffectionDimStage(cid, 'trust'),
+        tension: this.getAffectionDimStage(cid, 'tension')
+      }
+    }));
+  }
+
+  // ===== v0.0.15 主题/壁纸系统 =====
+  // 检查并解锁所有满足条件的主题（每次 stateChange 后调用）
+  checkThemeUnlocks(){
+    const themes = this.story.themes || {};
+    const iconThemes = this.story.iconThemes || {};
+    let newlyUnlocked = [];
+    for(const id in themes){
+      const t = themes[id];
+      if(this.state.unlockedThemes[id]) continue;
+      if(!t.unlockCondition){ this.state.unlockedThemes[id] = true; continue; }
+      try {
+        if(t.unlockCondition(this.state)){
+          this.state.unlockedThemes[id] = true;
+          newlyUnlocked.push({type:'theme', id, name:t.name});
+        }
+      } catch(_) {}
+    }
+    for(const id in iconThemes){
+      const t = iconThemes[id];
+      if(this.state.unlockedIconThemes[id]) continue;
+      if(!t.unlockCondition){ this.state.unlockedIconThemes[id] = true; continue; }
+      try {
+        if(t.unlockCondition(this.state)){
+          this.state.unlockedIconThemes[id] = true;
+          newlyUnlocked.push({type:'iconTheme', id, name:t.name});
+        }
+      } catch(_) {}
+    }
+    if(newlyUnlocked.length > 0){
+      this.emit('themesUnlocked', newlyUnlocked);
+    }
+    return newlyUnlocked;
+  }
+  setTheme(themeId){
+    if(!this.state.unlockedThemes[themeId]) return false;
+    this.state.currentTheme = themeId;
+    this.emit('themeChanged', {type:'theme', id:themeId, theme:this.story.themes[themeId]});
+    this.emit('stateChange', this.state);
+    return true;
+  }
+  setIconTheme(iconThemeId){
+    if(!this.state.unlockedIconThemes[iconThemeId]) return false;
+    this.state.currentIconTheme = iconThemeId;
+    this.emit('themeChanged', {type:'iconTheme', id:iconThemeId, theme:this.story.iconThemes[iconThemeId]});
+    this.emit('stateChange', this.state);
+    return true;
+  }
+  getCurrentTheme(){ return this.story.themes?.[this.state.currentTheme] || this.story.themes?.default; }
+  getCurrentIconTheme(){ return this.story.iconThemes?.[this.state.currentIconTheme] || this.story.iconThemes?.default; }
+
+  // ===== v0.0.15 结局图鉴 =====
+  // triggerEnding 时自动记入 endingGallerySeen
+  recordEndingGallery(endingId){
+    if(!endingId) return;
+    this.state.endingGallerySeen[endingId] = true;
+    this.emit('endingGalleryUpdated', endingId);
+  }
+  getEndingGallery(){
+    const all = this.story.endingGallery || {};
+    return Object.values(all).map(e => ({
+      ...e,
+      seen: !!this.state.endingGallerySeen[e.id],
+      charName: e.charId ? (this.story.characters[e.charId]?.name || e.charId) : '独行线'
+    }));
+  }
+  // 调用 STORY.computeEnding 计算实际结局
+  computeCurrentEnding(){
+    if(typeof this.story.computeEnding !== 'function') return null;
+    try { return this.story.computeEnding(this.state, this.state.route); }
+    catch(_) { return null; }
+  }
+
+  // ===== v0.0.15 每日约会小剧场 =====
+  // 判断男主本周是否可约会（从未约过视为可约）
+  canDate(charId){
+    const last = this.state.dateLastDone[charId];
+    if(last === undefined || last === null) return true;
+    const cooldown = this.story.dateCooldownDays || 7;
+    return (this.state.day - last) >= cooldown;
+  }
+  // 获取男主可用的约会场景列表
+  getAvailableDateScenes(charId){
+    const list = (this.story.dateScenes && this.story.dateScenes[charId]) || [];
+    return list.filter(s => !this.state.firedEvents[s.id]);
+  }
+  // 发起约会
+  startDate(sceneId){
+    let charId = null, scene = null;
+    for(const cid in this.story.dateScenes || {}){
+      const found = (this.story.dateScenes[cid]||[]).find(s=>s.id===sceneId);
+      if(found){ charId = cid; scene = found; break; }
+    }
+    if(!scene || !charId) return {ok:false, reason:'场景不存在'};
+    if(!this.canDate(charId)) return {ok:false, reason:'本周已约过'};
+    if(this.state.firedEvents[sceneId]) return {ok:false, reason:'已体验过'};
+    this.state.firedEvents[sceneId] = true;
+    this.state.dateLastDone[charId] = this.state.day;
+    this.emit('dateStarted', {charId, scene});
+    return {ok:true, charId, scene};
+  }
+  // 完成约会：应用 effects + 解锁照片 + 记录历史
+  finishDate(sceneId){
+    let charId = null, scene = null;
+    for(const cid in this.story.dateScenes || {}){
+      const found = (this.story.dateScenes[cid]||[]).find(s=>s.id===sceneId);
+      if(found){ charId = cid; scene = found; break; }
+    }
+    if(!scene) return false;
+    if(scene.effects) this._applyEffects(scene.effects);
+    if(scene.unlockPhoto) this.unlockPhoto(scene.unlockPhoto);
+    this.state.dateHistory.push({
+      charId, sceneId, day:this.state.day, ts:Date.now()
+    });
+    this.emit('dateFinished', {charId, scene});
+    this.emit('stateChange', this.state);
+    return true;
+  }
+  getDateStats(){
+    const cooldown = this.story.dateCooldownDays || 7;
+    return ['shenyan','luci','jiangyu'].map(cid => {
+      const last = this.state.dateLastDone[cid] || 0;
+      const remaining = Math.max(0, cooldown - (this.state.day - last));
+      const available = this.getAvailableDateScenes(cid);
+      return {
+        charId: cid,
+        canDate: this.canDate(cid),
+        remainingDays: remaining,
+        availableScenes: available,
+        totalScenes: (this.story.dateScenes?.[cid]||[]).length,
+        doneScenes: (this.story.dateScenes?.[cid]||[]).length - available.length
+      };
+    });
+  }
+
   // ===== 存档 =====
   static SAVE_VERSION = 1;
   save(slot){
@@ -1768,7 +1974,20 @@ class PhoneEngine {
       taskStreak: data.state.taskStreak || 0,
       taskStreakClaimed: data.state.taskStreakClaimed || {},
       watchMode: data.state.watchMode || false,
-      watchStrategy: data.state.watchStrategy || 'balanced'
+      watchStrategy: data.state.watchStrategy || 'balanced',
+      // v0.0.15 新字段兜底
+      affectionDetail: data.state.affectionDetail || {
+        shenyan:{closeness:0,trust:0,tension:0},
+        luci:{closeness:0,trust:0,tension:0},
+        jiangyu:{closeness:0,trust:0,tension:0}
+      },
+      currentTheme: data.state.currentTheme || 'default',
+      currentIconTheme: data.state.currentIconTheme || 'default',
+      unlockedThemes: data.state.unlockedThemes || {default:true},
+      unlockedIconThemes: data.state.unlockedIconThemes || {default:true},
+      endingGallerySeen: data.state.endingGallerySeen || {},
+      dateLastDone: data.state.dateLastDone || {},
+      dateHistory: data.state.dateHistory || []
     };
     // 读档后重新注入 dailyTasks 的 check 函数（JSON 序列化会丢失函数）
     this._rehydrateDailyTaskChecks();

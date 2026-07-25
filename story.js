@@ -2038,4 +2038,144 @@ STORY.watchMode = {
   autoDoDaily: true
 };
 
+// ===== v0.0.15 好感度深度系统 =====
+// 在 state.affection[charId] 综合分之上，新增三轴：closeness(亲密度) / trust(信任度) / tension(暧昧度)
+// 旧 effects.affection{charId:n} 仍驱动综合分；三轴按 50%/30%/20% 自动折算
+// 新 effects.affectionDetail{charId:{closeness:x,trust:y,tension:z}} 可精细驱动
+STORY.affectionDimensions = {
+  closeness: { id:'closeness', name:'亲密度', icon:'🤝', color:'#4ade80', desc:'一起经历过的事越多越亲密' },
+  trust:     { id:'trust',     name:'信任度', icon:'🔐', color:'#7a5cff', desc:'他愿意对你敞开心扉的程度' },
+  tension:   { id:'tension',   name:'暧昧度', icon:'💫', color:'#ff5fa8', desc:'心跳加速的瞬间累积' }
+};
+// 三轴阶段定义（每轴 4 段，独立于关系阶段系统）
+STORY.affectionDimStages = {
+  closeness: [
+    { min:0,  max:5,  name:'点头之交' },
+    { min:6,  max:15, name:'熟悉' },
+    { min:16, max:30, name:'知己' },
+    { min:31, max:99, name:'生死之交' }
+  ],
+  trust: [
+    { min:0,  max:5,  name:'戒备' },
+    { min:6,  max:15, name:'信赖' },
+    { min:16, max:30, name:'交心' },
+    { min:31, max:99, name:'托付' }
+  ],
+  tension: [
+    { min:0,  max:5,  name:'平淡' },
+    { min:6,  max:15, name:'微澜' },
+    { min:16, max:30, name:'心跳' },
+    { min:31, max:99, name:'炽热' }
+  ]
+};
+
+// ===== v0.0.15 手机主题/壁纸系统 =====
+STORY.themes = {
+  default: { id:'default', name:'霓虹初遇', bg:'#0a0612', accent:'#ff5fa8', wallpaper:'gradient', unlockDesc:'默认主题', unlockCondition: null },
+  starry:  { id:'starry',  name:'星夜', bg:'#0a0a2a', accent:'#7a5cff', wallpaper:'stars', unlockDesc:'收集3张梦境碎片解锁', unlockCondition: s => (s.dreamShards||[]).length >= 3 },
+  sea:     { id:'sea',     name:'海雾', bg:'#0a2a3a', accent:'#4ade80', wallpaper:'waves', unlockDesc:'南方出差剧情解锁', unlockCondition: s => s.flags.shenyan_south === true },
+  sunset:  { id:'sunset',  name:'暮色', bg:'#2a1a0a', accent:'#fbbf24', wallpaper:'sunset', unlockDesc:'天台剧情解锁', unlockCondition: s => !!(s.photos||[]).find(p=>p.id==='rooftop_night') },
+  ink:     { id:'ink',     name:'水墨', bg:'#1a1a1a', accent:'#e5e5e5', wallpaper:'ink', unlockDesc:'体验5种以上心情解锁', unlockCondition: s => (s.moodHistory||[]).length >= 5 },
+  rose:    { id:'rose',    name:'玫瑰', bg:'#2a0a1a', accent:'#ff5fa8', wallpaper:'rose', unlockDesc:'任一男主好感度达12解锁', unlockCondition: s => Object.values(s.affection||{}).some(v=>v>=12) },
+  dark:    { id:'dark',    name:'深夜', bg:'#000000', accent:'#888888', wallpaper:'dark', unlockDesc:'观看任一结局解锁', unlockCondition: s => Object.keys(s.endingSeen||{}).length >= 1 }
+};
+// 图标主题（与壁纸独立）
+STORY.iconThemes = {
+  default: { id:'default', name:'圆角方块', unlockDesc:'默认' },
+  outline: { id:'outline', name:'线性描边', unlockDesc:'解锁5个成就' , unlockCondition: s => Object.keys(s.achievements||{}).length >= 5 },
+  retro:   { id:'retro',   name:'复古拟物', unlockDesc:'连胜7天任务', unlockCondition: s => (s.taskStreak||0) >= 7 }
+};
+
+// ===== v0.0.15 结局图鉴 + 多分支 =====
+// 结局分级：GOOD(HE) / NORMAL(NE) / BAD(BE) / HIDDEN(隐藏)
+STORY.endingGallery = {
+  // 沈砚之线
+  shenyan_good:    { id:'shenyan_good',    charId:'shenyan', tier:'GOOD',    name:'月光画室',     desc:'他终于让你走进他的私人画室。那幅画，画了五年，画的是你。' },
+  shenyan_normal:  { id:'shenyan_normal',  charId:'shenyan', tier:'NORMAL',  name:'画框之外',     desc:'你们成为工作上的最佳搭档。画框外的事，他没说，你也没问。' },
+  shenyan_bad:     { id:'shenyan_bad',     charId:'shenyan', tier:'BAD',     name:'未完成的画',   desc:'画被收起来了。他说，下次再画。但你们都知道没有下次。' },
+  shenyan_hidden:  { id:'shenyan_hidden',  charId:'shenyan', tier:'HIDDEN',  name:'五年前的她',   desc:'(隐藏) 他在画室里发现一张五年前的旧画，画的是另一个女孩。' },
+  // 陆辞线
+  luci_good:       { id:'luci_good',       charId:'luci',    tier:'GOOD',    name:'暗房显影',     desc:'九年又一百八十二天。他终于把那句话对你说了。' },
+  luci_normal:     { id:'luci_normal',     charId:'luci',    tier:'NORMAL',  name:'镜头之外',     desc:'你们成为最默契的拍摄搭档。镜头之外的关系，没人挑明。' },
+  luci_bad:        { id:'luci_bad',        charId:'luci',    tier:'BAD',     name:'未寄出的信',   desc:'那封信他最终没寄出。九年又一百八十二天，成了永远。' },
+  luci_hidden:     { id:'luci_hidden',     charId:'luci',    tier:'HIDDEN',  name:'B面歌词',     desc:'(隐藏) 他在《夏》B面写了一首从未公开的歌，唱的是另一个林夏。' },
+  // 江屿线
+  jiangyu_good:    { id:'jiangyu_good',    charId:'jiangyu', tier:'GOOD',    name:'《夏》首唱',   desc:'这首歌，是为了等你而写的。B面那首，他只唱给你听。' },
+  jiangyu_normal:  { id:'jiangyu_normal',  charId:'jiangyu', tier:'NORMAL',  name:'雾港常客',     desc:'你成了雾港的常客。他的歌单里，总有一首没唱完。' },
+  jiangyu_bad:     { id:'jiangyu_bad',     charId:'jiangyu', tier:'BAD',     name:'空白B面',     desc:'B面永远是空白。他说，那首歌不唱了。' },
+  jiangyu_hidden:  { id:'jiangyu_hidden',  charId:'jiangyu', tier:'HIDDEN',  name:'夏的另一面',   desc:'(隐藏) 《夏》的原版歌词里，"林夏"其实是两个人。' },
+  // solo 线
+  solo_good:       { id:'solo_good',       charId:null,      tier:'GOOD',    name:'霓城独行',     desc:'你谁也没选。霓城的夜，依然为你亮着。' },
+  solo_normal:     { id:'solo_normal',     charId:null,      tier:'NORMAL',  name:'独立策展人',   desc:'你成了霓城最年轻的独立策展人。' },
+  solo_bad:        { id:'solo_bad',        charId:null,      tier:'BAD',     name:'空房间',       desc:'你谁也没选。霓城的灯一盏盏熄了。' },
+  solo_hidden:     { id:'solo_hidden',     charId:null,      tier:'HIDDEN',  name:'第四种可能',   desc:'(隐藏) 你发现自己也是某个故事的主角，不是任何人的配角。' }
+};
+// 结局判定函数：根据多维 flag 聚合计算实际 endingId
+STORY.computeEnding = function(state, route){
+  if(route === 'solo'){
+    if(state.flags._solo_hidden) return 'solo_hidden';
+    if(state.affectionDetail && state.affectionDetail.shenyan && state.affectionDetail.shenyan.tension >= 20) return 'solo_good';
+    if(state.flags._independent_end) return 'solo_normal';
+    return 'solo_bad';
+  }
+  // 路线男主
+  const ad = state.affectionDetail && state.affectionDetail[route] || {closeness:0,trust:0,tension:0};
+  const totalDim = ad.closeness + ad.trust + ad.tension;
+  const hiddenFlag = state.flags['_' + route + '_hidden'];
+  if(hiddenFlag) return route + '_hidden';
+  if(totalDim >= 40 && ad.tension >= 15) return route + '_good';
+  if(totalDim >= 20) return route + '_normal';
+  return route + '_bad';
+};
+
+// ===== v0.0.15 每日约会小剧场 =====
+// 每位男主每周可约会1次（state.day % 7 === 0 时刷新）
+// 约会完成后小事件影响三轴好感 + 解锁照片
+STORY.dateScenes = {
+  shenyan: [
+    { id:'date_shenyan_tea',     name:'午后茶会',   desc:'沈砚之带你去美术馆旁的茶室',     effects:{affectionDetail:{shenyan:{closeness:3,trust:2}}},  unlockPhoto:null,        dialogue:[
+      {who:'him', text:'茶室很安静。我喜欢这里。'},
+      {who:'me',  text:'比美术馆舒服多了。'},
+      {who:'him', text:'……难得听你说这种话。'},
+      {who:'him', text:'下次，可以常来。'}
+    ]},
+    { id:'date_shenyan_studio',  name:'画室参观',   desc:'他破例让你看他未完成的画',       effects:{affectionDetail:{shenyan:{trust:4,tension:2}}},   unlockPhoto:'shenyan_studio', dialogue:[
+      {who:'him', text:'这幅画，画了五年。'},
+      {who:'me',  text:'画的是……'},
+      {who:'him', text:'是你。'},
+      {who:'him', text:'从你来的第一天开始。'}
+    ]}
+  ],
+  luci: [
+    { id:'date_luci_rooftop',    name:'旧楼天台',   desc:'陆辞带你去他高中的天台',         effects:{affectionDetail:{luci:{closeness:3,tension:2}}},   unlockPhoto:null,        dialogue:[
+      {who:'him', text:'这里，我高中每天都来。'},
+      {who:'me',  text:'九年没回来过？'},
+      {who:'him', text:'直到今天，才敢带人来。'},
+      {who:'him', text:'……谢谢你愿意跟我来。'}
+    ]},
+    { id:'date_luci_darkroom',   name:'暗房显影',   desc:'他让你进暗房看显影的过程',       effects:{affectionDetail:{luci:{trust:3,tension:3}}},      unlockPhoto:'luci_school', dialogue:[
+      {who:'him', text:'红光下，照片慢慢显出来。'},
+      {who:'me',  text:'这张……是我？'},
+      {who:'him', text:'你笑起来，比那幅画好看多了。'},
+      {who:'him', text:'原来这话，我九年前就想说。'}
+    ]}
+  ],
+  jiangyu: [
+    { id:'date_jiangyu_sea',     name:'深夜看海',   desc:'江屿骑车带你去看霓城的海',       effects:{affectionDetail:{jiangyu:{closeness:3,tension:3}}}, unlockPhoto:null,        dialogue:[
+      {who:'him', text:'海的声音，比酒吧安静。'},
+      {who:'me',  text:'你怎么知道我想来。'},
+      {who:'him', text:'……不知道。只是觉得，你今天累。'},
+      {who:'him', text:'累的时候，适合看海。'}
+    ]},
+    { id:'date_jiangyu_rehearsal', name:'排练室',   desc:'他让你听他独自排练《夏》',       effects:{affectionDetail:{jiangyu:{trust:3,tension:3}}},   unlockPhoto:null,        dialogue:[
+      {who:'him', text:'这首歌，从来没在人前唱过。'},
+      {who:'me',  text:'为什么今天唱给我？'},
+      {who:'him', text:'……因为是你。'},
+      {who:'him', text:'因为这首歌，本来就是要唱给你听的。'}
+    ]}
+  ]
+};
+// 约会冷却：每周1次（每7天）
+STORY.dateCooldownDays = 7;
+
 if (typeof window !== 'undefined') window.STORY = STORY;
