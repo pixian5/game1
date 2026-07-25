@@ -834,6 +834,117 @@ async function run(){
   engine.setWatchMode(false);
   check('setWatchMode关闭', engine.state.watchMode === false);
 
+  console.log('[W5] v0.0.14 bug 修复回归');
+  // Bug 1: checkStreakRewards 不应自动领取
+  const eng_bug = new PhoneEngine(STORY);
+  eng_bug.newGame();
+  await sleep(200);
+  eng_bug.state.taskStreak = 3;
+  eng_bug.checkStreakRewards();  // 应只通知，不领取
+  check('Bug1: checkStreakRewards不自动标记claimed', !eng_bug.state.taskStreakClaimed[3]);
+  check('Bug1: checkStreakRewards不自动加金币', eng_bug.state.coins === 500, `金币:${eng_bug.state.coins}`);
+  let availableEvt = null;
+  eng_bug.on('streakRewardAvailable', (r)=>{ availableEvt = r; });
+  eng_bug.state.taskStreak = 7;
+  eng_bug.checkStreakRewards();
+  await sleep(50);
+  check('Bug1: streakRewardAvailable事件触发', !!availableEvt && availableEvt.length >= 1);
+  // 手动领取仍可成功
+  const claim7 = eng_bug.claimStreakReward(7);
+  check('Bug1: 手动领取7天奖励', claim7 === true);
+  const claim3 = eng_bug.claimStreakReward(3);
+  check('Bug1: 手动领取3天奖励', claim3 === true);
+
+  // Bug 13: 读档后 dailyTasks 的 check 函数应被重新注入
+  const eng_load = new PhoneEngine(STORY);
+  eng_load.newGame();
+  await sleep(200);
+  // 直接模拟 JSON 序列化后的 dailyTasks（check 函数会丢失）
+  const serializedTasks = JSON.parse(JSON.stringify(eng_load.state.dailyTasks));
+  check('Bug13: JSON序列化后check函数丢失', serializedTasks.every(t => typeof t.check !== 'function'));
+  // 把序列化后的 tasks 灌回 state，然后调用 _rehydrateDailyTaskChecks
+  eng_load.state.dailyTasks = serializedTasks;
+  eng_load._rehydrateDailyTaskChecks();
+  check('Bug13: 读档后check函数已重注入', eng_load.state.dailyTasks.every(t => typeof t.check === 'function'));
+
+  // Bug 14: task_puzzle check 在 attemptPuzzle 后应为 true
+  if(STORY.puzzles && Object.keys(STORY.puzzles).length > 0){
+    const pid = Object.keys(STORY.puzzles)[0];
+    const puzzle = STORY.puzzles[pid];
+    const eng_pz = new PhoneEngine(STORY);
+    eng_pz.newGame();
+    await sleep(200);
+    // 重试多次直到抽到 task_puzzle
+    let taskPuzzle = eng_pz.state.dailyTasks.find(t=>t.id==='task_puzzle');
+    let tries = 0;
+    while(!taskPuzzle && tries < 30){
+      eng_pz.state.day++;
+      eng_pz.generateDailyTasks();
+      taskPuzzle = eng_pz.state.dailyTasks.find(t=>t.id==='task_puzzle');
+      tries++;
+    }
+    if(taskPuzzle){
+      check('Bug14: task_puzzle被抽中', !!taskPuzzle, `重试${tries}次`);
+      check('Bug14: task_puzzle初始未完成', !taskPuzzle.completed);
+      eng_pz.attemptPuzzle(pid, '__wrong_answer_for_test__');
+      const completed = taskPuzzle.check(eng_pz.state);
+      check('Bug14: attemptPuzzle后task_puzzle.check返回true', completed === true);
+    } else {
+      check('Bug14: task_puzzle被抽中', false, `重试${tries}次仍未抽到`);
+    }
+  } else {
+    check('Bug14: puzzle定义存在', false, 'STORY.puzzles 为空');
+  }
+
+  // Bug 11: 观赏模式定时器应在 newGame 时被清理
+  const eng_w = new PhoneEngine(STORY);
+  eng_w.newGame();
+  await sleep(200);
+  // 注册一个长延迟定时器并记录其 id
+  const longTimerId = eng_w._setTimeout(()=>{}, 100000);
+  check('Bug11: 注册定时器后包含该id', eng_w._timers.has(longTimerId));
+  // newGame 应清理所有定时器（包括长延迟的）
+  eng_w.newGame();
+  check('Bug11: newGame后旧定时器已清理', !eng_w._timers.has(longTimerId));
+
+  console.log('[W6] v0.0.14 criticalEvent 调度修复回归');
+  // Bug 22: criticalEvents 应能被 scheduleEvent 调度
+  const eng_c = new PhoneEngine(STORY);
+  eng_c.newGame();
+  await sleep(200);
+  // 直接 scheduleEvent 一个 criticalEvent
+  const critId = 'shenyan_critical_3';
+  eng_c.scheduleEvent(critId);
+  await sleep(100);
+  check('Bug22: criticalEvent被firedEvents标记', eng_c.state.firedEvents[critId] === true);
+  // criticalEvent 是 message_batch，queueMessage 内部用 _setTimeout + typingTime 异步入队，需等足够时间
+  await sleep(3500);
+  const shenyanConv = eng_c.state.conversations.shenyan;
+  check('Bug22: criticalEvent消息已入队', shenyanConv && shenyanConv.messages.length > 0,
+    `消息数:${shenyanConv?.messages.length||0}`);
+
+  // Bug 21: 好感度反复横跳时 criticalEvent 不应重复 schedule
+  const eng_r = new PhoneEngine(STORY);
+  eng_r.newGame();
+  await sleep(200);
+  // 把沈砚之好感度拉到阶段3，触发 criticalEvent
+  eng_r.state.affection.shenyan = 8;
+  eng_r.checkRelationshipStageUp('shenyan');
+  const firedAfter1 = eng_r.state.firedEvents[critId];
+  check('Bug21: 首次阶段提升标记firedEvents', firedAfter1 === true);
+  // 好感度降到阶段2，再升回阶段3
+  eng_r.state.affection.shenyan = 5;
+  eng_r.checkRelationshipStageUp('shenyan');  // 降级
+  eng_r.state.affection.shenyan = 9;
+  const up2 = eng_r.checkRelationshipStageUp('shenyan');  // 再次升级
+  // 第二次升级时 criticalEvent 已被 firedEvents 标记，不应再 schedule
+  // 由于 firedEvents 已标记，checkRelationshipStageUp 内的 if 分支不会再进
+  // 验证：定时器数量不应因第二次升级而增加
+  const timersAfter2 = eng_r._timers.size;
+  // 等 2.5s 让第一次的 criticalEvent 定时器执行完
+  await sleep(2500);
+  check('Bug21: 反复横跳后定时器数量未异常增长', timersAfter2 <= 2, `定时器数:${timersAfter2}`);
+
   // 总结
   console.log('\n=== 总结 ===');
   const passed = results.filter(r=>r.pass).length;

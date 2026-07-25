@@ -278,7 +278,8 @@ class PhoneEngine {
   // ===== 事件调度 =====
   scheduleEvent(eventId){
     if(this.state.ended) return;   // 结局后不再调度
-    const evt = this.story.events[eventId];
+    // 优先查 events，fallback 查 criticalEvents（v0.0.13 临界事件单独定义在 STORY.criticalEvents）
+    const evt = this.story.events[eventId] || this.story.criticalEvents?.[eventId];
     if(!evt) return;
     // 标记已触发（避免重复）
     if(this.state.firedEvents[eventId]) return;
@@ -1373,6 +1374,7 @@ class PhoneEngine {
     if(progress.solved) return {ok:false, reason:'已解开', solved:true};
     progress.attemptCount++;
     progress.lastAttempt = answer;
+    progress.lastAttemptDay = this.state.day;
     if(answer === puzzle.answer){
       progress.solved = true;
       this.state.puzzleProgress[puzzleId] = progress;
@@ -1576,10 +1578,11 @@ class PhoneEngine {
       this.state.relationshipStages[charId] = cur;
       const stage = this.getRelationshipStage(charId);
       this.emit('relationshipStageUp', {charId, stage, prevStage: prev});
-      // 临界事件
+      // 临界事件：立即标记 firedEvents，防止好感度反复横跳时重复 schedule
       if(stage.criticalEvent){
         const evt = this.story.criticalEvents?.[stage.criticalEvent];
         if(evt && !this.state.firedEvents[stage.criticalEvent]){
+          this.state.firedEvents[stage.criticalEvent] = true;  // 立即标记，2s 延迟内反复触发不会再 schedule
           this._setTimeout(()=> this.scheduleEvent(stage.criticalEvent), 2000);
         }
       }
@@ -1651,15 +1654,16 @@ class PhoneEngine {
     return newlyCompleted;
   }
   checkStreakRewards(){
+    // 仅通知"可领取"，不自动发放，由玩家在 UI 上手动 claimStreakReward
     const rewards = this.story.dailyTasks?.streakRewards || [];
+    const claimable = [];
     for(const r of rewards){
       if(this.state.taskStreak >= r.days && !this.state.taskStreakClaimed[r.days]){
-        this.state.taskStreakClaimed[r.days] = true;
-        if(r.reward.coins) this.state.coins += r.reward.coins;
-        if(r.reward.collectible) this.collectItem(r.reward.collectible);
-        if(r.reward.flag) this.state.flags[r.reward.flag] = true;
-        this.emit('streakRewardClaimed', r);
+        claimable.push(r);
       }
+    }
+    if(claimable.length > 0){
+      this.emit('streakRewardAvailable', claimable);
     }
   }
   claimStreakReward(days){
@@ -1766,9 +1770,21 @@ class PhoneEngine {
       watchMode: data.state.watchMode || false,
       watchStrategy: data.state.watchStrategy || 'balanced'
     };
+    // 读档后重新注入 dailyTasks 的 check 函数（JSON 序列化会丢失函数）
+    this._rehydrateDailyTaskChecks();
     this.emit('stateChange', this.state);
     this.emit('timeChange', this.getTime());
     return true;
+  }
+  // 从 STORY.dailyTasks.pool 重新注入 check 函数到当前 dailyTasks
+  _rehydrateDailyTaskChecks(){
+    const pool = (this.story.dailyTasks && this.story.dailyTasks.pool) || [];
+    const poolMap = {};
+    pool.forEach(t => { poolMap[t.id] = t; });
+    this.state.dailyTasks.forEach(t => {
+      const src = poolMap[t.id];
+      if(src) t.check = src.check;
+    });
   }
   deleteSave(slot){
     const saves = this.getAllSaves();

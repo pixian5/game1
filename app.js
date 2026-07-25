@@ -444,14 +444,15 @@
 
   // 选项触发：若玩家正在该会话则立即显示，否则 engine 已挂起 pendingChoice
   engine.on('choicePrompt', ({convId, choice, conv})=>{
-    // v0.0.13 观赏模式：自动选择
+    // v0.0.13 观赏模式：自动选择（用 engine._setTimeout 集中管理，读档/关闭时清理）
     if(engine.state.watchMode && choice.options && choice.options.length > 0 && !choice.isInvitation){
       const autoIdx = engine.pickAutoChoice(choice.options);
       const autoOpt = choice.options[autoIdx];
       const delay = STORY.watchMode?.autoAdvanceDelay || 1500;
-      setTimeout(()=>{
+      engine._setTimeout(()=>{
+        // 二次校验：定时器触发时观赏模式仍开启才执行
+        if(!engine.state.watchMode) return;
         if(conv){ conv.pendingChoice = null; }
-        // 旁白决策也走 sendMessage 接口
         engine.sendMessage(convId, autoOpt.text, engine.normalizeOptionEffects(autoOpt));
         toast(`🎬 观赏自动选：${autoOpt.text}`);
       }, delay);
@@ -2530,6 +2531,18 @@
   });
   engine.on('streakRewardClaimed', (r)=>{
     toast(`连胜奖励：${r.name} +${r.reward?.coins||0}💰`);
+    if(screens.tasks && screens.tasks.classList.contains('active')){
+      renderTasks();
+    }
+  });
+  engine.on('streakRewardAvailable', (rewards)=>{
+    rewards.forEach(r=>{
+      const n = document.createElement('div');
+      n.className = 'egg-notif';
+      n.textContent = `🎁 连胜 ${r.days} 天达成！可领取：${r.name}`;
+      document.body.appendChild(n);
+      setTimeout(()=> n.remove(), 4500);
+    });
     if(screens.tasks && screens.tasks.classList.contains('active')){
       renderTasks();
     }
