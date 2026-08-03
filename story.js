@@ -15,7 +15,7 @@ const STORY = {
   events: {
     // ===== 序章：抵达霓城 =====
     'intro_susu': {
-      type:'message_batch', delay:0,
+      type:'message_batch', delay:0, collectible:'postcard_neon',
       messages:[
         {from:'susu', text:'林夏！！！你到霓城了吗？？', then:'intro_susu_2'}
       ]
@@ -66,7 +66,7 @@ const STORY = {
       ]
     },
     'moment_shenyan_opening_evt': {
-      type:'moment_post', moment:'moment_shenyan_opening',
+      type:'moment_post', moment:'moment_shenyan_opening', collectible:'ticket_gallery',
       then:'luci_reunion_msg'
     },
     // 陆辞的重逢（并发会话）
@@ -103,7 +103,7 @@ const STORY = {
 
     // 雾港酒吧
     'bar_invitation': {
-      type:'advance_time', text:'下班后', minutes:600,
+      type:'advance_time', text:'下班后', minutes:600, collectible:'ticket_bar',
       then:'bar_invitation_msg'
     },
     'bar_invitation_msg': {
@@ -396,7 +396,7 @@ const STORY = {
       messages:[{from:'shenyan', text:'别人我不放心。', then:'route_shenyan_south'}]
     },
     'route_shenyan_south': {
-      type:'advance_day', text:'南方出差', hour:20,
+      type:'advance_day', text:'南方出差', hour:20, collectible:'postcard_sea',
       then:'route_shenyan_dinner'
     },
     'route_shenyan_dinner': {
@@ -472,23 +472,18 @@ const STORY = {
     // 结局判定：累积 flag 决定走向，最终选择作为修正
     '__shenyan_end_judge': {
       type:'ending', delay:0,
-      // ending 在触发时由 engine 根据 flags 计算
-      _compute: s => {
-        const good = (s.flags.shenyan_brave?1:0) + (s.flags.shenyan_resist?1:0) + (s.flags.shenyan_awaken?1:0) + (s.flags.shenyan_choice==='confront'?1:0);
-        const bad  = (s.flags.shenyan_obey?1:0) + (s.flags.shenyan_deny?1:0) + (s.flags.shenyan_choice==='endure'?1:0);
-        return good >= bad ? 'shenyan_good' : 'shenyan_bad';
-      }
+      _compute: s => STORY.computeEnding(s, 'shenyan')
     },
     'ending_shenyan_good': { type:'ending', ending:'shenyan_good' },
     'ending_shenyan_bad': { type:'ending', ending:'shenyan_bad' },
 
     // ===== 陆辞线 =====
     'route_luci_start': {
-      type:'message_batch', delay:1,
+      type:'message_batch', delay:1, collectible:'memento_camera',
       messages:[{from:'luci', text:'明天周末，带你重走一遍我们以前的学校？往返四小时，赶得及吃晚饭。', then:'route_luci_school'}]
     },
     'route_luci_school': {
-      type:'advance_day', text:'母校之行', hour:19,
+      type:'advance_day', text:'母校之行', hour:19, collectible:'postcard_school',
       then:'route_luci_rooftop'
     },
     'route_luci_rooftop': {
@@ -576,18 +571,14 @@ const STORY = {
     },
     '__luci_end_judge': {
       type:'ending', delay:0,
-      _compute: s => {
-        const good = (s.flags.luci_confess?1:0) + (s.flags.luci_stop?1:0) + (s.flags.luci_chase?1:0) + (s.flags.luci_choice==='accept'?1:0);
-        const bad  = (s.flags.luci_avoid?1:0) + (s.flags.luci_letgo?1:0) + (s.flags.luci_giveup?1:0) + (s.flags.luci_choice==='miss'?1:0);
-        return good >= bad ? 'luci_good' : 'luci_bad';
-      }
+      _compute: s => STORY.computeEnding(s, 'luci')
     },
     'ending_luci_good': { type:'ending', ending:'luci_good' },
     'ending_luci_bad': { type:'ending', ending:'luci_bad' },
 
     // ===== 江屿线 =====
     'route_jiangyu_start': {
-      type:'message_batch', delay:1,
+      type:'message_batch', delay:1, collectible:'recording_xia',
       messages:[{from:'jiangyu', text:'今晚来雾港。想跟你说说话。', then:'route_jiangyu_sister'}]
     },
     'route_jiangyu_sister': {
@@ -637,7 +628,7 @@ const STORY = {
       messages:[{from:'jiangyu', text:'整理阿哲的遗物时，发现他没写完的副歌。我想把它写完。可我每次写到副歌，就写不下去。', then:'route_jiangyu_show'}]
     },
     'route_jiangyu_show': {
-      type:'advance_day', text:'一个月后', hour:21,
+      type:'advance_day', text:'一个月后', hour:21, collectible:'evidence_photo',
       then:'route_jiangyu_show_msg'
     },
     'route_jiangyu_show_msg': {
@@ -672,11 +663,7 @@ const STORY = {
     },
     '__jiangyu_end_judge': {
       type:'ending', delay:0,
-      _compute: s => {
-        const good = (s.flags.jiangyu_hold?1:0) + (s.flags.jiangyu_stand?1:0) + (s.flags.jiangyu_choice==='stay'?1:0);
-        const bad  = (s.flags.jiangyu_leave?1:0) + (s.flags.jiangyu_silent?1:0) + (s.flags.jiangyu_choice==='leave'?1:0);
-        return good >= bad ? 'jiangyu_good' : 'jiangyu_bad';
-      }
+      _compute: s => STORY.computeEnding(s, 'jiangyu')
     },
     'ending_jiangyu_good': { type:'ending', ending:'jiangyu_good' },
     'ending_jiangyu_bad': { type:'ending', ending:'jiangyu_bad' },
@@ -735,7 +722,7 @@ const STORY = {
         }}
       ]
     },
-    'ending_true': { type:'ending', ending:'true_ending' }
+    'ending_true': { type:'ending', _compute: s => STORY.computeEnding(s, 'solo') }
   },
 
   // ===== 朋友圈动态 =====
@@ -886,16 +873,36 @@ const STORY = {
       text:'他终于明白，把你留在画框里，便再也看不见你眼里的光。\n美术馆闭馆那天，他把那幅以你为模特的画送进了库房。\n"林夏，下次开展览，你来定主题。"\n你笑着点头。\n——这一次，你们站在同一侧。'},
     shenyan_bad:{title:'镀金的笼', tag:'沈砚之 · BAD END',
       text:'画很美，美到让人忘了呼吸。\n你才发现，自己也只是他收藏的一件作品。\n"别动，你现在的样子，刚刚好。"\n玻璃外是霓城的夜，玻璃内是你的倒影。\n你笑得越完美，他越满意。'},
+    shenyan_normal:{title:'画框之外', tag:'沈砚之 · NORMAL END',
+      text:'你们把展览做成了彼此都能呼吸的样子。\n工作结束后，他依旧会把咖啡放在你桌上。\n画框之外的事，他没说，你也没有逼问。'},
+    shenyan_hidden:{title:'五年前的她', tag:'沈砚之 · HIDDEN END',
+      text:'旧画室最深处藏着一张五年前的习作。\n他没有再把过去投射到你身上，只是把那张画交给你。\n你们终于在真相里看见了彼此。'},
     luci_good:{title:'九又二分之一', tag:'陆辞 · GOOD END',
       text:'他在你相册里翻到了那张十年前的合影。\n"我数过，从高一到今天，是九年又一百八十二天。"\n"那还差半年呢？"\n"差半年，凑个十年整，好不好？"\n霓城的烟火刚好升起来。'},
     luci_bad:{title:'未送出的底片', tag:'陆辞 · BAD END',
       text:'他走的那天，把一卷没冲洗的胶卷留在你家门口。\n你后来洗出来，每张都是你。\n最后一张背面写着：\n"我练了九年的告白，最终输给了一句再见。"\n你拨他电话，那头已停机。'},
+    luci_normal:{title:'镜头之外', tag:'陆辞 · NORMAL END',
+      text:'你们成了最默契的拍摄搭档。\n每次快门落下，他都会先确认你有没有笑。\n镜头之外的关系，谁都没有急着命名。'},
+    luci_hidden:{title:'B面歌词', tag:'陆辞 · HIDDEN END',
+      text:'旧储物柜里有一张被折过很多次的歌词。\n他承认那些年写下的不是告别，而是没敢寄出的求救。\n你把它放回他掌心，让他自己唱完。'},
     jiangyu_good:{title:'雾散之后', tag:'江屿 · GOOD END',
       text:'他重新拿起了吉他。\n不是为观众，是为坐在吧台最角落的你。\n"那首歌，我终于写完了最后一句。"\n你问是什么。\n他凑到你耳边："她回来了。"\n窗外，霓城的雾第一次散得那么干净。'},
     jiangyu_bad:{title:'最后一首歌', tag:'江屿 · BAD END',
       text:'酒吧歇业那天，他在台上唱了最后一首歌。\n歌词里的人，你听了很久才发现不是你。\n"江屿——"\n"林夏，对不起。你来得太晚了。"\n霓城的雨下了一整夜。'},
+    jiangyu_normal:{title:'雾港常客', tag:'江屿 · NORMAL END',
+      text:'你成了雾港最熟悉的客人。\n他偶尔唱起那段副歌，又在最后一个音前停住。\n你们都知道，有些伤口不该被催着愈合。'},
+    jiangyu_hidden:{title:'夏的另一面', tag:'江屿 · HIDDEN END',
+      text:'原版歌词里有两个同名的人。\n他终于肯说起妹妹，也肯承认此刻坐在他身边的是你。\n《夏》的 B 面被填满，雾港第一次亮到天明。'},
     true_ending:{title:'霓城无事', tag:'TRUE END',
-      text:'一年后，你办了自己的第一个独立策展。\n主题叫《霓城无事》。\n展厅里没有他们的画像，只有你拍下的这座城市的每一束光。\n开幕那天，三个人都没来。\n你举着酒杯，对着窗外轻轻一笑。\n——有些人路过，是为了让你学会一个人。'}
+      text:'一年后，你办了自己的第一个独立策展。\n主题叫《霓城无事》。\n展厅里没有他们的画像，只有你拍下的这座城市的每一束光。\n开幕那天，三个人都没来。\n你举着酒杯，对着窗外轻轻一笑。\n——有些人路过，是为了让你学会一个人。'},
+    solo_good:{title:'霓城独行', tag:'独行线 · GOOD END',
+      text:'你感谢每一份善意，却没有把自己交给任何人的期待。\n展览开幕时，霓城的灯一盏盏亮起。\n这一次，你走向的是自己选的方向。'},
+    solo_normal:{title:'独立策展人', tag:'独行线 · NORMAL END',
+      text:'你收下了帮助，也守住了距离。\n作品按时落地，名字第一次只属于你自己。\n未来还很长，没有必要急着回答所有问题。'},
+    solo_bad:{title:'空房间', tag:'独行线 · BAD END',
+      text:'你把所有人都隔在门外，也忘了给自己留一扇窗。\n展厅空下来后，霓城的夜显得格外安静。\n你知道独处和孤立从来不是一回事。'},
+    solo_hidden:{title:'第四种可能', tag:'独行线 · HIDDEN END',
+      text:'你回看一路收集的线索，忽然明白自己从不是任何人的支线。\n故事在你手里翻到新的一页。\n霓城仍旧喧闹，而你终于是自己的主角。'}
   }
 };
 
@@ -1457,15 +1464,20 @@ STORY.moods = {
   calm:      { id:'calm',      icon:'😌', label:'平静',     hint:'像深夜的霓城，安静地亮着', tone:'neutral' },
   tangled:   { id:'tangled',   icon:'😖', label:'纠结',     hint:'两个方向都想要，又都不敢要', tone:'tense' },
   low:       { id:'low',       icon:'😔', label:'低落',     hint:'今天的云比平时沉一点', tone:'sad' },
-  brave:     { id:'brave',     icon:'😤', label:'决意',     hint:'有些事不能再拖了', tone:'strong' }
+  brave:     { id:'brave',     icon:'😤', label:'决意',     hint:'有些事不能再拖了', tone:'strong' },
+  anxious:   { id:'anxious',   icon:'😟', label:'不安',     hint:'夜色没有答案，心跳却一直没有停', tone:'tense' },
+  reflective:{ id:'reflective',icon:'🫧', label:'沉思',     hint:'把梦写下来，才看清自己在害怕什么', tone:'neutral' },
+  lonely:    { id:'lonely',    icon:'🌙', label:'孤单',     hint:'房间很安静，仍然可以向可信的人靠近', tone:'sad' },
+  tired:     { id:'tired',     icon:'😪', label:'疲惫',     hint:'允许自己先休息，明天再做选择', tone:'neutral' },
+  determined:{ id:'determined',icon:'🧭', label:'坚定',     hint:'答案还没出现，但你已经准备好面对它', tone:'strong' }
 };
 // 不同心情对男主消息语气的影响（仅作为对话分支提示）
 STORY.moodEffects = {
   // 当玩家处于某心情时，发送特定回复会触发隐藏加成
-  brave:   { flag:'mood_brave',   bonusAffection:0.5 },
+  brave:   { flag:'mood_brave' },
   tangled: { flag:'mood_tangled', bonusPersonality:'emotional' },
   low:     { flag:'mood_low',     bonusPersonality:'dependent' },
-  happy:   { flag:'mood_happy',   bonusAffection:0.3 },
+  happy:   { flag:'mood_happy' },
   calm:    { flag:'mood_calm',    bonusPersonality:'rational' }
 };
 
@@ -1496,7 +1508,7 @@ STORY.tarot = {
 STORY.achievements = {
   // 对话类
   first_reply:   { id:'first_reply',   name:'初次回应',     icon:'💬', desc:'第一次回复男主消息', condition: s => Object.values(s.conversations).some(c=>c.messages.some(m=>m.from==='me')) },
-  perfect_listen:{ id:'perfect_listen',name:'完美倾听者',   icon:'👂', desc:'听完所有电话通话', condition: s => s.callLog.filter(c=>c.status==='answered').length >= 3 },
+  perfect_listen:{ id:'perfect_listen',name:'完美倾听者',   icon:'👂', desc:'听完3次电话通话', condition: s => (s.callLog||[]).filter(c=>c.type==='incoming').length >= 3 },
   no_reply:      { id:'no_reply',      name:'已读不回',     icon:'😶', desc:'让一个男主等待回复超过30秒', condition: s => s.flags.followup_triggered === true },
   // 社交类
   moment_star:   { id:'moment_star',   name:'动态之星',     icon:'🌟', desc:'发动态并收到角色互动', condition: s => s.moments.filter(m=>m.author==='me' && (m.likes||[]).length >= 1).length >= 1 },
@@ -1509,7 +1521,11 @@ STORY.achievements = {
   explorer:      { id:'explorer',      name:'霓城漫游人',   icon:'🗺️', desc:'前往过所有地点', condition: s => s.flags.visited_all_locations === true },
   memory_keeper: { id:'memory_keeper', name:'记忆收藏家',   icon:'🖼️', desc:'解锁3张以上相册照片', condition: s => s.photos.length >= 3 },
   dream_walker:  { id:'dream_walker',  name:'梦境行者',     icon:'🌙', desc:'收集3个以上梦境碎片', condition: s => s.dreamShards.length >= 3 },
-  tarot_believer:{ id:'tarot_believer',name:'占卜信徒',     icon:'🔮', desc:'连续3天抽塔罗', condition: s => (s.tarotHistory||[]).length >= 3 },
+  tarot_believer:{ id:'tarot_believer',name:'占卜信徒',     icon:'🔮', desc:'连续3天抽塔罗', condition: s => {
+    const days = new Set((s.tarotHistory||[]).map(t=>t.day).filter(Number.isFinite));
+    const end = Math.max(...days, -Infinity);
+    return Number.isFinite(end) && [end, end-1, end-2].every(day=>days.has(day));
+  }},
   gift_giver:    { id:'gift_giver',    name:'心意传递',     icon:'🎁', desc:'送出第一份礼物', condition: s => (s.gifts||[]).length >= 1 },
   mood_explorer: { id:'mood_explorer', name:'情绪光谱',     icon:'🎭', desc:'体验过4种以上不同心情', condition: s => {
     const set = new Set((s.moodHistory||[]).map(m=>m.mood));
@@ -1981,15 +1997,15 @@ STORY.criticalEvents = {
 STORY.dailyTasks = {
   // 任务模板池：每日随机抽 3 个
   pool: [
-    { id:'task_reply',    name:'今日回复',     desc:'回复任意一位男主的消息',     check: s => Object.values(s.conversations||{}).some(c=>c.messages.some(m=>m.from==='me')), reward:{coins:30} },
-    { id:'task_tarot',    name:'今日占卜',     desc:'抽一次塔罗',                 check: s => s.lastTarotDay === s.day, reward:{coins:20} },
-    { id:'task_gift',     name:'今日送礼',     desc:'给任意一位男主送一份礼物',   check: s => (s.gifts||[]).some(g=>g.day === s.day), reward:{coins:50} },
-    { id:'task_mood',     name:'今日心情',     desc:'切换一次心情',               check: s => (s.moodHistory||[]).some(m=>m.day === s.day), reward:{coins:15} },
-    { id:'task_diary',    name:'今日独白',     desc:'写一段内心独白',             check: s => (s.diary||[]).some(d=>d.day === s.day), reward:{coins:25} },
-    { id:'task_moment',   name:'今日动态',     desc:'发一条朋友圈',               check: s => (s.moments||[]).some(m=>m.author==='me'), reward:{coins:35} },
-    { id:'task_explore',  name:'今日出行',     desc:'前往一个新地点',             check: s => s.flags._visited_set && Object.keys(s.flags._visited_set).length > 0, reward:{coins:40} },
-    { id:'task_call',     name:'今日通话',     desc:'接听或拨出一次电话',         check: s => (s.callLog||[]).some(c=>c.day === s.day), reward:{coins:30} },
-    { id:'task_puzzle',   name:'今日解谜',     desc:'尝试解开一个谜题',           check: s => Object.values(s.puzzleProgress||{}).some(p=>p.lastAttemptDay === s.day), reward:{coins:45} }
+    { id:'task_reply',    name:'今日回复',     desc:'回复任意一位男主的消息',     check: s => Object.values(s.conversations||{}).some(c=>c.messages.some(m=>m.from==='me' && m.day===s.lastTaskDay)), reward:{coins:30} },
+    { id:'task_tarot',    name:'今日占卜',     desc:'抽一次塔罗',                 check: s => s.lastTarotDay === s.lastTaskDay, reward:{coins:20} },
+    { id:'task_gift',     name:'今日送礼',     desc:'给任意一位男主送一份礼物',   check: s => (s.gifts||[]).some(g=>g.day === s.lastTaskDay), reward:{coins:50} },
+    { id:'task_mood',     name:'今日心情',     desc:'切换一次心情',               check: s => (s.moodHistory||[]).some(m=>m.day === s.lastTaskDay), reward:{coins:15} },
+    { id:'task_diary',    name:'今日独白',     desc:'写一段内心独白',             check: s => (s.diary||[]).some(d=>d.day === s.lastTaskDay), reward:{coins:25} },
+    { id:'task_moment',   name:'今日动态',     desc:'发一条朋友圈',               check: s => (s.moments||[]).some(m=>m.author==='me' && m.day===s.lastTaskDay), reward:{coins:35} },
+    { id:'task_explore',  name:'今日出行',     desc:'前往一个新地点',             check: s => (s.locationVisits||[]).some(v=>v.day===s.lastTaskDay), reward:{coins:40} },
+    { id:'task_call',     name:'今日通话',     desc:'接听或拨出一次电话',         check: s => (s.callLog||[]).some(c=>c.day === s.lastTaskDay), reward:{coins:30} },
+    { id:'task_puzzle',   name:'今日解谜',     desc:'尝试解开一个谜题',           check: s => Object.values(s.puzzleProgress||{}).some(p=>p.lastAttemptDay === s.lastTaskDay), reward:{coins:45} }
   ],
   // 连胜奖励：连续 N 天完成所有任务
   streakRewards: [
@@ -2108,31 +2124,32 @@ STORY.endingGallery = {
   solo_good:       { id:'solo_good',       charId:null,      tier:'GOOD',    name:'霓城独行',     desc:'你谁也没选。霓城的夜，依然为你亮着。' },
   solo_normal:     { id:'solo_normal',     charId:null,      tier:'NORMAL',  name:'独立策展人',   desc:'你成了霓城最年轻的独立策展人。' },
   solo_bad:        { id:'solo_bad',        charId:null,      tier:'BAD',     name:'空房间',       desc:'你谁也没选。霓城的灯一盏盏熄了。' },
-  solo_hidden:     { id:'solo_hidden',     charId:null,      tier:'HIDDEN',  name:'第四种可能',   desc:'(隐藏) 你发现自己也是某个故事的主角，不是任何人的配角。' }
+  solo_hidden:     { id:'solo_hidden',     charId:null,      tier:'HIDDEN',  name:'第四种可能',   desc:'(隐藏) 你发现自己也是某个故事的主角，不是任何人的配角。' },
+  true_ending:     { id:'true_ending',     charId:null,      tier:'HIDDEN',  name:'霓城无事',     desc:'(隐藏) 你完成独立策展，也完整地成为了自己。' }
 };
 // 结局判定函数：根据多维 flag 聚合计算实际 endingId
 STORY.computeEnding = function(state, route){
   if(!route) return null;  // 未进入任何路线
   if(route === 'solo'){
-    if(state.flags._solo_hidden) return 'solo_hidden';
-    // solo_good 判定：三男主暧昧度最高者 ≥ 20（曾动心但最终选择独行）
-    const maxTension = Math.max(
-      (state.affectionDetail?.shenyan?.tension)||0,
-      (state.affectionDetail?.luci?.tension)||0,
-      (state.affectionDetail?.jiangyu?.tension)||0
-    );
-    if(maxTension >= 20) return 'solo_good';
-    if(state.flags._independent_end) return 'solo_normal';
+    if(STORY.trueEndingUnlockCondition?.(state)) return 'true_ending';
+    if(state.flags._solo_hidden || (state.collected||[]).length >= 10) return 'solo_hidden';
+    if(state.flags.solo_independent) return 'solo_good';
+    if(state.flags.solo_accept) return 'solo_normal';
     return 'solo_bad';
   }
-  // 路线男主
-  const ad = state.affectionDetail && state.affectionDetail[route] || {closeness:0,trust:0,tension:0};
-  const totalDim = ad.closeness + ad.trust + ad.tension;
-  const hiddenFlag = state.flags['_' + route + '_hidden'];
-  if(hiddenFlag) return route + '_hidden';
-  if(totalDim >= 40 && ad.tension >= 15) return route + '_good';
-  if(totalDim >= 20) return route + '_normal';
-  return route + '_bad';
+  const flags = state.flags || {};
+  const endingChoice = {shenyan:['shenyan_choice','confront','endure'], luci:['luci_choice','accept','miss'], jiangyu:['jiangyu_choice','stay','leave']}[route];
+  if(!endingChoice) return null;
+  const [choiceKey, goodChoice, badChoice] = endingChoice;
+  const hiddenRequired = {shenyan:'memento_pen',luci:'evidence_letter',jiangyu:'evidence_lyrics'}[route];
+  if(flags['_' + route + '_hidden'] || (flags[choiceKey] === goodChoice && (state.collected||[]).includes(hiddenRequired))) return route + '_hidden';
+  const positives = {shenyan:['shenyan_resist','shenyan_awaken'],luci:['luci_confess','luci_stop','luci_chase'],jiangyu:['jiangyu_hold','jiangyu_stand']}[route];
+  const negatives = {shenyan:['shenyan_obey','shenyan_deny'],luci:['luci_avoid','luci_letgo','luci_giveup'],jiangyu:['jiangyu_leave','jiangyu_silent']}[route];
+  const goodCount = positives.filter(key=>flags[key]).length;
+  const badCount = negatives.filter(key=>flags[key]).length;
+  if(flags[choiceKey] === goodChoice && goodCount > badCount) return route + '_good';
+  if(flags[choiceKey] === badChoice && badCount >= goodCount) return route + '_bad';
+  return route + '_normal';
 };
 
 // ===== v0.0.15 每日约会小剧场 =====

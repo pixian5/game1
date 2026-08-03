@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>霓虹心事 · 林夏的手机 · v0.0.16</title>
-<meta name="version" content="v0.0.16">
-<link rel="stylesheet" href="style.css?v=0.0.16">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'">
+<title>霓虹心事 · 林夏的手机 · v0.1.0</title>
+<meta name="version" content="v0.1.0">
+<link rel="stylesheet" href="style.css?v=0.1.0">
 </head>
 <body>
 <div id="phone-frame">
@@ -28,6 +29,10 @@
         <div class="lock-date" id="lock-date">7月15日 星期三</div>
         <div class="lock-notif" id="lock-notif"></div>
         <div class="lock-hint">向上滑动解锁</div>
+        <div class="lock-actions" id="lock-actions">
+          <button class="lock-action-btn primary" id="lock-continue-btn" data-action="continue-game" hidden>继续游戏</button>
+          <button class="lock-action-btn" data-action="open-saves">存档管理</button>
+        </div>
       </div>
     </section>
 
@@ -139,6 +144,10 @@
         </button>
         <button class="app-icon" data-app="hints">
           <span class="app-emoji">💡</span><span class="app-name">提示</span>
+        </button>
+        <button class="app-icon" data-app="saves">
+          <span class="app-emoji">💾</span><span class="app-name">存档</span>
+          <span class="app-badge" id="badge-saves" hidden>0</span>
         </button>
       </div>
       <div class="home-dock">
@@ -621,7 +630,7 @@
           <h1>发动态</h1>
           <button class="post-moment-publish" id="post-moment-publish" data-action="publish-moment">发表</button>
         </div>
-        <textarea class="post-moment-text" id="post-moment-text" placeholder="这一刻的想法…" rows="4"></textarea>
+        <textarea class="post-moment-text" id="post-moment-text" placeholder="这一刻的想法…" rows="4" maxlength="280"></textarea>
         <div class="post-moment-art">
           <span class="pm-art-label">配图：</span>
           <button class="pm-art-opt" data-moment-art="city">🌃</button>
@@ -629,6 +638,18 @@
           <button class="pm-art-opt" data-moment-art="">🚫</button>
         </div>
       </div>
+    </section>
+
+
+    <!-- v0.1.0 存档 App -->
+    <section id="saves-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1>存档管理</h1>
+        <div class="shop-coins" id="saves-counter">0/4</div>
+      </header>
+      <div class="saves-content" id="saves-content"></div>
+      <input type="file" id="save-import-input" accept="application/json,.json" hidden>
     </section>
 
     <!-- 结局 -->
@@ -659,8 +680,8 @@
   </div>
 </div>
 
-<script src="story.js?v=0.0.16"></script>
-<script src="engine.js?v=0.0.16"></script>
-<script src="app.js?v=0.0.16"></script>
+<script src="story.js?v=0.1.0"></script>
+<script src="engine.js?v=0.1.0"></script>
+<script src="app.js?v=0.1.0"></script>
 </body>
 </html>

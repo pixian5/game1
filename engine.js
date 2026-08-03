@@ -15,6 +15,13 @@ class PhoneEngine {
     this._pendingCallEventId = null;
     this._pendingEncounterThen = null;
     this._pendingDate = null;  // v0.0.16: 进行中的约会（不持久化）
+    this._memorySaves = {};  // localStorage 不可用时的内存存档
+    this._disableAutoSave = false;
+    this._lastAutoSaveAt = 0;
+    this._autoSaveStarted = false;
+    this._autoSaveInterval = null;
+    // 已排队但尚未真正触发的事件只存在运行时，不能提前写入 firedEvents。
+    this._scheduledEvents = new Set();
   }
   // 统一注册 setTimeout，便于清理
   _setTimeout(fn, delay){
@@ -33,6 +40,7 @@ class PhoneEngine {
     this._pendingCallEventId = null;
     this._pendingEncounterThen = null;
     this._pendingDate = null;
+    this._scheduledEvents.clear();
   }
   defaultState(){
     return {
@@ -75,10 +83,13 @@ class PhoneEngine {
       momentInteractions: {},
       // 梦境碎片
       dreamShards: [],
+      resolvedDreams: {},
+      activeDream: null,
       // 性格画像维度
       personality: {active:0, passive:0, rational:0, emotional:0, independent:0, dependent:0},
       // 当前地点
       currentLocation: 'home',
+      locationVisits: [],
       // 已触发的偶遇（避免重复）
       visitedEncounters: {},
       // 回忆碎片（通过照片触发）
@@ -153,6 +164,7 @@ class PhoneEngine {
       // v0.0.16 梦魇系统
       nightmaresSeen: {},        // {nightmareId: true}
       lastNightmareDay: 0,       // 上次梦魇的游戏日
+      activeNightmare: null,     // 等待玩家选择的梦魇 id
       // v0.0.16 智能提示开关
       showOptionHints: false,    // 是否显示选项影响提示
       // v0.0.16 男主朋友圈互动
@@ -193,7 +205,8 @@ class PhoneEngine {
     if(effects.affection){
       for(const k in effects.affection){
         if(this.state.affection[k] !== undefined){
-          const delta = effects.affection[k] || 0;
+          const delta = Number(effects.affection[k]);
+          if(!Number.isFinite(delta)) continue;
           this.state.affection[k] += delta;
           affChanged.push(k);
           // v0.0.15: 旧 effects.affection 按比例自动折算到三轴（50%/30%/20%），正负都折算
@@ -215,13 +228,14 @@ class PhoneEngine {
     // v0.0.15: 精细驱动三轴，并反向同步综合 affection（用于关系阶段/称谓）
     if(effects.affectionDetail){
       for(const k in effects.affectionDetail){
-        const delta = effects.affectionDetail[k];
+          const delta = effects.affectionDetail[k];
+          if(!delta || typeof delta !== 'object') continue;
         if(this.state.affectionDetail && this.state.affectionDetail[k]){
           const ad = this.state.affectionDetail[k];
           let dimSum = 0;
-          if(delta.closeness){ ad.closeness += delta.closeness; dimSum += delta.closeness; }
-          if(delta.trust){ ad.trust += delta.trust; dimSum += delta.trust; }
-          if(delta.tension){ ad.tension += delta.tension; dimSum += delta.tension; }
+          if(Number.isFinite(delta.closeness)){ ad.closeness += delta.closeness; dimSum += delta.closeness; }
+          if(Number.isFinite(delta.trust)){ ad.trust += delta.trust; dimSum += delta.trust; }
+          if(Number.isFinite(delta.tension)){ ad.tension += delta.tension; dimSum += delta.tension; }
           // 三轴下限为 0
           if(ad.closeness < 0) ad.closeness = 0;
           if(ad.trust < 0) ad.trust = 0;
@@ -240,7 +254,7 @@ class PhoneEngine {
     }
     if(effects.personality){
       for(const k in effects.personality){
-        if(this.state.personality[k] !== undefined) this.state.personality[k] += effects.personality[k];
+        if(this.state.personality[k] !== undefined && Number.isFinite(effects.personality[k])) this.state.personality[k] += effects.personality[k];
       }
     }
     // v0.0.13 关系阶段检查
@@ -261,6 +275,7 @@ class PhoneEngine {
     this.scheduleEvent('intro_susu');
     this.emit('stateChange', this.state);
     this.emit('timeChange', this.getTime());
+    this.emit('ambienceChange', this.getCurrentAmbience());
   }
 
   // ===== 时间系统 =====
@@ -337,7 +352,6 @@ class PhoneEngine {
       let d = fromDay, h = fromHour;
       while(d < toDay || (d === toDay && h <= toHour)){
         if(evt.trigger.day === d && evt.trigger.hour === h){
-          this.state.firedEvents[id] = true;
           this.scheduleEvent(id);
           break;
         }
@@ -354,8 +368,10 @@ class PhoneEngine {
     const evt = this.story.events[eventId] || this.story.criticalEvents?.[eventId];
     if(!evt) return;
     // 标记已触发（避免重复）
-    if(this.state.firedEvents[eventId]) return;
+    if(this.state.firedEvents[eventId] || this._scheduledEvents.has(eventId)) return;
+    this._scheduledEvents.add(eventId);
     this.state.firedEvents[eventId] = true;
+    if(evt.collectible) this.collectItem(evt.collectible);
     // 立即触发的消息事件
     if(evt.type === 'message_batch'){
       const n = evt.messages.length;
@@ -488,9 +504,7 @@ class PhoneEngine {
               });
               conv.unread++;
               if(fu.affection){
-                Object.keys(fu.affection).forEach(k=> {
-                  if(this.state.affection[k] !== undefined) this.state.affection[k] += fu.affection[k];
-                });
+                this._applyEffects({affection: fu.affection});
               }
               this.emit('conversationUpdate', {id:msg.from, conv});
               this.emit('messageReceived', {from:msg.from, text:fu.text, conv, isFollowup:true});
@@ -520,11 +534,13 @@ class PhoneEngine {
     if(convId === 'narrator'){
       this._applyEffects(eff);
       if(eff.thenEvent) this._dispatchSpecialThen(eff.thenEvent);
+      this.emit('stateChange', this.state);
       return;
     }
     const conv = this.state.conversations[convId];
     if(!conv) return;
-    conv.messages.push({from:'me', text, time:this.getTime().time, ts:Date.now()});
+    const safeText = typeof text === 'string' ? text.slice(0, 1000) : String(text || '').slice(0, 1000);
+    conv.messages.push({from:'me', text:safeText, time:this.getTime().time, day:this.state.day, ts:Date.now()});
     // 标记玩家已回复上一条 NPC 消息（用于已读不回判定）
     for(let i = conv.messages.length - 2; i >= 0; i--){
       if(conv.messages[i].from !== 'me'){
@@ -537,6 +553,7 @@ class PhoneEngine {
     this.emit('conversationUpdate', {id:convId, conv});
     this._applyEffects(eff);
     if(eff.thenEvent) this._dispatchSpecialThen(eff.thenEvent);
+    this.emit('stateChange', this.state);
   }
 
   // 处理特殊 thenEvent（邀约 accept/decline），否则按普通事件触发
@@ -557,13 +574,16 @@ class PhoneEngine {
 
   // 玩家选择路线（特殊处理：直接触发对应路线的首个事件）
   chooseRoute(route){
+    if(!['shenyan','luci','jiangyu','solo'].includes(route) || this.state.route || this.state.ended) return false;
     this.state.route = route;
     this.state.flags.route = route;
+    this.collectItem('stamp_route');
     // 进入路线后，未处理的邀约自动判定为 missed
     this.missPendingInvitations();
     const opt = this.story.routeChoice.options.find(o=>o.route===route);
     if(opt && opt.thenEvent) this.scheduleEvent(opt.thenEvent);
     this.emit('stateChange', this.state);
+    return true;
   }
 
   // 标记会话已读
@@ -589,7 +609,7 @@ class PhoneEngine {
     // 支持并发：用 Map 按 eventId 注册定时器
     const oldTimer = this._callMissTimers.get(eventId);
     if(oldTimer) clearTimeout(oldTimer);
-    const tid = setTimeout(()=>{
+    const tid = this._setTimeout(()=>{
       this._callMissTimers.delete(eventId);
       if(this._pendingCallEventId === eventId){
         this.addCallLog(evt.from, 'missed', '00:00');
@@ -607,13 +627,13 @@ class PhoneEngine {
   }
   answerCall(eventId){
     const tid = this._callMissTimers.get(eventId);
-    if(tid){ clearTimeout(tid); this._callMissTimers.delete(eventId); }
+    if(tid){ clearTimeout(tid); this._timers.delete(tid); this._callMissTimers.delete(eventId); }
     this._pendingCallEventId = null;
     this.emit('callAnswered', eventId);
   }
   declineCall(eventId){
     const tid = this._callMissTimers.get(eventId);
-    if(tid){ clearTimeout(tid); this._callMissTimers.delete(eventId); }
+    if(tid){ clearTimeout(tid); this._timers.delete(tid); this._callMissTimers.delete(eventId); }
     this._pendingCallEventId = null;
     const evt = this.story.events[eventId];
     // 留下语音信箱（基于 script 末尾的台词）
@@ -761,10 +781,13 @@ class PhoneEngine {
   }
   // 玩家自己发动态
   createMyMoment(text, art){
+    const normalizedText = typeof text === 'string' ? text.trim().slice(0, 280) : '';
+    if(!normalizedText) return null;
+    if(this.state.moments.filter(m=>m.isMine).length >= 200) return null;
     const id = 'my_moment_' + Date.now();
     const moment = {
       id, author:'me', name:'林夏', avatar:'林', bg:'#5a2a4a',
-      text, art: art||null,
+      text: normalizedText, art: art||null,
       time: this.getTime().time, day: this.state.day,
       dateLabel: this.getDateLabel().full,
       likes: [], comments: [],
@@ -800,14 +823,17 @@ class PhoneEngine {
   // ===== 梦境碎片 =====
   triggerDream(dreamId){
     const dream = this.story.dreams[dreamId];
-    if(!dream) return;
+    if(!dream || this.state.activeDream || this.state.resolvedDreams[dreamId]) return false;
+    this.state.activeDream = dreamId;
     this.emit('dreamStart', {dreamId, dream});
+    this.emit('stateChange', this.state);
+    return true;
   }
   resolveDream(dreamId, choiceIdx){
     const dream = this.story.dreams[dreamId];
-    if(!dream) return;
+    if(!dream || this.state.activeDream !== dreamId || this.state.resolvedDreams[dreamId]) return false;
     const opt = dream.options[choiceIdx];
-    if(!opt) return;
+    if(!opt) return false;
     // 收集碎片
     this.state.dreamShards.push({
       dreamId,
@@ -818,10 +844,13 @@ class PhoneEngine {
     });
     // 性格画像
     this._applyEffects({personality: opt.personality});
+    this.state.resolvedDreams[dreamId] = true;
+    this.state.activeDream = null;
     this.emit('dreamResolved', {dreamId, choice: opt});
     this.emit('stateChange', this.state);
     // 触发后续
     if(dream.then) this._setTimeout(()=> this.scheduleEvent(dream.then), 800);
+    return true;
   }
 
   // ===== 性格画像 =====
@@ -860,6 +889,8 @@ class PhoneEngine {
     const loc = this.story.locations[locId];
     if(!loc) return false;
     this.state.currentLocation = locId;
+    this.state.locationVisits.push({locId, day:this.state.day, ts:Date.now()});
+    if(this.state.locationVisits.length > 200) this.state.locationVisits.splice(0, this.state.locationVisits.length - 200);
     this.emit('locationChange', {locId, loc});
     this.emit('stateChange', this.state);
     // 推进时间30分钟
@@ -935,9 +966,9 @@ class PhoneEngine {
   }
   resolveMemory(memId, optIdx){
     const mem = this.story.memories[memId];
-    if(!mem) return;
+    if(!mem || this.state.resolvedMemories[memId]) return false;
     const opt = mem.options[optIdx];
-    if(!opt) return;
+    if(!opt) return false;
     this.state.resolvedMemories[memId] = true;
     this.state.memoryShards.push({
       memId,
@@ -951,6 +982,7 @@ class PhoneEngine {
     this.emit('stateChange', this.state);
     // 触发后续（与其他 resolve 方法保持一致）
     if(mem.then) this._setTimeout(()=> this.scheduleEvent(mem.then), 800);
+    return true;
   }
   getMemoriesByPhoto(photoId){
     // 找到触发该照片的回忆
@@ -1146,6 +1178,7 @@ class PhoneEngine {
     const vm = this.state.voicemails.find(v=>v.id===vmId);
     if(!vm) return false;
     vm.heard = true;
+    this.collectItem('recording_msg');
     this.emit('voicemailPlayed', vm);
     this.emit('stateChange', this.state);
     return true;
@@ -1213,13 +1246,19 @@ class PhoneEngine {
 
   // ===== 结局 =====
   triggerEnding(endingId){
+    const ending = this.story.endings?.[endingId];
+    if(this.state.ended || !ending) return false;
     this.state.ended = true;
     this.state.endingSeen[endingId] = true;
     // v0.0.15: 同步记录结局图鉴
     this.recordEndingGallery(endingId);
     // 结局后清理所有定时器，避免幽灵消息
     this._clearAllTimers();
-    this.emit('ending', this.story.endings[endingId]);
+    this.emit('stateChange', this.state);
+    // 结局是最不能丢失的状态，绕过节流立即落盘。
+    this.autoSave(true);
+    this.emit('ending', ending);
+    return true;
   }
 
   // ===== 礼物商城+喜好系统 =====
@@ -1245,9 +1284,7 @@ class PhoneEngine {
     // 基础好感 = 物品价格/50，乘以喜好倍率
     const baseAff = Math.max(1, Math.round(item.price / 50));
     const gain = Math.round(baseAff * mult);
-    if(this.state.affection[toCharId] !== undefined){
-      this.state.affection[toCharId] += gain;
-    }
+    this._applyEffects({affection:{[toCharId]:gain}});
     const giftRec = {to:toCharId, itemId, mult, gain, ts:Date.now(), day:this.state.day};
     this.state.gifts.push(giftRec);
     // 触发男主反应消息
@@ -1300,13 +1337,15 @@ class PhoneEngine {
   }
   addDiary(text){
     if(!text || !text.trim()) return false;
+    const normalizedText = text.trim().slice(0, 500);
     this.state.diary.push({
-      text: text.trim(),
+      text: normalizedText,
       mood: this.state.mood,
       day: this.state.day,
       time: this.getTime().time,
       ts: Date.now()
     });
+    if(this.state.diary.length > 200) this.state.diary.splice(0, this.state.diary.length - 200);
     // 内心独白影响性格画像（写下来 = 自省 = 理性+1）
     this.state.personality.rational = (this.state.personality.rational||0) + 1;
     this.emit('diaryAdded', this.state.diary[this.state.diary.length-1]);
@@ -1457,9 +1496,7 @@ class PhoneEngine {
       if(reward.collectible) this.collectItem(reward.collectible);
       if(reward.flag) this.state.flags[reward.flag] = true;
       if(reward.affection){
-        for(const k in reward.affection){
-          if(this.state.affection[k] !== undefined) this.state.affection[k] += reward.affection[k];
-        }
+        this._applyEffects({affection: reward.affection});
       }
       this.emit('puzzleSolved', {puzzleId, puzzle, reward});
       this.emit('stateChange', this.state);
@@ -1604,10 +1641,35 @@ class PhoneEngine {
     const opt = quiz.options[optIdx];
     if(!opt) return false;
     if(!this.state.player) this.setPlayer({});
+    const previous = this.state.player.answers[quizId];
+    if(previous === optIdx) return true;
+    this._applyQuizPersonalityDelta(quiz, previous, -1);
     this.state.player.answers[quizId] = optIdx;
-    if(opt.effects) this._applyEffects(opt.effects);
+    this._applyQuizPersonalityDelta(quiz, optIdx, 1);
     this.emit('stateChange', this.state);
     return true;
+  }
+  _applyQuizPersonalityDelta(quiz, optIdx, direction){
+    if(!quiz || !Number.isInteger(optIdx) || !quiz.options?.[optIdx]?.effects?.personality) return;
+    const delta = {};
+    for(const [key, value] of Object.entries(quiz.options[optIdx].effects.personality)){
+      if(this.state.personality[key] !== undefined && Number.isFinite(value)) delta[key] = value * direction;
+    }
+    this._applyEffects({personality: delta});
+  }
+  updatePlayerProfile(info){
+    const oldAnswers = {...(this.state.player?.answers || {})};
+    const nextAnswers = {...(info?.answers || {})};
+    const quiz = this.story.playerCustomization?.personalityQuiz || [];
+    quiz.forEach(q=>{
+      const oldIdx = oldAnswers[q.id];
+      const newIdx = nextAnswers[q.id];
+      if(oldIdx !== newIdx){
+        this._applyQuizPersonalityDelta(q, oldIdx, -1);
+        this._applyQuizPersonalityDelta(q, newIdx, 1);
+      }
+    });
+    this.setPlayer({...info, answers:nextAnswers});
   }
   finishQuiz(){
     this.state.playerQuizDone = true;
@@ -1652,12 +1714,15 @@ class PhoneEngine {
       this.state.relationshipStages[charId] = cur;
       const stage = this.getRelationshipStage(charId);
       this.emit('relationshipStageUp', {charId, stage, prevStage: prev});
-      // 临界事件：立即标记 firedEvents，防止好感度反复横跳时重复 schedule
+      // 临界事件延迟入队；运行时集合去重，真正触发时才写 firedEvents。
       if(stage.criticalEvent){
         const evt = this.story.criticalEvents?.[stage.criticalEvent];
-        if(evt && !this.state.firedEvents[stage.criticalEvent]){
-          this.state.firedEvents[stage.criticalEvent] = true;  // 立即标记，2s 延迟内反复触发不会再 schedule
-          this._setTimeout(()=> this.scheduleEvent(stage.criticalEvent), 2000);
+        if(evt && !this.state.firedEvents[stage.criticalEvent] && !this._scheduledEvents.has(stage.criticalEvent)){
+          this._scheduledEvents.add(stage.criticalEvent);
+          this._setTimeout(()=>{
+            this._scheduledEvents.delete(stage.criticalEvent);
+            this.scheduleEvent(stage.criticalEvent);
+          }, 2000);
         }
       }
       return stage;
@@ -1685,7 +1750,7 @@ class PhoneEngine {
       const t = pool.splice(idx, 1)[0];
       tasks.push({
         id: t.id, name: t.name, desc: t.desc, reward: t.reward,
-        completed: false, check: t.check
+        completed: false, day: this.state.day, check: t.check
       });
     }
     this.state.dailyTasks = tasks;
@@ -1916,7 +1981,8 @@ class PhoneEngine {
       const found = (this.story.dateScenes[cid]||[]).find(s=>s.id===sceneId);
       if(found){ charId = cid; scene = found; break; }
     }
-    if(!scene) return false;
+    if(!scene || this.state.firedEvents[sceneId]) return false;
+    if(!this._pendingDate || this._pendingDate.sceneId !== sceneId) return false;
     if(scene.effects) this._applyEffects(scene.effects);
     if(scene.unlockPhoto) this.unlockPhoto(scene.unlockPhoto);
     // 现在才真正标记已完成
@@ -1952,7 +2018,7 @@ class PhoneEngine {
   checkNightmare(){
     if(this.state.ended) return null;
     // 同一天不重复触发
-    if(this.state.lastNightmareDay === this.state.day) return null;
+    if(this.state.lastNightmareDay === this.state.day || this.state.activeNightmare) return null;
     const nightmares = this.story.nightmares || {};
     const hour = Math.floor(this.state.minute / 60);
     // 只在夜晚（20:00-次日6:00）触发
@@ -1962,10 +2028,7 @@ class PhoneEngine {
       if(this.state.nightmaresSeen[id]) continue;  // 已看过的不重复
       try {
         if(nm.trigger(this.state)){
-          this.state.nightmaresSeen[id] = true;
-          this.state.lastNightmareDay = this.state.day;
-          if(nm.effects) this._applyEffects(nm.effects);
-          if(nm.moodAfter) this.state.mood = nm.moodAfter;
+          this.state.activeNightmare = id;
           this.emit('nightmareTriggered', nm);
           return nm;
         }
@@ -1976,11 +2039,16 @@ class PhoneEngine {
   // 解梦：玩家选择后应用 effects + 更新心情
   resolveNightmare(nightmareId, optIdx){
     const nm = this.story.nightmares?.[nightmareId];
-    if(!nm || !nm.resolve) return false;
+    if(!nm || !nm.resolve || this.state.activeNightmare !== nightmareId || this.state.nightmaresSeen[nightmareId]) return false;
     const opt = nm.resolve.options[optIdx];
     if(!opt) return false;
+    if(nm.effects) this._applyEffects(nm.effects);
     if(opt.effects) this._applyEffects(opt.effects);
-    if(opt.moodAfter) this.state.mood = opt.moodAfter;
+    this.state.nightmaresSeen[nightmareId] = true;
+    this.state.lastNightmareDay = this.state.day;
+    this.state.activeNightmare = null;
+    const mood = opt.moodAfter || nm.moodAfter;
+    if(mood && this.story.moods?.[mood]) this.state.mood = mood;
     this.emit('nightmareResolved', {nightmareId, optIdx, opt});
     this.emit('stateChange', this.state);
     return true;
@@ -2037,13 +2105,15 @@ class PhoneEngine {
     const cat = moment.art || '';
     const cfg = this.story.momentComments?.byCategory || {};
     const charComments = cfg[cat] || cfg[''] || {};
+    const replyKey = `${momentId}_${charId}`;
+    if(this.state.momentReplies[replyKey]) return false;
     const list = charComments[charId] || [];
     const comment = list[commentIdx];
     if(!comment) return false;
     const reply = comment.replyOptions?.[replyIdx];
     if(!reply) return false;
     if(reply.effects) this._applyEffects(reply.effects);
-    this.state.momentReplies[`${momentId}_${charId}`] = {commentIdx, replyIdx};
+    this.state.momentReplies[replyKey] = {commentIdx, replyIdx};
     this.emit('momentReplySent', {momentId, charId, commentIdx, replyIdx, reply});
     this.emit('stateChange', this.state);
     return true;
@@ -2064,18 +2134,246 @@ class PhoneEngine {
   }
 
   // ===== 存档 =====
-  static SAVE_VERSION = 1;
-  save(slot){
-    const data = {
-      v: PhoneEngine.SAVE_VERSION,
-      state: this.state,
-      time: new Date().toISOString(),
-      label: `第${this.state.day}天 · ${this.getTime().time}`
+  // v0.1.0: 多槽位 + 自动存档 + 继续游戏 + 导出导入
+  static SAVE_VERSION = 2;
+  static SAVE_KEY = 'neon_phone_saves';
+  static SLOT_AUTO = 'auto';
+  static SLOT_MANUAL = ['slot1', 'slot2', 'slot3'];
+  static AUTO_SAVE_MIN_INTERVAL_MS = 8000;
+  static AUTO_SAVE_PERIODIC_MS = 60000;
+  static MAX_SAVE_BYTES = 1500000;
+
+  _isSaveSlot(slot){
+    return slot === PhoneEngine.SLOT_AUTO || PhoneEngine.SLOT_MANUAL.includes(slot);
+  }
+  _buildSaveSummary(state=this.state){
+    const t = {time:`${String(Math.floor(state.minute / 60)).padStart(2,'0')}:${String(state.minute % 60).padStart(2,'0')}`};
+    const playerName = state.player?.name || state.player?.nickname || '林夏';
+    const routeLabel = state.route ? (this.story.characters?.[state.route]?.name || state.route) : '未选线';
+    return {
+      day: state.day,
+      clock: t.time,
+      dateLabel: `第${state.day}天`,
+      playerName,
+      route: state.route || null,
+      routeLabel,
+      mood: state.mood || 'calm',
+      ended: !!state.ended,
+      affection: {...(state.affection || {})}
     };
+  }
+
+  _buildSaveData(slot, note){
+    const t = this.getTime();
+    const date = this.getDateLabel();
+    const summary = this._buildSaveSummary(this.state);
+    return {
+      v: PhoneEngine.SAVE_VERSION,
+      slot,
+      state: JSON.parse(JSON.stringify(this.state)),
+      time: new Date().toISOString(),
+      note: typeof note === 'string' ? note.slice(0, 140) : '',
+      label: `第${this.state.day}天 · ${t.time}`,
+      summary: {...summary, dateLabel: date.full}
+    };
+  }
+  _normalizeSaveData(raw, forcedSlot=null){
+    if(!raw || typeof raw !== 'object' || Array.isArray(raw) || !raw.state || typeof raw.state !== 'object' || Array.isArray(raw.state)) return null;
+    const slot = forcedSlot || raw.slot;
+    if(!this._isSaveSlot(slot)) return null;
+    const state = this._sanitizeLoadedState(raw.state);
+    const parsedTime = typeof raw.time === 'string' ? Date.parse(raw.time) : NaN;
+    const time = Number.isFinite(parsedTime) ? new Date(parsedTime).toISOString() : new Date().toISOString();
+    const clock = `${String(Math.floor(state.minute / 60)).padStart(2,'0')}:${String(state.minute % 60).padStart(2,'0')}`;
+    return {
+      v: PhoneEngine.SAVE_VERSION,
+      slot,
+      state,
+      time,
+      note: typeof raw.note === 'string' ? raw.note.slice(0, 140) : '',
+      label: `第${state.day}天 · ${clock}`,
+      summary: this._buildSaveSummary(state)
+    };
+  }
+  _sanitizeLoadedState(raw){
+    const def = this.defaultState();
+    const source = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+    const asText = (value, max=1000) => typeof value === 'string' ? value.slice(0, max) : '';
+    const asInt = (value, fallback=0, min=0, max=999999) => {
+      const n = Number(value);
+      return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.trunc(n))) : fallback;
+    };
+    const asBool = value => value === true;
+    const array = (value, limit, map) => Array.isArray(value) ? value.slice(0, limit).map(map).filter(v=>v !== null) : [];
+    const object = value => value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    const safeKey = key => /^[a-zA-Z0-9_:-]{1,100}$/.test(key) && key !== '__proto__' && key !== 'constructor' && key !== 'prototype';
+    const record = (value, limit, map) => {
+      const result = {};
+      Object.entries(object(value)).slice(0, limit).forEach(([key, item])=>{
+        if(safeKey(key)) result[key] = map(item, key);
+      });
+      return result;
+    };
+    const knownIds = values => new Set(Object.keys(values || {}));
+    const idList = (value, allowed, limit=200) => [...new Set(array(value, limit, id => typeof id === 'string' && allowed.has(id) ? id : null))];
+    const color = value => /^#[0-9a-fA-F]{6}$/.test(value || '') ? value : '#5a2a4a';
+    const eventIds = new Set([
+      ...Object.keys(this.story.events || {}),
+      ...Object.keys(this.story.criticalEvents || {}),
+      ...Object.values(this.story.dateScenes || {}).flat().map(scene=>scene.id)
+    ]);
+    const out = def;
+    out.day = asInt(source.day, def.day, 1, 9999);
+    out.minute = asInt(source.minute, def.minute, 0, 1439);
+    out.ended = asBool(source.ended);
+    out.route = ['shenyan','luci','jiangyu','solo'].includes(source.route) ? source.route : null;
+    out.currentLocation = this.story.locations?.[source.currentLocation] ? source.currentLocation : def.currentLocation;
+    out.coins = asInt(source.coins, def.coins, 0, 1000000);
+    out.lastTarotDay = asInt(source.lastTarotDay, 0, 0, 9999);
+    out.lastTaskDay = asInt(source.lastTaskDay, 0, 0, 9999);
+    out.taskStreak = asInt(source.taskStreak, 0, 0, 9999);
+    out.lastNightmareDay = asInt(source.lastNightmareDay, 0, 0, 9999);
+    out.watchMode = asBool(source.watchMode);
+    out.watchStrategy = this.story.watchMode?.strategies?.[source.watchStrategy] ? source.watchStrategy : def.watchStrategy;
+    out.showOptionHints = asBool(source.showOptionHints);
+    out.playerQuizDone = asBool(source.playerQuizDone);
+    out.mood = this.story.moods?.[source.mood] ? source.mood : def.mood;
+    out.flags = record(source.flags, 500, value => typeof value === 'string' ? value.slice(0, 100) : (Number.isFinite(value) ? Math.max(-999999, Math.min(999999, value)) : asBool(value)));
+    out.firedEvents = record(source.firedEvents, 500, (_value, key) => eventIds.has(key));
+    Object.keys(out.firedEvents).forEach(key=>{ if(!out.firedEvents[key]) delete out.firedEvents[key]; });
+    const chars = Object.keys(def.conversations);
+    chars.forEach(cid=>{
+      const conv = object(object(source.conversations)[cid]);
+      out.conversations[cid] = {
+        ...def.conversations[cid],
+        messages: array(conv.messages, 500, message=>{
+          const m = object(message);
+          const from = ['me','shenyan','luci','jiangyu','susu','narrator'].includes(m.from) ? m.from : cid;
+          return {from, text:asText(m.text, 1000), time:asText(m.time, 8), day:asInt(m.day, 0, 0, 9999), ts:asInt(m.ts, 0, 0, 9999999999999), replied:asBool(m.replied), isFollowup:asBool(m.isFollowup), isGiftReaction:asBool(m.isGiftReaction)};
+        }),
+        unread:asInt(conv.unread, 0, 0, 500),
+        typing:false,
+        finished:asBool(conv.finished)
+      };
+    });
+    out.affection = {...def.affection};
+    Object.keys(out.affection).forEach(cid=> out.affection[cid] = asInt(object(source.affection)[cid], 0, 0, 9999));
+    out.personality = {...def.personality};
+    Object.keys(out.personality).forEach(key=> out.personality[key] = asInt(object(source.personality)[key], 0, 0, 9999));
+    out.affectionDetail = {...def.affectionDetail};
+    Object.keys(out.affectionDetail).forEach(cid=>{
+      const saved = object(object(source.affectionDetail)[cid]);
+      out.affectionDetail[cid] = {closeness:asInt(saved.closeness, 0, 0, 9999), trust:asInt(saved.trust, 0, 0, 9999), tension:asInt(saved.tension, 0, 0, 9999)};
+    });
+    out.photos = array(source.photos, 200, item=>{
+      const id = typeof object(item).id === 'string' ? object(item).id : '';
+      return this.story.photos?.[id] ? {id, ...this.story.photos[id], unlocked:true} : null;
+    });
+    out.music = {unlocked:idList(object(source.music).unlocked, knownIds(this.story.music)), playing:null};
+    out.music.playing = out.music.unlocked.includes(object(source.music).playing) ? object(source.music).playing : null;
+    out.notes = array(source.notes, 200, item=>{ const n=object(item); return {title:asText(n.title,120), preview:asText(n.preview,1000), time:asText(n.time,40)}; });
+    out.calendar = array(source.calendar, 200, item=>{ const e=object(item); return {title:asText(e.title,120), time:asText(e.time,40), desc:asText(e.desc,1000)}; });
+    out.callLog = array(source.callLog, 300, item=>{ const c=object(item); const from=chars.includes(c.from)?c.from:'susu'; return {from,type:['incoming','missed','declined','outgoing'].includes(c.type)?c.type:'incoming',duration:asText(c.duration,20),name:asText(c.name,40),time:asText(c.time,8),day:asInt(c.day,0,0,9999)}; });
+    out.voicemails = array(source.voicemails, 100, item=>{ const vm=object(item); const from=chars.includes(vm.from)?vm.from:'susu'; return {id:asText(vm.id,100),from,text:asText(vm.text,1000),eventId:asText(vm.eventId,100),callbackEvent:eventIds.has(vm.callbackEvent)?vm.callbackEvent:null,time:asText(vm.time,8),day:asInt(vm.day,0,0,9999),heard:asBool(vm.heard)}; });
+    out.moments = array(source.moments, 250, item=>{
+      const m=object(item); const author=['me',...chars].includes(m.author)?m.author:'me';
+      const id = /^[a-zA-Z0-9_:-]{1,100}$/.test(m.id || '') ? m.id : null;
+      if(!id) return null;
+      return {
+        id, author, name:asText(m.name,40), avatar:asText(m.avatar,8), bg:color(m.bg),
+        text:asText(m.text,280), art:asText(m.art,30)||null, time:asText(m.time,8), day:asInt(m.day,0,0,9999), dateLabel:asText(m.dateLabel,40),
+        likes:idList(m.likes,new Set(['me',...chars]),20),
+        comments:array(m.comments,100,c=>{ const x=object(c); return {from:['me',...chars].includes(x.from)?x.from:'me', text:asText(x.text,1000), isReply:asBool(x.isReply)}; }),
+        isMine:asBool(m.isMine)
+      };
+    });
+    out.momentInteractions = record(source.momentInteractions, 250, item=>{const i=object(item);return {liked:asBool(i.liked),commented:asBool(i.commented),commentIdx:asInt(i.commentIdx,0,0,99)};});
+    out.momentReplies = record(source.momentReplies, 250, item=>{const i=object(item);return {commentIdx:asInt(i.commentIdx,0,0,99),replyIdx:asInt(i.replyIdx,0,0,99)};});
+    out.dreamShards = array(source.dreamShards,100,item=>{const d=object(item);return {dreamId:asText(d.dreamId,100),title:asText(d.title,120),choice:asText(d.choice,1000),shard:asText(d.shard,120)||null,meaning:asText(d.meaning,1000)||null};});
+    out.resolvedDreams = record(source.resolvedDreams, 100, value=>asBool(value));
+    out.activeDream = this.story.dreams?.[source.activeDream] && !out.resolvedDreams[source.activeDream] ? source.activeDream : null;
+    out.memoryShards = array(source.memoryShards,100,item=>{const m=object(item);return {memId:asText(m.memId,100),title:asText(m.title,120),choice:asText(m.choice,1000),shard:asText(m.shard,120)||null,meaning:asText(m.meaning,1000)||null};});
+    out.resolvedMemories = record(source.resolvedMemories,100,value=>asBool(value));
+    out.flashbackShards = array(source.flashbackShards,100,item=>{const f=object(item);return {fbId:asText(f.fbId,100),shard:asText(f.shard,120),meaning:asText(f.meaning,1000)||null};});
+    out.flashbacksSeen = record(source.flashbacksSeen,100,value=>asBool(value));
+    out.firedIntel = record(source.firedIntel,100,value=>asBool(value));
+    out.visitedEncounters = record(source.visitedEncounters,200,value=>asBool(value));
+    out.locationVisits = array(source.locationVisits,200,item=>{const v=object(item);return this.story.locations?.[v.locId] ? {locId:v.locId,day:asInt(v.day,0,0,9999),ts:asInt(v.ts,0,0,9999999999999)} : null;});
+    out.inventory = array(source.inventory,100,item=>{const i=object(item);return this.story.shop?.items?.[i.id] ? {id:i.id,ts:asInt(i.ts,0,0,9999999999999)} : null;});
+    out.gifts = array(source.gifts,200,item=>{const g=object(item);return {to:chars.includes(g.to)?g.to:'susu',itemId:this.story.shop?.items?.[g.itemId]?g.itemId:null,mult:Number.isFinite(g.mult)?g.mult:1,gain:asInt(g.gain,0,0,9999),ts:asInt(g.ts,0,0,9999999999999),day:asInt(g.day,0,0,9999)};}).filter(g=>g.itemId);
+    out.moodHistory = array(source.moodHistory,200,item=>{const m=object(item);return this.story.moods?.[m.mood] ? {mood:m.mood,day:asInt(m.day,0,0,9999),ts:asInt(m.ts,0,0,9999999999999)} : null;});
+    out.diary = array(source.diary,200,item=>{const d=object(item);return {text:asText(d.text,500),mood:this.story.moods?.[d.mood]?d.mood:def.mood,day:asInt(d.day,0,0,9999),time:asText(d.time,8),ts:asInt(d.ts,0,0,9999999999999)};});
+    out.tarotHistory = array(source.tarotHistory,200,item=>{const t=object(item);return this.story.tarot?.cards?.[t.cardId] ? {day:asInt(t.day,0,0,9999),cardId:t.cardId,reversed:asBool(t.reversed),ts:asInt(t.ts,0,0,9999999999999)} : null;});
+    const fortune=object(source.todayFortune); out.todayFortune=this.story.tarot?.cards?.[fortune.cardId] ? {cardId:fortune.cardId,name:asText(fortune.name,40),roman:asText(fortune.roman,10),reversed:asBool(fortune.reversed),text:asText(fortune.text,1000),hint:object(fortune.hint),day:asInt(fortune.day,0,0,9999)} : null;
+    out.achievements = record(source.achievements,100,(_value,key)=>!!this.story.achievements?.[key]);
+    Object.keys(out.achievements).forEach(key=>{ if(!out.achievements[key]) delete out.achievements[key]; });
+    out.collected = idList(source.collected, knownIds(this.story.collectibles));
+    out.easterEggsSeen = record(source.easterEggsSeen,100,(_value,key)=>!!this.story.easterEggs?.[key]);
+    out.puzzleProgress = record(source.puzzleProgress,100,(item,key)=>{const p=object(item);return this.story.puzzles?.[key] ? {attemptCount:asInt(p.attemptCount,0,0,9999),solved:asBool(p.solved),lastAttempt:asText(p.lastAttempt,200),lastAttemptDay:asInt(p.lastAttemptDay,0,0,9999)} : null;});
+    Object.keys(out.puzzleProgress).forEach(key=>{if(!out.puzzleProgress[key]) delete out.puzzleProgress[key];});
+    out.discoveredClues = record(source.discoveredClues,200,value=>asBool(value));
+    out.perspectivesSeen = record(source.perspectivesSeen,20,value=>record(value,100,seen=>asBool(seen)));
+    out.truthEndingsSeen = record(source.truthEndingsSeen,20,value=>asBool(value));
+    const player=object(source.player);
+    const quizIds = new Set((this.story.playerCustomization?.personalityQuiz||[]).map(q=>q.id));
+    const answers = record(player.answers,20,(value,key)=>quizIds.has(key) ? asInt(value,0,0,9) : null);
+    Object.keys(answers).forEach(key=>{ if(answers[key] === null) delete answers[key]; });
+    out.player=player.name || player.nickname ? {name:asText(player.name,6)||'林夏',nickname:asText(player.nickname,6)||'夏夏',avatar:asText(player.avatar,4)||'林',bg:color(player.bg),age:asInt(player.age,24,18,40),pronoun:['她','他','TA'].includes(player.pronoun)?player.pronoun:'她',answers} : null;
+    const taskMap = new Map((this.story.dailyTasks?.pool||[]).map(t=>[t.id,t]));
+    out.dailyTasks = array(source.dailyTasks,3,item=>{const t=object(item), defTask=taskMap.get(t.id);return defTask ? {id:defTask.id,name:defTask.name,desc:defTask.desc,reward:defTask.reward,completed:asBool(t.completed),day:asInt(t.day,out.lastTaskDay,0,9999),check:defTask.check} : null;});
+    out.taskStreakClaimed = record(source.taskStreakClaimed,20,value=>asBool(value));
+    out.relationshipStages = record(source.relationshipStages,20,value=>asInt(value,1,1,99));
+    out.invitations = array(source.invitations,100,item=>{const i=object(item);return this.story.invitations?.[i.id] ? {id:i.id,status:['pending','accepted','declined','missed'].includes(i.status)?i.status:'pending',ts:asInt(i.ts,0,0,9999999999999)} : null;});
+    out.firedInvitations = record(source.firedInvitations,100,value=>asBool(value));
+    out.resolvedInvitations = record(source.resolvedInvitations,100,value=>['accepted','declined','missed'].includes(value)?value:'missed');
+    out.groups = record(source.groups,20,(item,key)=>{const g=object(item); if(!this.story.groups?.[key]) return null; return {id:key,name:asText(g.name,80),members:idList(g.members,new Set(chars),10),messages:array(g.messages,300,m=>{const x=object(m);return {from:['me',...chars].includes(x.from)?x.from:'me',text:asText(x.text,1000),time:asText(x.time,8),ts:asInt(x.ts,0,0,9999999999999)};}),unread:asInt(g.unread,0,0,300),typing:false};});
+    Object.keys(out.groups).forEach(key=>{if(!out.groups[key]) delete out.groups[key];});
+    out.currentTheme = this.story.themes?.[source.currentTheme] ? source.currentTheme : 'default';
+    out.currentIconTheme = this.story.iconThemes?.[source.currentIconTheme] ? source.currentIconTheme : 'default';
+    out.unlockedThemes = record(source.unlockedThemes,50,(_value,key)=>!!this.story.themes?.[key]); out.unlockedThemes.default=true;
+    out.unlockedIconThemes = record(source.unlockedIconThemes,50,(_value,key)=>!!this.story.iconThemes?.[key]); out.unlockedIconThemes.default=true;
+    out.endingSeen = record(source.endingSeen,50,(_value,key)=>!!this.story.endings?.[key]);
+    out.endingGallerySeen = record(source.endingGallerySeen,50,(_value,key)=>!!this.story.endingGallery?.[key]);
+    Object.keys(out.endingSeen).forEach(key=>{ if(!out.endingSeen[key]) delete out.endingSeen[key]; });
+    Object.keys(out.endingGallerySeen).forEach(key=>{ if(!out.endingGallerySeen[key]) delete out.endingGallerySeen[key]; });
+    out.dateLastDone = record(source.dateLastDone,20,value=>asInt(value,0,0,9999));
+    out.dateHistory = array(source.dateHistory,100,item=>{const d=object(item);return {charId:chars.includes(d.charId)?d.charId:'susu',sceneId:eventIds.has(d.sceneId)?d.sceneId:'',day:asInt(d.day,0,0,9999),ts:asInt(d.ts,0,0,9999999999999)};}).filter(d=>d.sceneId);
+    out.nightmaresSeen = record(source.nightmaresSeen,20,(_value,key)=>!!this.story.nightmares?.[key]);
+    out.activeNightmare = this.story.nightmares?.[source.activeNightmare] && !out.nightmaresSeen[source.activeNightmare] ? source.activeNightmare : null;
+    return out;
+  }
+  _applySaveData(data){
+    if(!data || !data.state) return false;
+    this._clearAllTimers();
+    this._pendingDate = null; // load 后清空进行中约会，避免卡死本周约会名额
+    this._disableAutoSave = true;
     try {
+      this.state = this._sanitizeLoadedState(data.state);
+      this._rehydrateDailyTaskChecks();
+      this.emit('stateChange', this.state);
+      this.emit('timeChange', this.getTime());
+      this.emit('gameLoaded', {slot: data.slot || null, label: data.label || ''});
+      this.emit('ambienceChange', this.getCurrentAmbience());
+      return true;
+    } catch(e) {
+      console.error('[load failed]', e);
+      this.emit('loadFailed', {error:e.message});
+      return false;
+    } finally {
+      this._disableAutoSave = false;
+    }
+  }
+  save(slot='auto', opts={}){
+    const note = opts.note || '';
+    const silent = !!opts.silent;
+    try {
+      if(!this._isSaveSlot(slot)) throw new Error('无效存档槽位');
+      const data = this._buildSaveData(slot, note);
       const saves = this.getAllSaves();
       saves[slot] = data;
-      localStorage.setItem('neon_phone_saves', JSON.stringify(saves));
+      if(!this._writeAllSaves(saves)) throw new Error('浏览器存储不可用');
+      this._lastAutoSaveAt = Date.now();
+      if(!silent) this.emit('gameSaved', {slot, data});
       return true;
     } catch(e){
       console.error('[save failed]', e);
@@ -2083,110 +2381,185 @@ class PhoneEngine {
       return false;
     }
   }
+  autoSave(force=false){
+    if(this._disableAutoSave) return false;
+    const now = Date.now();
+    if(!force && this._lastAutoSaveAt && (now - this._lastAutoSaveAt) < PhoneEngine.AUTO_SAVE_MIN_INTERVAL_MS){
+      return false;
+    }
+    return this.save(PhoneEngine.SLOT_AUTO, {silent: true, note: '自动存档'});
+  }
+  startAutoSave(){
+    if(this._autoSaveStarted) return;
+    this._autoSaveStarted = true;
+    this._lastAutoSaveAt = 0;
+    this.on('stateChange', ()=>{
+      try { this.autoSave(false); } catch(_) {}
+    });
+    if(typeof setInterval !== 'undefined'){
+      this._autoSaveInterval = setInterval(()=>{
+        try { this.autoSave(true); } catch(_) {}
+      }, PhoneEngine.AUTO_SAVE_PERIODIC_MS);
+    }
+  }
+  stopAutoSave(){
+    if(this._autoSaveInterval){
+      clearInterval(this._autoSaveInterval);
+      this._autoSaveInterval = null;
+    }
+    this._autoSaveStarted = false;
+  }
   load(slot){
+    if(!this._isSaveSlot(slot)) return false;
     const saves = this.getAllSaves();
     const data = saves[slot];
     if(!data) return false;
-    // 清理旧游戏的定时器，避免幽灵消息
-    this._clearAllTimers();
-    // 用默认值兜底新字段（兼容旧存档）
-    const def = this.defaultState();
-    this.state = {...def, ...data.state,
-      conversations: {...def.conversations, ...(data.state.conversations||{})},
-      affection: {...def.affection, ...(data.state.affection||{})},
-      flags: {...(data.state.flags||{})},
-      personality: {...def.personality, ...(data.state.personality||{})},
-      moments: data.state.moments || [],
-      invitations: data.state.invitations || [],
-      groups: data.state.groups || {},
-      voicemails: data.state.voicemails || [],
-      callLog: data.state.callLog || [],
-      photos: data.state.photos || [],
-      notes: data.state.notes || [],
-      calendar: data.state.calendar || [],
-      dreamShards: data.state.dreamShards || [],
-      memoryShards: data.state.memoryShards || [],
-      flashbackShards: data.state.flashbackShards || [],
-      coins: data.state.coins !== undefined ? data.state.coins : def.coins,
-      inventory: data.state.inventory || [],
-      gifts: data.state.gifts || [],
-      mood: data.state.mood || def.mood,
-      moodHistory: data.state.moodHistory || [],
-      diary: data.state.diary || [],
-      tarotHistory: data.state.tarotHistory || [],
-      lastTarotDay: data.state.lastTarotDay || 0,
-      todayFortune: data.state.todayFortune || null,
-      achievements: data.state.achievements || {},
-      collected: data.state.collected || [],
-      easterEggsSeen: data.state.easterEggsSeen || {},
-      puzzleProgress: data.state.puzzleProgress || {},
-      discoveredClues: data.state.discoveredClues || {},
-      perspectivesSeen: data.state.perspectivesSeen || {},
-      truthEndingsSeen: data.state.truthEndingsSeen || {},
-      player: data.state.player || null,
-      playerQuizDone: data.state.playerQuizDone || false,
-      relationshipStages: data.state.relationshipStages || {},
-      dailyTasks: data.state.dailyTasks || [],
-      lastTaskDay: data.state.lastTaskDay || 0,
-      taskStreak: data.state.taskStreak || 0,
-      taskStreakClaimed: data.state.taskStreakClaimed || {},
-      watchMode: data.state.watchMode || false,
-      watchStrategy: data.state.watchStrategy || 'balanced',
-      // v0.0.15 新字段兜底（按角色级合并，避免旧存档部分角色缺失）
-      affectionDetail: (()=>{
-        const def = {
-          shenyan:{closeness:0,trust:0,tension:0},
-          luci:{closeness:0,trust:0,tension:0},
-          jiangyu:{closeness:0,trust:0,tension:0}
-        };
-        const saved = data.state.affectionDetail || {};
-        const merged = {};
-        for(const cid in def){
-          merged[cid] = {
-            closeness: saved[cid]?.closeness || 0,
-            trust: saved[cid]?.trust || 0,
-            tension: saved[cid]?.tension || 0
-          };
-        }
-        return merged;
-      })(),
-      currentTheme: data.state.currentTheme || 'default',
-      currentIconTheme: data.state.currentIconTheme || 'default',
-      unlockedThemes: data.state.unlockedThemes || {default:true},
-      unlockedIconThemes: data.state.unlockedIconThemes || {default:true},
-      endingGallerySeen: data.state.endingGallerySeen || {},
-      dateLastDone: data.state.dateLastDone || {},
-      dateHistory: data.state.dateHistory || [],
-      // v0.0.16 新字段兜底
-      nightmaresSeen: data.state.nightmaresSeen || {},
-      lastNightmareDay: data.state.lastNightmareDay || 0,
-      showOptionHints: data.state.showOptionHints || false,
-      momentReplies: data.state.momentReplies || {}
-    };
-    // 读档后重新注入 dailyTasks 的 check 函数（JSON 序列化会丢失函数）
-    this._rehydrateDailyTaskChecks();
-    this.emit('stateChange', this.state);
-    this.emit('timeChange', this.getTime());
-    return true;
+    return this._applySaveData(data);
   }
-  // 从 STORY.dailyTasks.pool 重新注入 check 函数到当前 dailyTasks
+  hasSave(slot){
+    const saves = this.getAllSaves();
+    return !!(saves && saves[slot] && saves[slot].state);
+  }
+  hasAnySave(){
+    const saves = this.getAllSaves();
+    return Object.keys(saves).some(k => saves[k] && saves[k].state);
+  }
+  getLatestSave(){
+    const saves = this.getAllSaves();
+    let best = null;
+    for(const slot in saves){
+      const s = saves[slot];
+      if(!s || !s.state) continue;
+      if(!best || String(s.time||'') > String(best.time||'')){
+        best = {...s, slot};
+      }
+    }
+    return best;
+  }
+  continueGame(){
+    if(this.hasSave(PhoneEngine.SLOT_AUTO)){
+      return this.load(PhoneEngine.SLOT_AUTO);
+    }
+    const latest = this.getLatestSave();
+    if(latest && latest.slot) return this.load(latest.slot);
+    return false;
+  }
+  listSaveSlots(){
+    const saves = this.getAllSaves();
+    const order = [PhoneEngine.SLOT_AUTO, ...PhoneEngine.SLOT_MANUAL];
+    return order.map(slot => {
+      const data = saves[slot] || null;
+      return {
+        slot,
+        empty: !data || !data.state,
+        isAuto: slot === PhoneEngine.SLOT_AUTO,
+        label: data?.label || '空槽位',
+        time: data?.time || null,
+        note: data?.note || '',
+        summary: data?.summary || null,
+        v: data?.v || null
+      };
+    });
+  }
+  exportSave(slot){
+    const saves = this.getAllSaves();
+    const data = saves[slot];
+    if(!data) return null;
+    return JSON.stringify({
+      app: 'neon-heart',
+      exportVersion: 1,
+      exportedAt: new Date().toISOString(),
+      slot,
+      save: data
+    }, null, 2);
+  }
+  importSave(jsonText, targetSlot){
+    try {
+      if(typeof jsonText === 'string' && jsonText.length > PhoneEngine.MAX_SAVE_BYTES) return {ok:false, reason:'存档文件过大'};
+      const parsed = typeof jsonText === 'string' ? JSON.parse(jsonText) : jsonText;
+      const data = parsed.save || parsed;
+      const slot = targetSlot || data?.slot || PhoneEngine.SLOT_AUTO;
+      if(!this._isSaveSlot(slot)) return {ok:false, reason:'无效存档槽位'};
+      const wrapped = this._normalizeSaveData({...data, slot, note:data?.note || '导入存档'}, slot);
+      if(!wrapped) return {ok:false, reason:'无效存档文件'};
+      const saves = this.getAllSaves();
+      saves[slot] = wrapped;
+      if(!this._writeAllSaves(saves)) return {ok:false, reason:'浏览器存储不可用'};
+      this.emit('gameImported', {slot, data: wrapped});
+      return {ok:true, slot};
+    } catch(e){
+      return {ok:false, reason: e.message || '解析失败'};
+    }
+  }
   _rehydrateDailyTaskChecks(){
     const pool = (this.story.dailyTasks && this.story.dailyTasks.pool) || [];
     const poolMap = {};
     pool.forEach(t => { poolMap[t.id] = t; });
+    if(!Array.isArray(this.state.dailyTasks)) this.state.dailyTasks = [];
+    this.state.dailyTasks = this.state.dailyTasks.filter(t => t && poolMap[t.id]).slice(0, 3);
     this.state.dailyTasks.forEach(t => {
       const src = poolMap[t.id];
-      if(src) t.check = src.check;
+      if(src){
+        t.name = src.name; t.desc = src.desc; t.reward = src.reward;
+        t.day = Number.isFinite(t.day) ? t.day : this.state.lastTaskDay;
+        t.check = src.check;
+      }
     });
   }
   deleteSave(slot){
+    if(!this._isSaveSlot(slot)) return false;
     const saves = this.getAllSaves();
     delete saves[slot];
-    localStorage.setItem('neon_phone_saves', JSON.stringify(saves));
+    if(!this._writeAllSaves(saves)){
+      this.emit('saveFailed', {slot, error:'浏览器存储不可用'});
+      return false;
+    }
+    this.emit('gameDeleted', {slot});
+    return true;
   }
   getAllSaves(){
-    try{ return JSON.parse(localStorage.getItem('neon_phone_saves')||'{}'); }
-    catch(e){ return {}; }
+    // 优先 localStorage，失败时回退内存（测试环境 / 隐私模式也能记住进度）
+    try{
+      if(typeof localStorage !== 'undefined' && localStorage && typeof localStorage.getItem === 'function'){
+        const raw = localStorage.getItem(PhoneEngine.SAVE_KEY);
+        if(raw){
+          const parsed = JSON.parse(raw || '{}') || {};
+          const normalized = {};
+          for(const slot of [PhoneEngine.SLOT_AUTO, ...PhoneEngine.SLOT_MANUAL]){
+            const save = this._normalizeSaveData(parsed[slot], slot);
+            if(save) normalized[slot] = save;
+          }
+          this._memorySaves = normalized;
+          return {...normalized};
+        }
+      }
+    } catch(e){}
+    const normalized = {};
+    for(const slot of [PhoneEngine.SLOT_AUTO, ...PhoneEngine.SLOT_MANUAL]){
+      const save = this._normalizeSaveData(this._memorySaves?.[slot], slot);
+      if(save) normalized[slot] = save;
+    }
+    this._memorySaves = normalized;
+    return {...normalized};
+  }
+  _writeAllSaves(saves){
+    const payload = {};
+    for(const slot of [PhoneEngine.SLOT_AUTO, ...PhoneEngine.SLOT_MANUAL]){
+      const save = this._normalizeSaveData(saves?.[slot], slot);
+      if(save) payload[slot] = save;
+    }
+    try{
+      const serialized = JSON.stringify(payload);
+      if(serialized.length > PhoneEngine.MAX_SAVE_BYTES) throw new Error('存档数据过大');
+      if(typeof localStorage !== 'undefined' && localStorage && typeof localStorage.setItem === 'function'){
+        localStorage.setItem(PhoneEngine.SAVE_KEY, serialized);
+      }
+      this._memorySaves = {...payload};
+      return true;
+    } catch(e){
+      console.error('[save failed]', e && e.message ? e.message : e);
+      return false;
+    }
   }
 }
 

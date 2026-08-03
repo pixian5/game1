@@ -591,10 +591,11 @@ async function run(){
     `彩蛋数:${STORY.easterEggs?Object.keys(STORY.easterEggs).length:0}`);
   // 收集测试
   const beforeColl = engine.state.collected.length;
-  const collR = engine.collectItem('postcard_neon');
+  const testCollectible = Object.keys(STORY.collectibles).find(id=>!engine.state.collected.includes(id));
+  const collR = engine.collectItem(testCollectible);
   check('收集物品成功', collR === true);
   check('已收集列表+1', engine.state.collected.length === beforeColl + 1, `数:${engine.state.collected.length}`);
-  check('重复收集被拒绝', engine.collectItem('postcard_neon') === false);
+  check('重复收集被拒绝', engine.collectItem(testCollectible) === false);
   check('收集不存在的物品返回false', engine.collectItem('nonexistent_xyz') === false);
 
   console.log('[T] 解谜玩法+线索本');
@@ -742,7 +743,9 @@ async function run(){
   const allStages = engine.getAllRelationshipStages();
   check('getAllRelationshipStages返回3条', allStages.length === 3, `数:${allStages.length}`);
   // 模拟好感度提升触发阶段升级
-  const initShenyanStage = engine.state.relationshipStages.shenyan || 1;
+  engine.state.affection.shenyan = 0;
+  engine.state.relationshipStages.shenyan = 1;
+  const initShenyanStage = engine.state.relationshipStages.shenyan;
   // 临时把好感度拉到阶段3，检查 relationshipStageUp 事件
   let stageUpEvt = null;
   const stageUpHandler = (p)=>{ stageUpEvt = p; };
@@ -931,14 +934,13 @@ async function run(){
   eng_r.state.affection.shenyan = 8;
   eng_r.checkRelationshipStageUp('shenyan');
   const firedAfter1 = eng_r.state.firedEvents[critId];
-  check('Bug21: 首次阶段提升标记firedEvents', firedAfter1 === true);
+  check('Bug21: 首次阶段提升已进入延迟队列', eng_r._scheduledEvents.has(critId) === true);
   // 好感度降到阶段2，再升回阶段3
   eng_r.state.affection.shenyan = 5;
   eng_r.checkRelationshipStageUp('shenyan');  // 降级
   eng_r.state.affection.shenyan = 9;
   const up2 = eng_r.checkRelationshipStageUp('shenyan');  // 再次升级
-  // 第二次升级时 criticalEvent 已被 firedEvents 标记，不应再 schedule
-  // 由于 firedEvents 已标记，checkRelationshipStageUp 内的 if 分支不会再进
+  // 第二次升级时 criticalEvent 已在运行时队列中，不应重复 schedule
   // 验证：定时器数量不应因第二次升级而增加
   const timersAfter2 = eng_r._timers.size;
   // 等 2.5s 让第一次的 criticalEvent 定时器执行完
@@ -1011,9 +1013,9 @@ async function run(){
   const eng_e = new PhoneEngine(STORY);
   eng_e.newGame();
   await sleep(100);
-  // 图鉴总数=16
+  // 图鉴总数=17（含真结局）
   const gallery = eng_e.getEndingGallery();
-  check('v0.0.15: 结局图鉴共16项', gallery.length === 16, `数量:${gallery.length}`);
+  check('v0.1.0: 结局图鉴共17项', gallery.length === 17, `数量:${gallery.length}`);
   // 初始全部未seen
   check('v0.0.15: 初始结局全部未解锁', gallery.every(e=>!e.seen));
   // recordEndingGallery 后变seen
@@ -1021,25 +1023,25 @@ async function run(){
   const g2 = eng_e.getEndingGallery();
   const item = g2.find(e=>e.id==='shenyan_good');
   check('v0.0.15: recordEndingGallery标记seen', item && item.seen === true);
-  // computeEnding: solo线 任一男主 tension>=20 → solo_good
+  // computeEnding: solo线的独立选择 → solo_good
   eng_e.state.route = 'solo';
-  eng_e.state.affectionDetail.jiangyu.tension = 20;  // v0.0.16 改为三男主 max
+  eng_e.state.flags.solo_independent = true;
   const ending1 = eng_e.computeCurrentEnding();
-  check('v0.0.16: solo线任一tension≥20→solo_good', ending1 === 'solo_good', `结果:${ending1}`);
+  check('v0.1.0: solo线独立选择→solo_good', ending1 === 'solo_good', `结果:${ending1}`);
   // v0.0.16: route=null 时 computeEnding 返回 null
   eng_e.state.route = null;
   const ending0 = eng_e.computeCurrentEnding();
   check('v0.0.16: route=null时computeEnding返回null', ending0 === null, `结果:${ending0}`);
   eng_e.state.route = 'shenyan';
-  // computeEnding: 沈砚之线 总分>=40且tension>=15 → good
+  // computeEnding: 沈砚之线的明确正向选择 → good
   eng_e.state.route = 'shenyan';
-  eng_e.state.affectionDetail.shenyan = {closeness:20, trust:10, tension:15};
+  eng_e.state.flags = {shenyan_choice:'confront', shenyan_resist:true};
   const ending2 = eng_e.computeCurrentEnding();
-  check('v0.0.15: 沈砚之线总分45+tension15→shenyan_good', ending2 === 'shenyan_good', `结果:${ending2}`);
-  // computeEnding: 总分<20 → bad
-  eng_e.state.affectionDetail.shenyan = {closeness:5, trust:2, tension:2};
+  check('v0.1.0: 沈砚之线正向选择→shenyan_good', ending2 === 'shenyan_good', `结果:${ending2}`);
+  // computeEnding: 明确负向选择 → bad
+  eng_e.state.flags = {shenyan_choice:'endure', shenyan_obey:true};
   const ending3 = eng_e.computeCurrentEnding();
-  check('v0.0.15: 沈砚之线总分9→shenyan_bad', ending3 === 'shenyan_bad', `结果:${ending3}`);
+  check('v0.1.0: 沈砚之线负向选择→shenyan_bad', ending3 === 'shenyan_bad', `结果:${ending3}`);
   // 隐藏结局优先
   eng_e.state.flags._shenyan_hidden = true;
   const ending4 = eng_e.computeCurrentEnding();
@@ -1152,7 +1154,7 @@ async function run(){
   // 重复回复应失败（已记录）
   const replyAgain = eng_m.replyMomentComment(mId, 'shenyan', comments[0].commentIdx, 1);
   // 当前实现不主动阻止重复回复，但 momentReplies 会被覆盖；这里只验证不报错
-  check('v0.0.16: 重复回复不报错', typeof replyAgain === 'boolean');
+  check('v0.1.0: 重复回复被拒绝', replyAgain === false);
 
   // 梦魇系统
   const eng_n = new PhoneEngine(STORY);
@@ -1163,24 +1165,27 @@ async function run(){
   const nm = eng_n.checkNightmare();
   check('v0.0.16: 夜晚+初始状态触发梦魇', nm !== null && nm.id === 'nightmare_lonely',
     `nm:${nm?.id || 'null'}`);
-  // 触发后 nightmaresSeen 已标记
-  check('v0.0.16: nightmaresSeen已标记', eng_n.state.nightmaresSeen['nightmare_lonely'] === true);
-  // lastNightmareDay 已写入
-  check('v0.0.16: lastNightmareDay已写入', eng_n.state.lastNightmareDay === eng_n.state.day);
+  // 触发后必须等待玩家选择，尚未写入已完成记录
+  check('v0.1.0: 梦魇进入待解决状态', eng_n.state.activeNightmare === 'nightmare_lonely');
+  check('v0.1.0: 未选择前不标记已完成', eng_n.state.nightmaresSeen['nightmare_lonely'] !== true);
   // 同一天再调用不再触发
   const nm2 = eng_n.checkNightmare();
   check('v0.0.16: 同一天不再触发梦魇', nm2 === null);
   // 白天不触发（即使未触发过的梦魇）
+  eng_n.state.activeNightmare = null;
   eng_n.state.day += 1;
   eng_n.state.minute = 12 * 60;  // 12:00 白天
   const nm3 = eng_n.checkNightmare();
   check('v0.0.16: 白天不触发梦魇', nm3 === null);
-  // resolveNightmare 应用 effects + moodAfter
+  // 回到触发日后 resolveNightmare 应用 effects + moodAfter
+  eng_n.state.day -= 1;
+  eng_n.state.activeNightmare = 'nightmare_lonely';
   const moodBefore = eng_n.state.mood;
   const ok = eng_n.resolveNightmare('nightmare_lonely', 0);
   check('v0.0.16: resolveNightmare返回true', ok === true);
   check('v0.0.16: resolveNightmare更新mood', eng_n.state.mood !== moodBefore || 'reflective' === eng_n.state.mood,
     `mood:${eng_n.state.mood}`);
+  check('v0.1.0: resolveNightmare标记完成', eng_n.state.nightmaresSeen['nightmare_lonely'] === true && eng_n.state.lastNightmareDay === eng_n.state.day);
   // 不存在的梦魇 ID 返回 false
   check('v0.0.16: 不存在梦魇ID返回false', eng_n.resolveNightmare('not_exist', 0) === false);
 

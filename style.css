@@ -27,7 +27,16 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--ink
   width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;
   background:radial-gradient(ellipse at center,#1a0a2e 0%,#000 70%);
   perspective:1200px;
+  position:relative;
 }
+/* 动态氛围层：由 app.js 写入 --ambience-overlay */
+#phone-frame::before{
+  content:"";
+  position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:var(--ambience-overlay, transparent);
+  transition:background .5s ease;
+}
+#phone-frame > #phone{ position:relative; z-index:1; }
 #phone{
   width:min(420px,100vw);height:min(900px,100vh);
   background:#000;border-radius:42px;overflow:hidden;position:relative;
@@ -81,7 +90,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--ink
 @keyframes bounce{0%,100%{transform:translateY(0);opacity:.6}50%{transform:translateY(-4px);opacity:1}}
 
 /* 主屏 */
-#home-screen{justify-content:space-between;padding:50px 0 20px;background:var(--wallpaper-1);}
+#home-screen{justify-content:flex-start;overflow-y:auto;overscroll-behavior:contain;padding:50px 0 20px;background:var(--wallpaper-1);}
 .home-bg{position:absolute;inset:0;background:var(--wallpaper-1);z-index:-1;}
 .home-bg::before{
   content:"";position:absolute;inset:0;
@@ -96,7 +105,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--ink
 
 .app-grid{
   display:grid;grid-template-columns:repeat(4,1fr);gap:20px 12px;
-  padding:20px 24px;flex:1;align-content:flex-start;
+  padding:20px 24px;flex:none;align-content:flex-start;
 }
 .app-icon{
   position:relative;background:transparent;border:none;cursor:pointer;
@@ -123,7 +132,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--ink
 @keyframes badgePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
 
 .home-dock{
-  margin:0 16px 8px;padding:12px;background:rgba(255,255,255,0.1);backdrop-filter:blur(20px);
+  flex:none;margin:0 16px 8px;padding:12px;background:rgba(255,255,255,0.1);backdrop-filter:blur(20px);
   border-radius:24px;display:flex;justify-content:space-around;
   border:0.5px solid rgba(255,255,255,0.1);
 }
@@ -1249,3 +1258,21 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--ink
 
 
 
+
+
+/* ===== v0.1.0 存档 App ===== */
+.saves-content{padding:12px 16px 28px;overflow-y:auto;flex:1;}
+.saves-intro{font-size:12px;color:var(--ink-mute);line-height:1.5;margin-bottom:12px;}
+.save-slot{background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px;margin-bottom:10px;}
+.save-slot.empty{opacity:0.72;}
+.save-slot-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;}
+.save-slot-title{font-size:14px;font-weight:600;color:var(--ink);}
+.save-slot-tag{font-size:10px;padding:2px 8px;border-radius:999px;background:rgba(122,92,255,0.18);color:var(--accent2);}
+.save-slot-meta{font-size:12px;color:var(--ink-dim);line-height:1.5;margin-bottom:8px;}
+.save-slot-actions{display:flex;flex-wrap:wrap;gap:6px;}
+.save-btn{border:none;border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer;background:rgba(255,255,255,0.08);color:var(--ink);}
+.save-btn.primary{background:linear-gradient(135deg,#ff5fa8,#7a5cff);color:#fff;font-weight:600;}
+.save-btn.danger{background:rgba(248,113,113,0.16);color:var(--red);}
+.lock-actions{margin-top:18px;display:flex;flex-direction:column;gap:8px;align-items:center;}
+.lock-action-btn{border:none;border-radius:999px;padding:8px 16px;font-size:12px;cursor:pointer;background:rgba(255,255,255,0.12);color:#fff;backdrop-filter:blur(10px);}
+.lock-action-btn.primary{background:linear-gradient(135deg,rgba(255,95,168,0.85),rgba(122,92,255,0.85));}

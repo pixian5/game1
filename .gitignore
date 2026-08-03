@@ -22,6 +22,10 @@ Downloads/
 *.log
 tmp/
 .cache/
+coverage/
+.nyc_output/
+.eslintcache
+*.tsbuildinfo
 
 # 依赖（如有）
 node_modules/
@@ -33,3 +37,5 @@ venv/
 # 本地环境配置
 .env
 .env.local
+.env.*
+!.env.example

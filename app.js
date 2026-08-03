@@ -31,12 +31,37 @@
     dateScene:$('date-scene-screen'),
     // v0.0.16 新玩法
     dreams:$('dreams-app'), hints:$('hints-app'),
-    nightmare:$('nightmare-screen')
+    nightmare:$('nightmare-screen'),
+    // v0.1.0 存档
+    saves:$('saves-app')
   };
   let currentConvId = null;
   let currentGroupId = null;
   let timeoutTimer = null;
   let selectedMomentArt = '';
+  const uiTimers = new Set();
+  let pendingRouteChoice = null;
+
+  function setUiTimeout(fn, delay){
+    const id = window.setTimeout(()=>{
+      uiTimers.delete(id);
+      fn();
+    }, delay);
+    uiTimers.add(id);
+    return id;
+  }
+  function resetTransientUi(){
+    uiTimers.forEach(id=>window.clearTimeout(id));
+    uiTimers.clear();
+    if(timeoutTimer){ window.clearTimeout(timeoutTimer); timeoutTimer = null; }
+    currentConvId = null;
+    currentGroupId = null;
+    currentEncounter = null;
+    currentNightmare = null;
+    window._currentCall = null;
+    document.getElementById('route-choice-modal')?.remove();
+    document.getElementById('narrator-choice-modal')?.remove();
+  }
 
   // ===== 屏幕切换 =====
   function showScreen(name){
@@ -51,7 +76,7 @@
     t.textContent = msg;
     t.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(()=>{ t.hidden = true; }, 1500);
+    toastTimer = setUiTimeout(()=>{ t.hidden = true; }, 1500);
   }
 
   // ===== 通知 =====
@@ -65,7 +90,7 @@
       <div class="n-icon" style="background:${char.bg}">${char.avatar}</div>
       <div class="n-content">
         <div class="n-title">${char.name}</div>
-        <div class="n-text">${text}</div>
+        <div class="n-text">${escapeHtml(text)}</div>
       </div>
     `;
     n.onclick = ()=>{
@@ -74,7 +99,7 @@
       n.remove();
     };
     stack.appendChild(n);
-    setTimeout(()=> n.remove(), 5000);
+    setUiTimeout(()=> n.remove(), 5000);
   }
 
   // ===== 时间显示 =====
@@ -118,7 +143,28 @@
     const restartBtn = e.target.closest('[data-action="restart"]');
     if(restartBtn){
       engine.newGame();
+      afterLoadRefresh();
       showScreen('lock');
+      return;
+    }
+    // v0.1.0 存档操作
+    const continueBtn = e.target.closest('[data-action="continue-game"]');
+    if(continueBtn){
+      const ok = engine.continueGame();
+      if(ok){
+        afterLoadRefresh();
+        toast('已继续游戏');
+        showScreen('home');
+      } else {
+        toast('没有可继续的存档');
+      }
+      return;
+    }
+    const openSavesBtn = e.target.closest('[data-action="open-saves"]');
+    if(openSavesBtn){ openApp('saves'); return; }
+    const saveSlotBtn = e.target.closest('[data-save-action]');
+    if(saveSlotBtn){
+      handleSaveAction(saveSlotBtn.dataset.saveAction, saveSlotBtn.dataset.slot || '');
       return;
     }
     const callBtn = e.target.closest('[data-call]');
@@ -152,8 +198,11 @@
     if(encOpt){
       const idx = parseInt(encOpt.dataset.encOpt);
       if(currentEncounter){
-        engine.resolveEncounter(currentEncounter, idx);
-        setTimeout(()=> closeEncounter(), 200);
+        const isMemory = !!currentEncounter.isMemory;
+        const resolved = isMemory
+          ? engine.resolveMemory(currentEncounter.id, idx)
+          : engine.resolveEncounter(currentEncounter, idx);
+        if(resolved && !isMemory) setUiTimeout(()=> closeEncounter(), 200);
       }
       return;
     }
@@ -276,6 +325,8 @@
       // v0.0.16 新玩法
       case 'dreams': renderDreams(); showScreen('dreams'); break;
       case 'hints': renderHints(); showScreen('hints'); break;
+    // v0.1.0 存档
+      case 'saves': renderSaves(); showScreen('saves'); break;
     }
   }
 
@@ -396,6 +447,8 @@
     updateDatesBadge();
     // v0.0.16 梦魇徽章
     updateDreamsBadge();
+    // v0.1.0 存档徽章
+    updateSavesBadge();
   }
   function updateDreamsBadge(){
     const b = $('badge-dreams');
@@ -462,9 +515,9 @@
     showScreen('chat');
     // 如果有待处理选项，立即显示
     if(conv.pendingChoice){
-      setTimeout(()=> showChatChoice(convId, conv.pendingChoice), 400);
+      setUiTimeout(()=> showChatChoice(convId, conv.pendingChoice), 400);
     }
-    setTimeout(()=>{
+    setUiTimeout(()=>{
       const body = $('chat-body');
       body.scrollTop = body.scrollHeight;
     }, 50);
@@ -563,13 +616,13 @@
     modal.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);z-index:160;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:32px;animation:screenIn .4s ease;';
     modal.innerHTML = `
       <div style="font-family:var(--serif);font-size:15px;color:var(--ink-dim);margin-bottom:20px;text-align:center;line-height:1.9;letter-spacing:0.05em;max-width:300px;">
-        ${choice.prompt}
+        ${escapeHtml(choice.prompt)}
       </div>
       <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:280px;">
         ${choice.options.map((opt, i)=>`
           <button class="chat-opt" data-narrator-choice="${i}" style="padding:14px;">
-            ${opt.text}
-            ${opt.hint?`<span style="color:var(--ink-mute);font-size:11px;display:block;margin-top:4px;">${opt.hint}</span>`:''}
+            ${escapeHtml(opt.text)}
+            ${opt.hint?`<span style="color:var(--ink-mute);font-size:11px;display:block;margin-top:4px;">${escapeHtml(opt.hint)}</span>`:''}
           </button>
         `).join('')}
       </div>
@@ -625,13 +678,13 @@
       const smartHint = engine.getOptionHint(opt);
       const hintHtml = opt.hint ? ` <span style="color:var(--ink-mute);font-size:11px">(${escapeHtml(opt.hint)})</span>` : '';
       const smartHintHtml = smartHint ? ` <span class="chat-opt-smart-hint">💡 ${escapeHtml(smartHint)}</span>` : '';
-      btn.innerHTML = opt.text + hintHtml + smartHintHtml;
+      btn.innerHTML = escapeHtml(opt.text) + hintHtml + smartHintHtml;
       btn.onclick = (e)=>{
         e.stopPropagation();
         if(timeoutTimer){ clearTimeout(timeoutTimer); timeoutTimer = null; }
         const conv = engine.state.conversations[convId];
         if(conv) conv.pendingChoice = null;
-        engine.sendMessage(convId, opt.text, opt.effects);
+        engine.sendMessage(convId, opt.text, mergeOptionEffects(opt));
         bar.hidden = true;
       };
       opts.appendChild(btn);
@@ -675,7 +728,7 @@
         onTimeout();
         return;
       }
-      timeoutTimer = setTimeout(tick, 100);
+      timeoutTimer = setUiTimeout(tick, 100);
     }
     tick();
   }
@@ -709,7 +762,7 @@
     engine.sendMessage(convId, finalText, finalEffects);
     bar.hidden = true;
     if(matched && matched.reply){
-      setTimeout(()=> toast(matched.reply), 1200);
+      setUiTimeout(()=> toast(matched.reply), 1200);
     }
   }
 
@@ -763,7 +816,7 @@
         // 通话结束：触发后续事件（通过 engine 的 afterEvent 链）
         $('call-label').textContent = '通话结束';
         const evt = engine.story.events[call.eventId];
-        setTimeout(()=>{
+        setUiTimeout(()=>{
           showScreen('home');
           window._currentCall = null;
           if(evt && evt.then) engine.scheduleEvent(evt.then);
@@ -779,9 +832,7 @@
           btn.textContent = opt.text;
           btn.onclick = (e)=>{
             e.stopPropagation();
-            if(opt.effects && opt.effects.affection){
-              Object.keys(opt.effects.affection).forEach(k=> engine.state.affection[k] += opt.effects.affection[k]);
-            }
+            engine.applyEffects(mergeOptionEffects(opt));
             choices.remove();
             // 防御：then:0 视为"继续下一步"，避免无限循环
             call.step = (typeof opt.then === 'number' && opt.then > 0) ? opt.then : call.step + 1;
@@ -795,11 +846,11 @@
         const lineDiv = document.createElement('div');
         lineDiv.className = 'line';
         const speaker = line.who === 'me' ? `<span class="you">你：</span>` : `<span class="speaker">${call.name}：</span>`;
-        lineDiv.innerHTML = speaker + line.text;
+        lineDiv.innerHTML = speaker + escapeHtml(line.text);
         scriptEl.appendChild(lineDiv);
         scriptEl.scrollTop = scriptEl.scrollHeight;
         call.step++;
-        setTimeout(nextStep, 1100);
+        setUiTimeout(nextStep, 1100);
       }
     }
     nextStep();
@@ -1006,9 +1057,9 @@
         const div = document.createElement('div');
         div.className = 'note-item';
         div.innerHTML = `
-          <div class="ni-title">${n.title}</div>
-          <div class="ni-preview">${n.preview.replace(/\n/g,'<br>')}</div>
-          <div class="ni-date">${n.time}</div>
+          <div class="ni-title">${escapeHtml(n.title)}</div>
+          <div class="ni-preview">${nl2brEscaped(n.preview)}</div>
+          <div class="ni-date">${escapeHtml(n.time)}</div>
         `;
         list.appendChild(div);
       });
@@ -1017,9 +1068,9 @@
         const div = document.createElement('div');
         div.className = 'note-item';
         div.innerHTML = `
-          <div class="ni-title">${n.title}</div>
-          <div class="ni-preview">${(n.preview||'').replace(/\n/g,'<br>')}</div>
-          <div class="ni-date">${n.time}</div>
+          <div class="ni-title">${escapeHtml(n.title)}</div>
+          <div class="ni-preview">${nl2brEscaped(n.preview||'')}</div>
+          <div class="ni-date">${escapeHtml(n.time)}</div>
         `;
         list.appendChild(div);
       });
@@ -1042,10 +1093,10 @@
       div.innerHTML = `
         <div class="call-avatar" style="background:${char?.bg||'#2a2f5a'}">${char?.avatar||'?'}</div>
         <div class="call-info">
-          <div class="call-name">${c.name}</div>
-          <div class="call-meta">${typeText} · ${c.duration}</div>
+          <div class="call-name">${escapeHtml(c.name)}</div>
+          <div class="call-meta">${escapeHtml(typeText)} · ${escapeHtml(c.duration)}</div>
         </div>
-        <div class="call-type ${c.type}">${c.time}</div>
+        <div class="call-type ${escapeHtml(c.type)}">${escapeHtml(c.time)}</div>
       `;
       list.appendChild(div);
     });
@@ -1062,6 +1113,10 @@
 
   // ===== 路线选择 =====
   engine.on('routeChoiceReady', (routeChoice)=>{
+    if(currentNightmare || engine.state.activeNightmare){
+      pendingRouteChoice = routeChoice;
+      return;
+    }
     showRouteChoiceModal(routeChoice);
   });
 
@@ -1076,13 +1131,13 @@
     modal.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);z-index:160;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:32px;animation:screenIn .4s ease;';
     modal.innerHTML = `
       <div style="font-family:var(--serif);font-size:17px;color:var(--ink-dim);margin-bottom:24px;text-align:center;line-height:1.9;letter-spacing:0.05em;">
-        ${routeChoice.prompt}
+        ${escapeHtml(routeChoice.prompt)}
       </div>
       <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:280px;">
         ${routeChoice.options.map((opt)=>`
           <button class="chat-opt" data-route="${opt.route}" style="padding:14px;">
-            ${opt.text}
-            <span style="color:var(--ink-mute);font-size:11px;display:block;margin-top:4px;">${opt.hint}</span>
+            ${escapeHtml(opt.text)}
+            <span style="color:var(--ink-mute);font-size:11px;display:block;margin-top:4px;">${escapeHtml(opt.hint)}</span>
           </button>
         `).join('')}
       </div>
@@ -1112,6 +1167,7 @@
       const item = document.createElement('div');
       item.className = 'moment-item';
       item.dataset.momentId = m.id;
+      const safeMomentId = escapeHtml(m.id);
       // 点赞列表
       const likeNames = m.likes.map(l=>{
         if(l === 'me') return '我';
@@ -1129,8 +1185,8 @@
       // 评论选项
       let commentOptsHtml = '';
       if(m.commentOptions && !inter.commented){
-        commentOptsHtml = `<div class="moment-comment-options" id="opts-${m.id}" hidden>
-          ${m.commentOptions.map((opt,i)=>`<button class="moment-comment-opt" data-moment-comment-opt="${m.id}" data-opt-idx="${i}">${escapeHtml(opt.text)}</button>`).join('')}
+        commentOptsHtml = `<div class="moment-comment-options" id="opts-${safeMomentId}" hidden>
+          ${m.commentOptions.map((opt,i)=>`<button class="moment-comment-opt" data-moment-comment-opt="${safeMomentId}" data-opt-idx="${i}">${escapeHtml(opt.text)}</button>`).join('')}
         </div>`;
       }
       // v0.0.16: 男主朋友圈互动评论 + 回复选项
@@ -1144,7 +1200,7 @@
         if(comment.replyOptions && !sentReply){
           replyOptsHtml = '<div class="moment-reply-options">';
           comment.replyOptions.forEach((rp, ri) => {
-            replyOptsHtml += `<button class="moment-reply-opt" data-moment-reply="${m.id}|${cc.charId}|${cc.commentIdx}|${ri}">${escapeHtml(rp.text)}</button>`;
+            replyOptsHtml += `<button class="moment-reply-opt" data-moment-reply="${safeMomentId}|${escapeHtml(cc.charId)}|${cc.commentIdx}|${ri}">${escapeHtml(rp.text)}</button>`;
           });
           replyOptsHtml += '</div>';
         } else if(sentReply){
@@ -1166,12 +1222,12 @@
             <div class="moment-text">${nl2brEscaped(m.text)}</div>
             ${m.art ? `<div class="moment-art">${getMomentArt(m.art)}</div>` : ''}
             <div class="moment-meta">
-              <span>${m.dateLabel} ${m.time}</span>
+              <span>${escapeHtml(m.dateLabel)} ${escapeHtml(m.time)}</span>
               <div class="moment-actions">
-                <button class="moment-act-btn ${inter.liked?'liked':''}" data-moment-like="${m.id}" ${inter.liked?'disabled':''}>
+                <button class="moment-act-btn ${inter.liked?'liked':''}" data-moment-like="${safeMomentId}" ${inter.liked?'disabled':''}>
                   ${inter.liked?'♥':'♡'} ${m.likes.length}
                 </button>
-                ${m.commentOptions && !inter.commented ? `<button class="moment-act-btn" data-moment-comment="${m.id}">💬 评论</button>` : ''}
+                ${m.commentOptions && !inter.commented ? `<button class="moment-act-btn" data-moment-comment="${safeMomentId}">💬 评论</button>` : ''}
               </div>
             </div>
             ${likeNames ? `<div class="moment-likes">♥ ${escapeHtml(likeNames)}</div>` : ''}
@@ -1282,11 +1338,11 @@
     showScreen('dream');
   });
   engine.on('dreamResolved', ({choice})=>{
-    setTimeout(()=>{
+    setUiTimeout(()=>{
       if(choice.shard) toast('✦ 获得记忆碎片：' + choice.shard);
     }, 500);
     // 碎片提示后回到主屏（若 timeAdvance 随后触发会自动覆盖）
-    setTimeout(()=>{
+    setUiTimeout(()=>{
       if(screens.dream.classList.contains('active')) showScreen('home');
     }, 1800);
   });
@@ -1312,10 +1368,10 @@
     });
   });
   engine.on('memoryResolved', ({opt})=>{
-    setTimeout(()=>{
+    setUiTimeout(()=>{
       if(opt.shard) toast('✦ 获得回忆碎片：' + opt.shard);
     }, 300);
-    setTimeout(()=>{
+    setUiTimeout(()=>{
       if(screens.encounter.classList.contains('active')) showScreen('album');
     }, 1500);
   });
@@ -1429,8 +1485,8 @@
         <div class="vm-icon">${char.avatar}</div>
         <div class="vm-info">
           <div class="vm-name">${char.name}</div>
-          <div class="vm-text">${vm.text}</div>
-          <div class="vm-meta">第${vm.day}天 ${vm.time}</div>
+          <div class="vm-text">${escapeHtml(vm.text)}</div>
+          <div class="vm-meta">第${escapeHtml(vm.day)}天 ${escapeHtml(vm.time)}</div>
           <div class="vm-actions">
             <button class="vm-btn" data-vm-play="${vm.id}">▶ 播放</button>
             ${vm.callbackEvent ? `<button class="vm-btn callback" data-vm-callback="${vm.id}">回拨</button>` : ''}
@@ -1519,9 +1575,9 @@
     $('group-chat-input-bar').hidden = true;
     showScreen('groupChat');
     if(g.pendingChoice){
-      setTimeout(()=> showGroupChoice(groupId, g.pendingChoice), 400);
+      setUiTimeout(()=> showGroupChoice(groupId, g.pendingChoice), 400);
     }
-    setTimeout(()=>{
+    setUiTimeout(()=>{
       const body = $('group-chat-body');
       body.scrollTop = body.scrollHeight;
     }, 50);
@@ -1567,7 +1623,7 @@
     choice.options.forEach((opt, i)=>{
       const btn = document.createElement('button');
       btn.className = 'chat-opt';
-      btn.innerHTML = opt.text + (opt.hint?` <span style="color:var(--ink-mute);font-size:11px">(${opt.hint})</span>`:'');
+        btn.innerHTML = escapeHtml(opt.text) + (opt.hint?` <span style="color:var(--ink-mute);font-size:11px">(${escapeHtml(opt.hint)})</span>`:'');
       btn.dataset.groupOpt = i;
       opts.appendChild(btn);
     });
@@ -1712,7 +1768,7 @@
       engine.resolveFlashback(currentFlashback.fbId, currentFlashback.choices);
       toast(opt?.shard ? '收集碎片：' + opt.shard : '回忆结束');
       currentFlashback = null;
-      setTimeout(()=> showScreen('home'), 1800);
+      setUiTimeout(()=> showScreen('home'), 1800);
       return;
     }
   });
@@ -2018,7 +2074,7 @@
       n.className = 'ach-notif';
       n.textContent = `🏆 成就解锁：${a.name}`;
       document.body.appendChild(n);
-      setTimeout(()=> n.remove(), 3000);
+      setUiTimeout(()=> n.remove(), 3000);
     });
     // 若成就页打开则刷新
     if(screens.achievements && screens.achievements.classList.contains('active')){
@@ -2075,7 +2131,7 @@
       n.className = 'egg-notif';
       n.textContent = `✦ 彩蛋：${egg.name}`;
       document.body.appendChild(n);
-      setTimeout(()=> n.remove(), 3000);
+      setUiTimeout(()=> n.remove(), 3000);
     });
   });
 
@@ -2159,7 +2215,7 @@
     n.className = 'egg-notif';
     n.textContent = `🔍 谜题解开：${puzzle.title}`;
     document.body.appendChild(n);
-    setTimeout(()=> n.remove(), 3000);
+    setUiTimeout(()=> n.remove(), 3000);
   });
 
   // ===== v0.0.10 节日App =====
@@ -2298,7 +2354,7 @@
     engine.markPerspectiveSceneSeen(currentPerspectiveCharId, currentPsceneId);
     toast('心声：' + opt.inner);
     // 返回视角列表
-    setTimeout(()=>{
+    setUiTimeout(()=>{
       renderPerspective();
       showScreen('perspective');
     }, 1500);
@@ -2315,7 +2371,7 @@
     n.className = 'egg-notif';
     n.textContent = `✦ 真相结局解锁：${perspective.title}`;
     document.body.appendChild(n);
-    setTimeout(()=> n.remove(), 4000);
+    setUiTimeout(()=> n.remove(), 4000);
   });
 
   // ===== v0.0.13 主角档案 App =====
@@ -2443,10 +2499,21 @@
     $('player-edit-content').innerHTML = html;
   }
 
+  function capturePlayerEditInputs(){
+    if(!playerEditState) return;
+    const name = $('pe-name');
+    const nickname = $('pe-nick');
+    const age = $('pe-age');
+    if(name) playerEditState.name = name.value.slice(0, 6);
+    if(nickname) playerEditState.nickname = nickname.value.slice(0, 6);
+    if(age) playerEditState.age = Math.max(18, Math.min(40, parseInt(age.value) || 24));
+  }
+
   function handlePlayerEditClick(target){
     // 颜色选择
     const colorOpt = target.closest('[data-pe-color]');
     if(colorOpt){
+      capturePlayerEditInputs();
       playerEditState.bg = colorOpt.dataset.peColor;
       renderPlayerEdit();
       return true;
@@ -2454,6 +2521,7 @@
     // 称谓选择
     const pronounOpt = target.closest('[data-pe-pronoun]');
     if(pronounOpt){
+      capturePlayerEditInputs();
       playerEditState.pronoun = pronounOpt.dataset.pePronoun;
       renderPlayerEdit();
       return true;
@@ -2461,6 +2529,7 @@
     // 性格问答选择
     const quizOpt = target.closest('[data-pe-quiz]');
     if(quizOpt){
+      capturePlayerEditInputs();
       playerEditState.answers[quizOpt.dataset.peQuiz] = parseInt(quizOpt.dataset.peIdx);
       renderPlayerEdit();
       return true;
@@ -2470,6 +2539,7 @@
 
   function savePlayer(){
     if(!playerEditState) return;
+    capturePlayerEditInputs();
     const nameInput = $('pe-name');
     const nickInput = $('pe-nick');
     const ageInput = $('pe-age');
@@ -2478,23 +2548,9 @@
     const age = Math.max(18, Math.min(40, parseInt(ageInput?.value) || 24));
     // 头像取姓名首字
     const avatar = name[0];
-    // 应用性格问答 effects：先减去旧 effects，再加新 effects
-    // 简化：仅在首次作答时累加；若已作答则跳过重复应用
-    const oldAnswers = engine.state.player?.answers || {};
     const newAnswers = playerEditState.answers;
-    // 重置 personality 中由 quiz 产生的维度（避免重复累加）
-    // 简化策略：直接保存新 answers，不重新计算 personality（已应用过的不再加）
-    // 但若首次作答，需要应用 effects
     const quiz = STORY.playerCustomization?.personalityQuiz || [];
-    quiz.forEach(q=>{
-      const oldIdx = oldAnswers[q.id];
-      const newIdx = newAnswers[q.id];
-      if(oldIdx === undefined && newIdx !== undefined){
-        const opt = q.options[newIdx];
-        if(opt && opt.effects) engine._applyEffects(opt.effects);
-      }
-    });
-    engine.setPlayer({
+    engine.updatePlayerProfile({
       name, nickname, avatar, age,
       bg: playerEditState.bg,
       pronoun: playerEditState.pronoun,
@@ -2574,7 +2630,7 @@
     n.className = 'egg-notif';
     n.textContent = `★ ${char.name} 关系阶段提升：${stage.name} · ${stage.title}`;
     document.body.appendChild(n);
-    setTimeout(()=> n.remove(), 4000);
+    setUiTimeout(()=> n.remove(), 4000);
     if(stage.unlockMsg){
       toast(stage.unlockMsg);
     }
@@ -2642,7 +2698,7 @@
       n.className = 'egg-notif';
       n.textContent = `✅ 任务完成：${t.name} +${t.reward?.coins||0}💰`;
       document.body.appendChild(n);
-      setTimeout(()=> n.remove(), 3000);
+      setUiTimeout(()=> n.remove(), 3000);
     });
     if(screens.tasks && screens.tasks.classList.contains('active')){
       renderTasks();
@@ -2660,7 +2716,7 @@
       n.className = 'egg-notif';
       n.textContent = `🎁 连胜 ${r.days} 天达成！可领取：${r.name}`;
       document.body.appendChild(n);
-      setTimeout(()=> n.remove(), 4500);
+      setUiTimeout(()=> n.remove(), 4500);
     });
     if(screens.tasks && screens.tasks.classList.contains('active')){
       renderTasks();
@@ -2995,7 +3051,7 @@
       n.className = 'egg-notif';
       n.textContent = `🎨 解锁${it.type==='theme'?'壁纸':'图标'}主题：${it.name}`;
       document.body.appendChild(n);
-      setTimeout(()=> n.remove(), 4500);
+      setUiTimeout(()=> n.remove(), 4500);
     });
     if(screens.themes && screens.themes.classList.contains('active')){
       renderThemes();
@@ -3072,15 +3128,27 @@
   }
   function closeNightmareScreen(){
     currentNightmare = null;
+    if(pendingRouteChoice){
+      const routeChoice = pendingRouteChoice;
+      pendingRouteChoice = null;
+      showRouteChoiceModal(routeChoice);
+      return;
+    }
     showScreen('home');
   }
   function handleNightmareOpt(optIdx){
     if(!currentNightmare) return;
     const nm = currentNightmare;
-    engine.resolveNightmare(nm.id, optIdx);
+    if(!engine.resolveNightmare(nm.id, optIdx)) return;
     toast('梦魇已解');
     currentNightmare = null;
-    showScreen('home');
+    if(pendingRouteChoice){
+      const routeChoice = pendingRouteChoice;
+      pendingRouteChoice = null;
+      showRouteChoiceModal(routeChoice);
+    } else {
+      showScreen('home');
+    }
   }
 
   // ===== v0.0.16 智能提示 App =====
@@ -3125,7 +3193,7 @@
     n.className = 'egg-notif';
     n.textContent = `🌙 梦魇触发：${nm.name}`;
     document.body.appendChild(n);
-    setTimeout(()=> n.remove(), 4500);
+    setUiTimeout(()=> n.remove(), 4500);
     // 弹出梦魇模态
     openNightmareScreen(nm);
     updateDreamsBadge();
@@ -3162,6 +3230,155 @@
     toast('已回复');
   });
 
+
+  // ===== v0.1.0 存档 App =====
+  function formatSaveTime(iso){
+    if(!iso) return '—';
+    try {
+      const d = new Date(iso);
+      if(Number.isNaN(d.getTime())) return '—';
+      const pad = n => String(n).padStart(2,'0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } catch(_){
+      return '—';
+    }
+  }
+  function slotDisplayName(slot){
+    if(slot === 'auto') return '自动存档';
+    if(slot === 'slot1') return '手动槽位 1';
+    if(slot === 'slot2') return '手动槽位 2';
+    if(slot === 'slot3') return '手动槽位 3';
+    return slot;
+  }
+  function updateSavesBadge(){
+    const b = $('badge-saves');
+    const counter = $('saves-counter');
+    const slots = engine.listSaveSlots ? engine.listSaveSlots() : [];
+    const used = slots.filter(s => !s.empty).length;
+    if(b){
+      if(used > 0){ b.textContent = used; b.hidden = false; }
+      else b.hidden = true;
+    }
+    if(counter) counter.textContent = `${used}/${slots.length || 4}`;
+  }
+  function updateLockContinueBtn(){
+    const btn = $('lock-continue-btn');
+    if(!btn) return;
+    const has = engine.hasAnySave ? engine.hasAnySave() : false;
+    btn.hidden = !has;
+  }
+  function afterLoadRefresh(){
+    resetTransientUi();
+    updateTimeDisplay();
+    updateBadges();
+    updateSavesBadge();
+    updateLockContinueBtn();
+    applyThemeToBody();
+    applyAmbienceToBody(engine.getCurrentAmbience ? engine.getCurrentAmbience() : null);
+    // 关闭可能残留的覆盖层；未解决的梦魇会按保存状态恢复。
+    currentDateScene = null;
+    if(screens.dateScene) screens.dateScene.classList.remove('active');
+    if(screens.nightmare) screens.nightmare.classList.remove('active');
+    const activeNightmareId = engine.state.activeNightmare;
+    if(activeNightmareId && STORY.nightmares?.[activeNightmareId]){
+      openNightmareScreen(STORY.nightmares[activeNightmareId]);
+    }
+  }
+  function renderSaves(){
+    const content = $('saves-content');
+    if(!content || !engine.listSaveSlots) return;
+    const slots = engine.listSaveSlots();
+    let html = `<div class="saves-intro">自动存档会在关键进度变化时写入。手动槽位可长期保留；支持导出/导入 JSON。</div>`;
+    slots.forEach(s => {
+      const summary = s.summary || {};
+      const title = slotDisplayName(s.slot);
+      const tag = s.isAuto ? 'AUTO' : 'MANUAL';
+      const meta = s.empty
+        ? '空槽位 · 可写入当前进度'
+        : `${escapeHtml(s.label || '')}<br>${escapeHtml(summary.playerName || '林夏')} · ${escapeHtml(summary.routeLabel || '未选线')}<br>${escapeHtml(formatSaveTime(s.time))}${s.note ? ' · ' + escapeHtml(s.note) : ''}`;
+      html += `<div class="save-slot ${s.empty?'empty':''}">
+        <div class="save-slot-top">
+          <div class="save-slot-title">${escapeHtml(title)}</div>
+          <div class="save-slot-tag">${tag}</div>
+        </div>
+        <div class="save-slot-meta">${meta}</div>
+        <div class="save-slot-actions">
+          <button class="save-btn primary" data-save-action="write" data-slot="${escapeHtml(s.slot)}">${s.empty?'写入':'覆盖写入'}</button>
+          ${s.empty ? '' : `<button class="save-btn primary" data-save-action="load" data-slot="${escapeHtml(s.slot)}">读取</button>
+          <button class="save-btn" data-save-action="export" data-slot="${escapeHtml(s.slot)}">导出</button>
+          <button class="save-btn danger" data-save-action="delete" data-slot="${escapeHtml(s.slot)}">删除</button>`}
+          <button class="save-btn" data-save-action="import" data-slot="${escapeHtml(s.slot)}">导入到此</button>
+        </div>
+      </div>`;
+    });
+    html += `<div class="saves-intro" style="margin-top:8px;">提示：删除仅影响本地浏览器存档，不会回滚剧情文件。</div>`;
+    content.innerHTML = html;
+    updateSavesBadge();
+  }
+  function downloadText(filename, text){
+    const blob = new Blob([text], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    setUiTimeout(()=> URL.revokeObjectURL(url), 1000);
+  }
+  function handleSaveAction(action, slot){
+    if(!action) return;
+    if(action === 'write'){
+      const ok = engine.save(slot || 'slot1', {note: '手动存档'});
+      toast(ok ? `已保存到 ${slotDisplayName(slot)}` : '保存失败');
+      renderSaves();
+      updateLockContinueBtn();
+      return;
+    }
+    if(action === 'load'){
+      const ok = engine.load(slot);
+      if(ok){
+        afterLoadRefresh();
+        toast(`已读取 ${slotDisplayName(slot)}`);
+        showScreen('home');
+      } else toast('读取失败');
+      return;
+    }
+    if(action === 'delete'){
+      if(!confirm(`确认删除 ${slotDisplayName(slot)}？`)) return;
+      const ok = engine.deleteSave(slot);
+      toast(ok ? '已删除' : '删除失败');
+      renderSaves();
+      updateLockContinueBtn();
+      return;
+    }
+    if(action === 'export'){
+      const text = engine.exportSave(slot);
+      if(!text){ toast('导出失败'); return; }
+      downloadText(`neon-heart-${slot}.json`, text);
+      toast('已导出');
+      return;
+    }
+    if(action === 'import'){
+      const input = $('save-import-input');
+      if(!input){ toast('导入控件缺失'); return; }
+      input.value = '';
+      input.onchange = ()=>{
+        const file = input.files && input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = ()=>{
+          const res = engine.importSave(String(reader.result || ''), slot || 'slot1');
+          if(res && res.ok){
+            toast(`已导入到 ${slotDisplayName(res.slot || slot)}`);
+            renderSaves();
+            updateLockContinueBtn();
+          } else {
+            toast('导入失败：' + (res?.reason || '未知错误'));
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+  }
+
   // 氛围层应用到 body
   function applyAmbienceToBody(amb){
     const overlay = amb?.wallpaperOverlay || 'transparent';
@@ -3181,12 +3398,41 @@
     engine.replyMomentComment(momentId, charId, parseInt(commentIdx), parseInt(replyIdx));
   }
 
+  engine.on('gameSaved', ()=>{
+    updateSavesBadge();
+    updateLockContinueBtn();
+    if(screens.saves && screens.saves.classList.contains('active')) renderSaves();
+  });
+  engine.on('gameLoaded', ()=>{
+    afterLoadRefresh();
+  });
+  engine.on('gameDeleted', ()=>{
+    updateSavesBadge();
+    updateLockContinueBtn();
+  });
+  engine.on('gameImported', ()=>{
+    updateSavesBadge();
+    updateLockContinueBtn();
+  });
+  engine.on('saveFailed', ({error})=>{
+    toast('存档失败：' + (error || '未知错误'));
+  });
+
   // ===== 初始化 =====
   function init(){
     updateTimeDisplay();
-    engine.newGame();
-    applyThemeToBody();
-    applyAmbienceToBody(engine.getCurrentAmbience());
+    engine.startAutoSave();
+    // 有存档则恢复进度，否则新开一局
+    if(engine.hasAnySave()){
+      const ok = engine.continueGame();
+      if(!ok) engine.newGame();
+    } else {
+      engine.newGame();
+    }
+    afterLoadRefresh();
+    // 启动后再强制写一次自动存档，保证下次能继续
+    engine.autoSave(true);
+    updateLockContinueBtn();
     showScreen('lock');
   }
   init();
