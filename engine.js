@@ -85,6 +85,10 @@ class PhoneEngine {
       dreamShards: [],
       resolvedDreams: {},
       activeDream: null,
+      // 可恢复的异步剧情工作。存档时不能只记录 firedEvents，否则刷新会吞剧情。
+      pendingMessages: [],
+      pendingEventDispatches: [],
+      pendingCalls: [],
       // 性格画像维度
       personality: {active:0, passive:0, rational:0, emotional:0, independent:0, dependent:0},
       // 当前地点
@@ -380,12 +384,12 @@ class PhoneEngine {
       if(evt.then){
         const lastDelay = (evt.delay || 0) + (n-1)*0.3;
         const totalDelay = (lastDelay + 2.8) * 1000; // 留足打字时间
-        this._setTimeout(()=> this.scheduleEvent(evt.then), totalDelay);
+        this._queueEventDispatch(evt.then, totalDelay);
       }
       return; // 不走 afterEvent
     } else if(evt.type === 'call'){
       // 电话事件：稍后触发
-      this._setTimeout(()=> this.triggerCall(eventId), (evt.delay||0)*1000);
+      this._queueCall(eventId, (evt.delay||0)*1000);
       return; // 电话的后续在通话结束后处理
     } else if(evt.type === 'photo_unlock'){
       this.unlockPhoto(evt.photo);
@@ -427,14 +431,14 @@ class PhoneEngine {
       if(evt.then){
         const lastDelay = (evt.delay || 0) + (n-1)*0.3;
         const totalDelay = (lastDelay + 2.8) * 1000;
-        this._setTimeout(()=> this.scheduleEvent(evt.then), totalDelay);
+        this._queueEventDispatch(evt.then, totalDelay);
       }
       return;
     }
     this.afterEvent(evt);
   }
   afterEvent(evt){
-    if(evt.then) this._setTimeout(()=> this.scheduleEvent(evt.then), 400);
+    if(evt.then) this._queueEventDispatch(evt.then, 400);
   }
 
   checkTimeEvents(){
@@ -450,74 +454,120 @@ class PhoneEngine {
   }
 
   // ===== 消息系统 =====
-  queueMessage(msg, delay=0){
-    // 旁白消息：不依赖会话，直接发出事件（带选项时作为决策弹窗）
+  _newPendingId(prefix){
+    return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  }
+  _queueEventDispatch(eventId, delay=0){
+    if(!this.story.events?.[eventId] && !this.story.criticalEvents?.[eventId]) return null;
+    const item = {id:this._newPendingId('event'), eventId, dueAt:Date.now() + Math.max(0, delay)};
+    this.state.pendingEventDispatches.push(item);
+    this._schedulePendingEventDispatch(item);
+    this.emit('stateChange', this.state);
+    return item.id;
+  }
+  _schedulePendingEventDispatch(item){
+    this._setTimeout(()=>{
+      const idx = this.state.pendingEventDispatches.findIndex(p=>p.id === item.id);
+      if(idx < 0) return;
+      const [pending] = this.state.pendingEventDispatches.splice(idx, 1);
+      this.scheduleEvent(pending.eventId);
+    }, Math.max(0, item.dueAt - Date.now()));
+  }
+  _queueCall(eventId, delay=0){
+    const item = {id:this._newPendingId('call'), eventId, dueAt:Date.now() + Math.max(0, delay)};
+    this.state.pendingCalls.push(item);
+    this._schedulePendingCall(item);
+    this.emit('stateChange', this.state);
+    return item.id;
+  }
+  _schedulePendingCall(item){
+    this._setTimeout(()=>{
+      const idx = this.state.pendingCalls.findIndex(p=>p.id === item.id);
+      if(idx < 0) return;
+      const [pending] = this.state.pendingCalls.splice(idx, 1);
+      this.triggerCall(pending.eventId);
+    }, Math.max(0, item.dueAt - Date.now()));
+  }
+  _schedulePendingMessage(item){
+    this._setTimeout(()=> this._deliverPendingMessage(item.id), Math.max(0, item.dueAt - Date.now()));
+  }
+  _deliverPendingMessage(id){
+    const idx = this.state.pendingMessages.findIndex(p=>p.id === id);
+    if(idx < 0) return;
+    const [msg] = this.state.pendingMessages.splice(idx, 1);
+    if(msg.groupId){
+      const group = this.state.groups[msg.groupId];
+      if(!group) return;
+      group.typing = false;
+      group.messages.push({from:msg.from, text:msg.text, time:this.getTime().time, ts:Date.now()});
+      group.unread++;
+      this.emit('groupUpdate', {id:msg.groupId, group});
+      this.emit('groupMessageReceived', {groupId:msg.groupId, from:msg.from, text:msg.text, group});
+      if(msg.choice){
+        group.pendingChoice = msg.choice;
+        this.emit('choicePrompt', {convId:'group:'+msg.groupId, choice:msg.choice, conv:group});
+      }
+      if(msg.thenEvent) this._queueEventDispatch(msg.thenEvent, 600);
+      this.emit('stateChange', this.state);
+      return;
+    }
     if(msg.from === 'narrator'){
-      this._setTimeout(()=>{
-        this.emit('messageReceived', {from:'narrator', text:msg.text});
-        if(msg.choice){
-          this.emit('choicePrompt', {convId:'narrator', choice:msg.choice, conv:null});
-        }
-        if(msg.then) this._setTimeout(()=> this.scheduleEvent(msg.then), 600);
-      }, delay*1000);
+      this.emit('messageReceived', {from:'narrator', text:msg.text});
+      if(msg.choice) this.emit('choicePrompt', {convId:'narrator', choice:msg.choice, conv:null});
+      if(msg.thenEvent) this._queueEventDispatch(msg.thenEvent, 600);
+      this.emit('stateChange', this.state);
       return;
     }
     const conv = this.state.conversations[msg.from];
-    if(!conv) return;
-    this._setTimeout(()=>{
-      if(conv.finished) return;
-      conv.typing = true;
-      this.emit('conversationUpdate', {id:msg.from, conv});
-      // 打字时间根据字数
-      const typingTime = Math.min(2200, Math.max(700, msg.text.length * 50));
+    if(!conv || conv.finished) return;
+    conv.typing = false;
+    const msgObj = {from:msg.from, text:msg.text, time:this.getTime().time, ts:Date.now(), replied:false};
+    conv.messages.push(msgObj);
+    conv.unread++;
+    this.emit('conversationUpdate', {id:msg.from, conv});
+    this.emit('messageReceived', {from:msg.from, text:msg.text, conv});
+    if(msg.choice){
+      conv.pendingChoice = msg.choice;
+      this.emit('choicePrompt', {convId:msg.from, choice:msg.choice, conv});
+    }
+    if(msg.followup){
+      const fu = msg.followup;
       this._setTimeout(()=>{
-        conv.typing = false;
-        const msgObj = {
-          from: msg.from,
-          text: msg.text,
-          time: this.getTime().time,
-          ts: Date.now(),
-          replied: false   // 跟踪玩家是否回复此消息
-        };
-        conv.messages.push(msgObj);
-        conv.unread++;
-        this.emit('conversationUpdate', {id:msg.from, conv});
-        this.emit('messageReceived', {from:msg.from, text:msg.text, conv});
-        // 如果该消息后有玩家选择，触发选择
-        if(msg.choice){
-          conv.pendingChoice = msg.choice; // engine 层挂起选项，UI/测试均可读取
-          this.emit('choicePrompt', {convId:msg.from, choice:msg.choice, conv});
+        if(!msgObj.replied && conv.messages[conv.messages.length-1] === msgObj){
+          conv.messages.push({from:msg.from, text:fu.text, time:this.getTime().time, ts:Date.now(), isFollowup:true});
+          conv.unread++;
+          if(fu.affection) this._applyEffects({affection:fu.affection});
+          this.emit('conversationUpdate', {id:msg.from, conv});
+          this.emit('messageReceived', {from:msg.from, text:fu.text, conv, isFollowup:true});
+          this.state.flags.followup_triggered = true;
+          this.emit('stateChange', this.state);
         }
-        // 已读不回后果：若该消息配置了 followup，启动计时器
-        // 判定逻辑：玩家未在 delay 时间内回复此消息（msgObj.replied 仍为 false）
-        if(msg.followup){
-          const fu = msg.followup;
-          this._setTimeout(()=>{
-            // 若该消息仍是会话最后一条且玩家未回复 → 触发跟进
-            if(!msgObj.replied && conv.messages[conv.messages.length-1] === msgObj){
-              conv.messages.push({
-                from: msg.from,
-                text: fu.text,
-                time: this.getTime().time,
-                ts: Date.now(),
-                isFollowup: true
-              });
-              conv.unread++;
-              if(fu.affection){
-                this._applyEffects({affection: fu.affection});
-              }
-              this.emit('conversationUpdate', {id:msg.from, conv});
-              this.emit('messageReceived', {from:msg.from, text:fu.text, conv, isFollowup:true});
-              // 标记已触发过 followup，用于成就判定
-              this.state.flags.followup_triggered = true;
-              this.emit('stateChange', this.state);
-            }
-          }, (fu.delay || 30) * 1000);
+      }, (fu.delay || 30) * 1000);
+    }
+    if(msg.thenEvent) this._queueEventDispatch(msg.thenEvent, 600);
+    this.emit('stateChange', this.state);
+  }
+  queueMessage(msg, delay=0){
+    if(!msg || !['narrator', ...Object.keys(this.state.conversations)].includes(msg.from)) return;
+    const text = typeof msg.text === 'string' ? msg.text : '';
+    const typingTime = msg.from === 'narrator' ? 0 : Math.min(2200, Math.max(700, text.length * 50));
+    const item = {
+      id:this._newPendingId('message'), from:msg.from, text,
+      choice:msg.choice || null, thenEvent:msg.then || null, followup:msg.followup || null,
+      dueAt:Date.now() + Math.max(0, delay * 1000) + typingTime
+    };
+    this.state.pendingMessages.push(item);
+    if(msg.from !== 'narrator'){
+      this._setTimeout(()=>{
+        const conv = this.state.conversations[msg.from];
+        if(conv && this.state.pendingMessages.some(p=>p.id === item.id)){
+          conv.typing = true;
+          this.emit('conversationUpdate', {id:msg.from, conv});
         }
-        // 链式触发下一个事件（msg.then 指向 event id）
-        if(msg.then) this._setTimeout(()=> this.scheduleEvent(msg.then), 600);
-      }, typingTime);
-    }, delay*1000);
+      }, Math.max(0, delay * 1000));
+    }
+    this._schedulePendingMessage(item);
+    this.emit('stateChange', this.state);
   }
 
   // 玩家发送消息（通过选项触发）
@@ -569,7 +619,7 @@ class PhoneEngine {
       this.resolveInvitation(invId, 'declined');
       return;
     }
-    this._setTimeout(()=> this.scheduleEvent(thenEvent), 900);
+    this._queueEventDispatch(thenEvent, 900);
   }
 
   // 玩家选择路线（特殊处理：直接触发对应路线的首个事件）
@@ -849,7 +899,7 @@ class PhoneEngine {
     this.emit('dreamResolved', {dreamId, choice: opt});
     this.emit('stateChange', this.state);
     // 触发后续
-    if(dream.then) this._setTimeout(()=> this.scheduleEvent(dream.then), 800);
+    if(dream.then) this._queueEventDispatch(dream.then, 800);
     return true;
   }
 
@@ -952,7 +1002,7 @@ class PhoneEngine {
     // 触发 then（赴约场景的后续事件）
     const thenEvt = enc.then || this._pendingEncounterThen;
     this._pendingEncounterThen = null;
-    if(thenEvt) this._setTimeout(()=> this.scheduleEvent(thenEvt), 1000);
+    if(thenEvt) this._queueEventDispatch(thenEvt, 1000);
     return true;
   }
 
@@ -981,7 +1031,7 @@ class PhoneEngine {
     this.emit('memoryResolved', {memId, opt});
     this.emit('stateChange', this.state);
     // 触发后续（与其他 resolve 方法保持一致）
-    if(mem.then) this._setTimeout(()=> this.scheduleEvent(mem.then), 800);
+    if(mem.then) this._queueEventDispatch(mem.then, 800);
     return true;
   }
   getMemoriesByPhoto(photoId){
@@ -1103,7 +1153,7 @@ class PhoneEngine {
             messages: [], unread:0, typing:false
           };
           this.emit('groupCreated', {id, group:this.state.groups[id]});
-          if(g.createEvent) this._setTimeout(()=> this.scheduleEvent(g.createEvent), 1500);
+          if(g.createEvent) this._queueEventDispatch(g.createEvent, 1500);
         }
       } catch(_) {}
     }
@@ -1117,29 +1167,20 @@ class PhoneEngine {
       this.state.groups[groupId] = {id:groupId, name:gdef.name, members:gdef.members, messages:[], unread:0, typing:false};
     }
     const g = this.state.groups[groupId];
+    const text = typeof msg.text === 'string' ? msg.text : '';
+    const typingTime = Math.min(2200, Math.max(700, text.length * 50));
+    const item = {id:this._newPendingId('group-message'), groupId, from:msg.from, text,
+      choice:msg.choice || null, thenEvent:msg.then || null,
+      dueAt:Date.now() + Math.max(0, delay * 1000) + typingTime};
+    this.state.pendingMessages.push(item);
     this._setTimeout(()=>{
-      g.typing = true;
-      this.emit('groupUpdate', {id:groupId, group:g});
-      const typingTime = Math.min(2200, Math.max(700, msg.text.length * 50));
-      this._setTimeout(()=>{
-        g.typing = false;
-        g.messages.push({
-          from: msg.from,
-          text: msg.text,
-          time: this.getTime().time,
-          ts: Date.now()
-        });
-        g.unread++;
+      if(this.state.pendingMessages.some(p=>p.id === item.id)){
+        g.typing = true;
         this.emit('groupUpdate', {id:groupId, group:g});
-        this.emit('groupMessageReceived', {groupId, from:msg.from, text:msg.text, group:g});
-        // 群内选项
-        if(msg.choice){
-          g.pendingChoice = msg.choice;
-          this.emit('choicePrompt', {convId:'group:'+groupId, choice:msg.choice, conv:g});
-        }
-        if(msg.then) this._setTimeout(()=> this.scheduleEvent(msg.then), 600);
-      }, typingTime);
-    }, delay*1000);
+      }
+    }, Math.max(0, delay * 1000));
+    this._schedulePendingMessage(item);
+    this.emit('stateChange', this.state);
   }
   // 玩家在群里选择
   sendGroupMessage(groupId, text, effects){
@@ -1150,7 +1191,7 @@ class PhoneEngine {
     if(g.pendingChoice){ delete g.pendingChoice; }
     this.emit('groupUpdate', {id:groupId, group:g});
     this._applyEffects(effects);
-    if(effects && effects.thenEvent) this._setTimeout(()=> this.scheduleEvent(effects.thenEvent), 900);
+    if(effects && effects.thenEvent) this._queueEventDispatch(effects.thenEvent, 900);
   }
   markGroupRead(groupId){
     const g = this.state.groups[groupId];
@@ -1235,7 +1276,7 @@ class PhoneEngine {
     }
     this.emit('flashbackResolved', {fbId, fb});
     this.emit('stateChange', this.state);
-    if(fb.then) this._setTimeout(()=> this.scheduleEvent(fb.then), 800);
+    if(fb.then) this._queueEventDispatch(fb.then, 800);
   }
 
   // ===== 时间推进动画 =====
@@ -2222,6 +2263,60 @@ class PhoneEngine {
       ...Object.keys(this.story.criticalEvents || {}),
       ...Object.values(this.story.dateScenes || {}).flat().map(scene=>scene.id)
     ]);
+    const safeEventId = value => {
+      if(typeof value !== 'string') return null;
+      if(eventIds.has(value)) return value;
+      return /^__inv_(accept|decline)_[a-zA-Z0-9_:-]{1,100}$/.test(value) ? value : null;
+    };
+    const sanitizeEffects = value => {
+      const e = object(value);
+      const result = {};
+      const affection = {};
+      Object.keys(def.affection).forEach(cid=>{
+        const n = Number(object(e.affection)[cid]);
+        if(Number.isFinite(n)) affection[cid] = Math.max(-9999, Math.min(9999, n));
+      });
+      if(Object.keys(affection).length) result.affection = affection;
+      const personality = {};
+      Object.keys(def.personality).forEach(key=>{
+        const n = Number(object(e.personality)[key]);
+        if(Number.isFinite(n)) personality[key] = Math.max(-9999, Math.min(9999, n));
+      });
+      if(Object.keys(personality).length) result.personality = personality;
+      const affectionDetail = {};
+      Object.keys(def.affectionDetail).forEach(cid=>{
+        const detail = object(object(e.affectionDetail)[cid]);
+        const clean = {};
+        ['closeness','trust','tension'].forEach(key=>{
+          const n = Number(detail[key]);
+          if(Number.isFinite(n)) clean[key] = Math.max(-9999, Math.min(9999, n));
+        });
+        if(Object.keys(clean).length) affectionDetail[cid] = clean;
+      });
+      if(Object.keys(affectionDetail).length) result.affectionDetail = affectionDetail;
+      const flags = {};
+      Object.entries(object(e.flags)).slice(0, 50).forEach(([key, value])=>{
+        if(!safeKey(key)) return;
+        flags[key] = typeof value === 'string' ? value.slice(0, 100) : (Number.isFinite(value) ? Math.max(-9999, Math.min(9999, value)) : asBool(value));
+      });
+      if(Object.keys(flags).length) result.flags = flags;
+      const thenEvent = safeEventId(e.thenEvent);
+      if(thenEvent) result.thenEvent = thenEvent;
+      return result;
+    };
+    const sanitizeChoice = value => {
+      const c = object(value);
+      if(typeof c.prompt !== 'string' || !Array.isArray(c.options)) return null;
+      const options = c.options.slice(0, 10).map(opt=>{
+        const o = object(opt);
+        const outOpt = {text:asText(o.text, 500), hint:asText(o.hint, 300), effects:sanitizeEffects(o.effects)};
+        const thenEvent = safeEventId(o.thenEvent);
+        if(thenEvent) outOpt.thenEvent = thenEvent;
+        if(o.route && ['shenyan','luci','jiangyu','solo'].includes(o.route)) outOpt.route = o.route;
+        return outOpt;
+      });
+      return {prompt:asText(c.prompt, 1000), options, isInvitation:asBool(c.isInvitation)};
+    };
     const out = def;
     out.day = asInt(source.day, def.day, 1, 9999);
     out.minute = asInt(source.minute, def.minute, 0, 1439);
@@ -2253,7 +2348,8 @@ class PhoneEngine {
         }),
         unread:asInt(conv.unread, 0, 0, 500),
         typing:false,
-        finished:asBool(conv.finished)
+        finished:asBool(conv.finished),
+        pendingChoice:sanitizeChoice(conv.pendingChoice)
       };
     });
     out.affection = {...def.affection};
@@ -2279,11 +2375,24 @@ class PhoneEngine {
       const m=object(item); const author=['me',...chars].includes(m.author)?m.author:'me';
       const id = /^[a-zA-Z0-9_:-]{1,100}$/.test(m.id || '') ? m.id : null;
       if(!id) return null;
+      const template = this.story.moments?.[id];
+      const commentsConfig = this.story.momentComments?.byCategory?.[m.art] || this.story.momentComments?.byCategory?.[''] || {};
+      const charComments = array(m.charComments, 20, cc=>{
+        const item = object(cc);
+        const charId = chars.includes(item.charId) ? item.charId : null;
+        const commentIdx = asInt(item.commentIdx, -1, 0, 99);
+        const comment = charId && commentsConfig[charId]?.[commentIdx];
+        return comment ? {charId, commentIdx, comment} : null;
+      });
       return {
         id, author, name:asText(m.name,40), avatar:asText(m.avatar,8), bg:color(m.bg),
         text:asText(m.text,280), art:asText(m.art,30)||null, time:asText(m.time,8), day:asInt(m.day,0,0,9999), dateLabel:asText(m.dateLabel,40),
         likes:idList(m.likes,new Set(['me',...chars]),20),
         comments:array(m.comments,100,c=>{ const x=object(c); return {from:['me',...chars].includes(x.from)?x.from:'me', text:asText(x.text,1000), isReply:asBool(x.isReply)}; }),
+        replyOnLike:template?.replyOnLike || null,
+        commentOptions:template?.commentOptions || null,
+        replyOnComment:template?.replyOnComment || null,
+        charComments,
         isMine:asBool(m.isMine)
       };
     });
@@ -2326,7 +2435,7 @@ class PhoneEngine {
     out.invitations = array(source.invitations,100,item=>{const i=object(item);return this.story.invitations?.[i.id] ? {id:i.id,status:['pending','accepted','declined','missed'].includes(i.status)?i.status:'pending',ts:asInt(i.ts,0,0,9999999999999)} : null;});
     out.firedInvitations = record(source.firedInvitations,100,value=>asBool(value));
     out.resolvedInvitations = record(source.resolvedInvitations,100,value=>['accepted','declined','missed'].includes(value)?value:'missed');
-    out.groups = record(source.groups,20,(item,key)=>{const g=object(item); if(!this.story.groups?.[key]) return null; return {id:key,name:asText(g.name,80),members:idList(g.members,new Set(chars),10),messages:array(g.messages,300,m=>{const x=object(m);return {from:['me',...chars].includes(x.from)?x.from:'me',text:asText(x.text,1000),time:asText(x.time,8),ts:asInt(x.ts,0,0,9999999999999)};}),unread:asInt(g.unread,0,0,300),typing:false};});
+    out.groups = record(source.groups,20,(item,key)=>{const g=object(item); if(!this.story.groups?.[key]) return null; return {id:key,name:asText(g.name,80),members:idList(g.members,new Set(chars),10),messages:array(g.messages,300,m=>{const x=object(m);return {from:['me',...chars].includes(x.from)?x.from:'me',text:asText(x.text,1000),time:asText(x.time,8),ts:asInt(x.ts,0,0,9999999999999)};}),unread:asInt(g.unread,0,0,300),typing:false,pendingChoice:sanitizeChoice(g.pendingChoice)};});
     Object.keys(out.groups).forEach(key=>{if(!out.groups[key]) delete out.groups[key];});
     out.currentTheme = this.story.themes?.[source.currentTheme] ? source.currentTheme : 'default';
     out.currentIconTheme = this.story.iconThemes?.[source.currentIconTheme] ? source.currentIconTheme : 'default';
@@ -2340,7 +2449,30 @@ class PhoneEngine {
     out.dateHistory = array(source.dateHistory,100,item=>{const d=object(item);return {charId:chars.includes(d.charId)?d.charId:'susu',sceneId:eventIds.has(d.sceneId)?d.sceneId:'',day:asInt(d.day,0,0,9999),ts:asInt(d.ts,0,0,9999999999999)};}).filter(d=>d.sceneId);
     out.nightmaresSeen = record(source.nightmaresSeen,20,(_value,key)=>!!this.story.nightmares?.[key]);
     out.activeNightmare = this.story.nightmares?.[source.activeNightmare] && !out.nightmaresSeen[source.activeNightmare] ? source.activeNightmare : null;
+    out.pendingMessages = array(source.pendingMessages, 300, item=>{
+      const p = object(item);
+      const from = ['narrator', ...chars].includes(p.from) ? p.from : null;
+      const groupId = typeof p.groupId === 'string' && this.story.groups?.[p.groupId] ? p.groupId : null;
+      const thenEvent = safeEventId(p.thenEvent);
+      if((!from && !groupId) || !p.id || typeof p.id !== 'string') return null;
+      return {id:asText(p.id,120), from:from || (chars.includes(p.from) ? p.from : 'susu'), groupId, text:asText(p.text,1000), choice:sanitizeChoice(p.choice), thenEvent,
+        followup:object(p.followup).text ? {text:asText(p.followup.text,1000), delay:asInt(p.followup.delay,30,1,86400), affection:sanitizeEffects({affection:p.followup.affection}).affection || {}} : null,
+        dueAt:asInt(p.dueAt, Date.now(), 0, 9999999999999)};
+    });
+    out.pendingEventDispatches = array(source.pendingEventDispatches, 300, item=>{
+      const p = object(item); const eventId = safeEventId(p.eventId);
+      return eventId && p.id ? {id:asText(p.id,120), eventId, dueAt:asInt(p.dueAt, Date.now(), 0, 9999999999999)} : null;
+    });
+    out.pendingCalls = array(source.pendingCalls, 100, item=>{
+      const p = object(item); const eventId = safeEventId(p.eventId);
+      return eventId && p.id ? {id:asText(p.id,120), eventId, dueAt:asInt(p.dueAt, Date.now(), 0, 9999999999999)} : null;
+    });
     return out;
+  }
+  _resumePendingWork(){
+    this.state.pendingMessages.forEach(item=>this._schedulePendingMessage(item));
+    this.state.pendingEventDispatches.forEach(item=>this._schedulePendingEventDispatch(item));
+    this.state.pendingCalls.forEach(item=>this._schedulePendingCall(item));
   }
   _applySaveData(data){
     if(!data || !data.state) return false;
@@ -2350,6 +2482,7 @@ class PhoneEngine {
     try {
       this.state = this._sanitizeLoadedState(data.state);
       this._rehydrateDailyTaskChecks();
+      this._resumePendingWork();
       this.emit('stateChange', this.state);
       this.emit('timeChange', this.getTime());
       this.emit('gameLoaded', {slot: data.slot || null, label: data.label || ''});
@@ -2430,16 +2563,17 @@ class PhoneEngine {
     for(const slot in saves){
       const s = saves[slot];
       if(!s || !s.state) continue;
-      if(!best || String(s.time||'') > String(best.time||'')){
+      const newer = !best || String(s.time||'') > String(best.time||'');
+      // 同一毫秒内手动存档可能与自动档时间戳相同，手动档应优先，避免继续游戏回退。
+      const sameTimeManual = best && String(s.time||'') === String(best.time||'')
+        && s.slot !== PhoneEngine.SLOT_AUTO && best.slot === PhoneEngine.SLOT_AUTO;
+      if(newer || sameTimeManual){
         best = {...s, slot};
       }
     }
     return best;
   }
   continueGame(){
-    if(this.hasSave(PhoneEngine.SLOT_AUTO)){
-      return this.load(PhoneEngine.SLOT_AUTO);
-    }
     const latest = this.getLatestSave();
     if(latest && latest.slot) return this.load(latest.slot);
     return false;

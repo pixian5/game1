@@ -134,6 +134,49 @@ test('所有剧情收藏品都有可调用的获得路径', ()=>{
   assert.ok(e.state.collected.includes('recording_msg'));
 });
 
+test('刷新后会恢复尚未送达的开场消息', ()=>{
+  const e = engine();
+  const queued = [];
+  e._setTimeout = fn => { queued.push(fn); return queued.length; };
+  e.newGame();
+  assert.equal(e.state.conversations.susu.messages.length, 0);
+  assert.ok(e.state.pendingMessages.length > 0);
+  assert.equal(e.save('slot1'), true);
+
+  const restored = engine();
+  const resumed = [];
+  restored._setTimeout = fn => { resumed.push(fn); return resumed.length; };
+  assert.equal(restored.load('slot1'), true);
+  assert.ok(restored.state.pendingMessages.length > 0);
+  while(resumed.length) resumed.shift()();
+  assert.equal(restored.state.conversations.susu.messages.length, 3);
+});
+
+test('存档保留会话选项与朋友圈互动配置', ()=>{
+  const e = engine();
+  e.state.conversations.susu.pendingChoice = {
+    prompt:'继续？',
+    options:[{text:'继续', hint:'推进剧情', effects:{flags:{resume_test:1}, thenEvent:'intro_susu'}}]
+  };
+  e.postMoment('moment_shenyan_opening');
+  assert.equal(e.save('slot1'), true);
+  const restored = engine();
+  assert.equal(restored.load('slot1'), true);
+  assert.equal(restored.state.conversations.susu.pendingChoice.options[0].text, '继续');
+  assert.ok(restored.state.moments[0].commentOptions.length > 0);
+  assert.equal(restored.commentMoment('moment_shenyan_opening', 0), true);
+});
+
+test('继续游戏选择时间最新的存档', ()=>{
+  const e = engine();
+  e.state.day = 1;
+  assert.equal(e.save('auto'), true);
+  e.state.day = 9;
+  assert.equal(e.save('slot1'), true);
+  assert.equal(e.continueGame(), true);
+  assert.equal(e.state.day, 9);
+});
+
 test('存储写入异常会显式失败', ()=>{
   const saved = sandbox.localStorage.setItem;
   sandbox.localStorage.setItem = () => { throw new Error('quota'); };
