@@ -167,6 +167,124 @@ test('存档保留会话选项与朋友圈互动配置', ()=>{
   assert.equal(restored.commentMoment('moment_shenyan_opening', 0), true);
 });
 
+test('读档会恢复进行中的路线、旁白、偶遇与来电', ()=>{
+  const routeEventId = Object.entries(STORY.events).find(([, evt])=>evt.type === 'route_choice')[0];
+  const route = engine();
+  route.scheduleEvent(routeEventId);
+  assert.equal(route.state.pendingInteraction.type, 'route_choice');
+  assert.equal(route.save('slot1'), true);
+  const restoredRoute = engine();
+  assert.equal(restoredRoute.load('slot1'), true);
+  assert.equal(restoredRoute.state.pendingInteraction.type, 'route_choice');
+  assert.equal(restoredRoute.chooseRoute('solo'), true);
+  assert.equal(restoredRoute.state.pendingInteraction, null);
+
+  const narrator = engine();
+  narrator.state.pendingMessages.push({
+    id:'message_narrator_choice', from:'narrator', text:'请选择', dueAt:Date.now(),
+    choice:{prompt:'继续？', options:[{text:'继续', effects:{flags:{narrator_resume:true}}}]}, thenEvent:null, followup:null
+  });
+  narrator._deliverPendingMessage('message_narrator_choice');
+  assert.equal(narrator.state.pendingInteraction.type, 'narrator_choice');
+  assert.equal(narrator.save('slot1'), true);
+  const restoredNarrator = engine();
+  assert.equal(restoredNarrator.load('slot1'), true);
+  assert.equal(restoredNarrator.state.pendingInteraction.choice.options[0].text, '继续');
+  restoredNarrator.sendMessage('narrator', '继续', {});
+  assert.equal(restoredNarrator.state.pendingInteraction, null);
+
+  const encounter = engine();
+  encounter.scheduleEvent('inv_shenyan_studio_scene');
+  assert.equal(encounter.state.pendingInteraction.type, 'encounter');
+  assert.equal(encounter.save('slot1'), true);
+  const restoredEncounter = engine();
+  assert.equal(restoredEncounter.load('slot1'), true);
+  const savedEncounter = restoredEncounter.getPendingEncounter();
+  assert.equal(savedEncounter.id, 'inv_shenyan_studio_scene');
+  assert.equal(restoredEncounter.resolveEncounter(savedEncounter, 0), true);
+  assert.equal(restoredEncounter.state.pendingInteraction, null);
+
+  const call = engine();
+  const callTimers = [];
+  call._setTimeout = fn => { callTimers.push(fn); return callTimers.length; };
+  call.triggerCall('jiangyu_call_night');
+  assert.equal(call.state.pendingInteraction.type, 'call');
+  assert.equal(call.save('slot1'), true);
+  const restoredCall = engine();
+  const resumedTimers = [];
+  restoredCall._setTimeout = fn => { resumedTimers.push(fn); return resumedTimers.length; };
+  assert.equal(restoredCall.load('slot1'), true);
+  assert.equal(restoredCall.state.pendingInteraction.eventId, 'jiangyu_call_night');
+  assert.equal(restoredCall._pendingCallEventId, 'jiangyu_call_night');
+  assert.equal(resumedTimers.length, 1);
+  restoredCall.answerCall('jiangyu_call_night');
+  assert.equal(restoredCall.state.pendingInteraction, null);
+});
+
+test('读档会恢复梦境、追问、临界事件与时间推进', ()=>{
+  const dream = engine();
+  assert.equal(dream.triggerDream('dream_day1'), true);
+  assert.equal(dream.save('slot1'), true);
+  const restoredDream = engine();
+  assert.equal(restoredDream.load('slot1'), true);
+  assert.equal(restoredDream.state.activeDream, 'dream_day1');
+  assert.equal(restoredDream.triggerDream('dream_day1'), false);
+
+  const followup = engine();
+  const followupTimers = [];
+  followup._setTimeout = fn => { followupTimers.push(fn); return followupTimers.length; };
+  followup.queueMessage({from:'shenyan', text:'在吗？', followup:{text:'算了。', delay:30, affection:{shenyan:-1}}});
+  followupTimers[1]();
+  assert.equal(followup.state.pendingFollowups.length, 1);
+  assert.equal(followup.save('slot1'), true);
+  const restoredFollowup = engine();
+  const resumedFollowupTimers = [];
+  restoredFollowup._setTimeout = fn => { resumedFollowupTimers.push(fn); return resumedFollowupTimers.length; };
+  assert.equal(restoredFollowup.load('slot1'), true);
+  assert.equal(restoredFollowup.state.pendingFollowups.length, 1);
+  resumedFollowupTimers.shift()();
+  assert.equal(restoredFollowup.state.conversations.shenyan.messages.at(-1).text, '算了。');
+
+  const critical = engine();
+  const criticalTimers = [];
+  critical._setTimeout = fn => { criticalTimers.push(fn); return criticalTimers.length; };
+  critical.state.affection.shenyan = 8;
+  critical.checkRelationshipStageUp('shenyan');
+  assert.equal(critical.state.pendingEventDispatches.some(item=>item.eventId === 'shenyan_critical_3'), true);
+  assert.equal(critical.save('slot1'), true);
+  const restoredCritical = engine();
+  const resumedCriticalTimers = [];
+  restoredCritical._setTimeout = fn => { resumedCriticalTimers.push(fn); return resumedCriticalTimers.length; };
+  assert.equal(restoredCritical.load('slot1'), true);
+  resumedCriticalTimers.shift()();
+  assert.equal(restoredCritical.state.firedEvents.shenyan_critical_3, true);
+
+  const timeAdvance = engine();
+  const timeTimers = [];
+  timeAdvance._setTimeout = fn => { timeTimers.push(fn); return timeTimers.length; };
+  timeAdvance.scheduleEvent('day2_morning');
+  assert.equal(timeAdvance.state.pendingTimeAdvances.length, 1);
+  assert.equal(timeAdvance.save('slot1'), true);
+  const restoredTime = engine();
+  const resumedTimeTimers = [];
+  restoredTime._setTimeout = fn => { resumedTimeTimers.push(fn); return resumedTimeTimers.length; };
+  assert.equal(restoredTime.load('slot1'), true);
+  assert.equal(restoredTime.state.pendingTimeAdvances.length, 1);
+  resumedTimeTimers.shift()();
+  assert.equal(restoredTime.state.day, 2);
+});
+
+test('停止自动存档会注销状态监听器', ()=>{
+  const e = engine();
+  e.startAutoSave();
+  assert.equal(e.listeners.stateChange.length, 1);
+  e.stopAutoSave();
+  assert.equal(e.listeners.stateChange.length, 0);
+  e.startAutoSave();
+  assert.equal(e.listeners.stateChange.length, 1);
+  e.stopAutoSave();
+});
+
 test('继续游戏选择时间最新的存档', ()=>{
   const e = engine();
   e.state.day = 1;
