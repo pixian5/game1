@@ -392,6 +392,9 @@
     showScreen('encounter');
   }
   function closeEncounter(){
+    if(currentEncounter && !currentEncounter.isMemory){
+      engine.cancelPendingInteraction(currentEncounter);
+    }
     currentEncounter = null;
     showScreen('map');
   }
@@ -3163,7 +3166,7 @@
       openDreamScreen(activeDreamId, STORY.dreams[activeDreamId]);
       return true;
     }
-    const pending = engine.state.pendingInteraction;
+    const pending = engine.getPendingInteractions?.()[0] || engine.state.pendingInteraction;
     if(pending?.type === 'call'){
       const evt = STORY.events?.[pending.eventId];
       const char = evt && STORY.characters?.[evt.from];
@@ -3473,6 +3476,9 @@
     engine.autoSave(true);
     updateLockContinueBtn();
     showScreen('lock');
+  }
+  if(typeof window !== 'undefined' && (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')){
+    window.__neonTest = {engine, restorePendingUi, showEncounter, closeEncounter};
   }
   init();
 })();

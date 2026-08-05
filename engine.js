@@ -43,6 +43,18 @@ class PhoneEngine {
     this._pendingDate = null;
     this._scheduledEvents.clear();
   }
+  _addInteraction(item){
+    return InteractionQueue.upsert(this.state, item);
+  }
+  _findInteraction(predicate){
+    return InteractionQueue.find(this.state, predicate);
+  }
+  _removeInteraction(predicate){
+    return InteractionQueue.remove(this.state, predicate);
+  }
+  getPendingInteractions(){
+    return InteractionQueue.all(this.state);
+  }
   defaultState(){
     return {
       // 时间：第N天 + 当天分钟数(0-1440)
@@ -91,6 +103,7 @@ class PhoneEngine {
       pendingEventDispatches: [],
       pendingCalls: [],
       // 已显示但尚未完成的交互，读档后由 UI 按该状态重建。
+      pendingInteractions: [],
       pendingInteraction: null,
       // 消息送达后的延迟后果与时间推进动画同样需要跨读档恢复。
       pendingFollowups: [],
@@ -418,7 +431,7 @@ class PhoneEngine {
       return;
     } else if(evt.type === 'route_choice'){
       // 路线选择：发出提示消息后等待玩家选择
-      this.state.pendingInteraction = {type:'route_choice', eventId};
+      this._addInteraction({id:`route:${eventId}`, type:'route_choice', eventId});
       this.emit('routeChoiceReady', this.story.routeChoice);
       this.emit('stateChange', this.state);
       return;
@@ -430,7 +443,7 @@ class PhoneEngine {
     } else if(evt.type === 'encounter'){
       // 赴约/剧情场景：复用偶遇屏，then 在 resolveEncounter 后触发
       this._pendingEncounterThen = evt.then || null;
-      this.state.pendingInteraction = {type:'encounter', eventId, encounterId:evt.encounter?.id || ''};
+      this._addInteraction({id:`encounter:event:${eventId}`, type:'encounter', eventId, encounterId:evt.encounter?.id || ''});
       this.emit('encounterTriggered', {locId:null, enc:evt.encounter});
       this.emit('stateChange', this.state);
       return;
@@ -548,7 +561,7 @@ class PhoneEngine {
     if(msg.from === 'narrator'){
       this.emit('messageReceived', {from:'narrator', text:msg.text});
       if(msg.choice){
-        this.state.pendingInteraction = {type:'narrator_choice', choice:msg.choice};
+        this._addInteraction({id:`narrator:${msg.id}`, type:'narrator_choice', messageId:msg.id, choice:msg.choice});
         this.emit('choicePrompt', {convId:'narrator', choice:msg.choice, conv:null});
       }
       if(msg.thenEvent) this._queueEventDispatch(msg.thenEvent, 600);
@@ -637,7 +650,7 @@ class PhoneEngine {
     const eff = effects || {};
     // 旁白决策：不入会话，仅应用 effects
     if(convId === 'narrator'){
-      if(this.state.pendingInteraction?.type === 'narrator_choice') this.state.pendingInteraction = null;
+      this._removeInteraction(item=>item.type === 'narrator_choice');
       this._applyEffects(eff);
       if(eff.thenEvent) this._dispatchSpecialThen(eff.thenEvent);
       this.emit('stateChange', this.state);
@@ -685,7 +698,7 @@ class PhoneEngine {
   chooseRoute(route){
     if(!['shenyan','luci','jiangyu','solo'].includes(route) || this.state.route || this.state.ended) return false;
     this.state.route = route;
-    if(this.state.pendingInteraction?.type === 'route_choice') this.state.pendingInteraction = null;
+    this._removeInteraction(item=>item.type === 'route_choice');
     this.state.flags.route = route;
     this.collectItem('stamp_route');
     // 进入路线后，未处理的邀约自动判定为 missed
@@ -709,8 +722,8 @@ class PhoneEngine {
     const evt = this.story.events[eventId];
     if(!evt || evt.type !== 'call') return;
     const callDueAt = Number.isFinite(dueAt) ? dueAt : Date.now() + 25000;
-    this._pendingCallEventId = eventId;
-    this.state.pendingInteraction = {type:'call', eventId, dueAt:callDueAt};
+    const interaction = this._addInteraction({id:`call:${eventId}`, type:'call', eventId, dueAt:callDueAt});
+    this._pendingCallEventId = interaction.eventId;
     this.emit('incomingCall', {
       from: evt.from,
       name: this.story.characters[evt.from].name,
@@ -729,9 +742,10 @@ class PhoneEngine {
     if(oldTimer) clearTimeout(oldTimer);
     const tid = this._setTimeout(()=>{
       this._callMissTimers.delete(eventId);
-      if(this.state.pendingInteraction?.type === 'call' && this.state.pendingInteraction.eventId === eventId){
-        this.state.pendingInteraction = null;
-        this._pendingCallEventId = null;
+      const pending = this._findInteraction(item=>item.type === 'call' && item.eventId === eventId);
+      if(pending){
+        this._removeInteraction(item=>item.id === pending.id);
+        this._pendingCallEventId = this._findInteraction(item=>item.type === 'call')?.eventId || null;
         this.addCallLog(evt.from, 'missed', '00:00');
         // 留语音信箱
         const lastHim = evt.script && [...evt.script].reverse().find(l=>l.who==='him');
@@ -748,20 +762,16 @@ class PhoneEngine {
   answerCall(eventId){
     const tid = this._callMissTimers.get(eventId);
     if(tid){ clearTimeout(tid); this._timers.delete(tid); this._callMissTimers.delete(eventId); }
-    this._pendingCallEventId = null;
-    if(this.state.pendingInteraction?.type === 'call' && this.state.pendingInteraction.eventId === eventId){
-      this.state.pendingInteraction = null;
-    }
+    this._removeInteraction(item=>item.type === 'call' && item.eventId === eventId);
+    this._pendingCallEventId = this._findInteraction(item=>item.type === 'call')?.eventId || null;
     this.emit('callAnswered', eventId);
     this.emit('stateChange', this.state);
   }
   declineCall(eventId){
     const tid = this._callMissTimers.get(eventId);
     if(tid){ clearTimeout(tid); this._timers.delete(tid); this._callMissTimers.delete(eventId); }
-    this._pendingCallEventId = null;
-    if(this.state.pendingInteraction?.type === 'call' && this.state.pendingInteraction.eventId === eventId){
-      this.state.pendingInteraction = null;
-    }
+    this._removeInteraction(item=>item.type === 'call' && item.eventId === eventId);
+    this._pendingCallEventId = this._findInteraction(item=>item.type === 'call')?.eventId || null;
     const evt = this.story.events[eventId];
     // 留下语音信箱（基于 script 末尾的台词）
     if(evt && evt.from && evt.script){
@@ -1048,7 +1058,7 @@ class PhoneEngine {
     // 随机选一个
     const enc = available[Math.floor(Math.random() * available.length)];
     this.state.visitedEncounters[enc.id] = true;
-    this.state.pendingInteraction = {type:'encounter', locId, encounterId:enc.id};
+    this._addInteraction({id:`encounter:location:${locId}:${enc.id}`, type:'encounter', locId, encounterId:enc.id});
     this.emit('encounterTriggered', {locId, enc});
     this.emit('stateChange', this.state);
     return true;
@@ -1077,9 +1087,11 @@ class PhoneEngine {
         this._setTimeout(()=> this.emit('messageReceived', {from:'narrator', text:opt.reply}), 1200);
       }
     }
-    const pendingEventId = this.state.pendingInteraction?.eventId;
+    const pending = this._findInteraction(item=>item.type === 'encounter' &&
+      (item.encounterId === enc.id || item.eventId === enc.id));
+    const pendingEventId = pending?.eventId;
     this.emit('encounterResolved', {enc, opt});
-    if(this.state.pendingInteraction?.type === 'encounter') this.state.pendingInteraction = null;
+    if(pending) this._removeInteraction(item=>item.id === pending.id);
     this.emit('stateChange', this.state);
     // 触发 then（赴约场景的后续事件）
     const thenEvt = enc.then || this._pendingEncounterThen || this.story.events?.[pendingEventId]?.then;
@@ -1088,12 +1100,30 @@ class PhoneEngine {
     return true;
   }
   getPendingEncounter(){
-    const pending = this.state.pendingInteraction;
+    const pending = this._findInteraction(item=>item.type === 'encounter');
     if(!pending || pending.type !== 'encounter') return null;
     const eventEncounter = pending.eventId && this.story.events?.[pending.eventId]?.encounter;
     if(eventEncounter) return eventEncounter;
     const list = this.story.locations?.[pending.locId]?.encounters || [];
     return list.find(enc=>enc.id === pending.encounterId) || null;
+  }
+  cancelPendingInteraction(idOrType='encounter'){
+    const pending = typeof idOrType === 'string'
+      ? this._findInteraction(item=>item.id === idOrType || item.type === idOrType)
+      : this._findInteraction(item=>item.id === idOrType?.id ||
+        (item.type === 'encounter' && item.encounterId === idOrType?.id));
+    if(!pending) return false;
+    if(pending.type === 'encounter'){
+      this._pendingEncounterThen = null;
+      if(pending.locId){
+        const encounter = this.story.locations?.[pending.locId]?.encounters?.find(enc=>enc.id === pending.encounterId);
+        if(encounter?.once) delete this.state.visitedEncounters[pending.encounterId];
+      }
+      if(pending.eventId) this.state.flags[`interaction_cancelled_${pending.eventId}`] = true;
+    }
+    this._removeInteraction(item=>item.id === pending.id);
+    this.emit('stateChange', this.state);
+    return true;
   }
 
   // ===== 回忆杀系统 =====
@@ -2307,6 +2337,7 @@ class PhoneEngine {
   }
   _normalizeSaveData(raw, forcedSlot=null){
     if(!raw || typeof raw !== 'object' || Array.isArray(raw) || !raw.state || typeof raw.state !== 'object' || Array.isArray(raw.state)) return null;
+    raw = SaveMigrations.migrate(raw);
     const slot = forcedSlot || raw.slot;
     if(!this._isSaveSlot(slot)) return null;
     const state = this._sanitizeLoadedState(raw.state);
@@ -2406,30 +2437,32 @@ class PhoneEngine {
     };
     const sanitizePendingInteraction = value => {
       const p = object(value);
+      const id = /^[a-zA-Z0-9_:-]{1,120}$/.test(p.id || '') ? p.id : null;
+      const priority = asInt(p.priority, 0, 0, 999);
       if(p.type === 'route_choice'){
         const evt = safeEventId(p.eventId);
-        return evt && this.story.events?.[evt]?.type === 'route_choice' ? {type:'route_choice', eventId:evt} : null;
+        return evt && this.story.events?.[evt]?.type === 'route_choice' ? {id:id || `route:${evt}`, type:'route_choice', eventId:evt, priority:priority || 60} : null;
       }
       if(p.type === 'narrator_choice'){
         const choice = sanitizeChoice(p.choice);
-        return choice ? {type:'narrator_choice', choice} : null;
+        return choice ? {id:id || `narrator:${asText(p.messageId,120) || 'pending'}`, type:'narrator_choice', messageId:asText(p.messageId,120), choice, priority:priority || 70} : null;
       }
       if(p.type === 'encounter'){
         const eventId = safeEventId(p.eventId);
         if(eventId && this.story.events?.[eventId]?.type === 'encounter'){
-          return {type:'encounter', eventId, encounterId:asText(p.encounterId,100)};
+          return {id:id || `encounter:event:${eventId}`, type:'encounter', eventId, encounterId:asText(p.encounterId,100), priority:priority || 80};
         }
         const locId = typeof p.locId === 'string' && this.story.locations?.[p.locId] ? p.locId : null;
         const encounterId = asText(p.encounterId,100);
         if(locId && this.story.locations[locId].encounters?.some(enc=>enc.id === encounterId)){
-          return {type:'encounter', locId, encounterId};
+          return {id:id || `encounter:location:${locId}:${encounterId}`, type:'encounter', locId, encounterId, priority:priority || 80};
         }
         return null;
       }
       if(p.type === 'call'){
         const eventId = safeEventId(p.eventId);
         return eventId && this.story.events?.[eventId]?.type === 'call'
-          ? {type:'call', eventId, dueAt:asInt(p.dueAt, Date.now(), 0, 9999999999999)}
+          ? {id:id || `call:${eventId}`, type:'call', eventId, dueAt:asInt(p.dueAt, Date.now(), 0, 9999999999999), priority:priority || 100}
           : null;
       }
       return null;
@@ -2600,7 +2633,11 @@ class PhoneEngine {
         ? {id:asText(p.id,120), eventId, dueAt:asInt(p.dueAt, Date.now(), 0, 9999999999999)}
         : null;
     });
-    out.pendingInteraction = sanitizePendingInteraction(source.pendingInteraction);
+    const pendingRaw = Array.isArray(source.pendingInteractions)
+      ? source.pendingInteractions
+      : (source.pendingInteraction ? [source.pendingInteraction] : []);
+    out.pendingInteractions = pendingRaw.map(sanitizePendingInteraction).filter(Boolean);
+    InteractionQueue.syncLegacy(out);
     return out;
   }
   _resumePendingWork(){
@@ -2609,11 +2646,9 @@ class PhoneEngine {
     this.state.pendingCalls.forEach(item=>this._schedulePendingCall(item));
     this.state.pendingFollowups.forEach(item=>this._schedulePendingFollowup(item));
     this.state.pendingTimeAdvances.forEach(item=>this._schedulePendingTimeAdvance(item));
-    const interaction = this.state.pendingInteraction;
-    if(interaction?.type === 'call'){
-      this._pendingCallEventId = interaction.eventId;
-      this._scheduleActiveCall(interaction.eventId, interaction.dueAt);
-    }
+    const calls = this.getPendingInteractions().filter(item=>item.type === 'call');
+    this._pendingCallEventId = calls[0]?.eventId || null;
+    calls.forEach(interaction=> this._scheduleActiveCall(interaction.eventId, interaction.dueAt));
   }
   _applySaveData(data){
     if(!data || !data.state) return false;
@@ -2621,7 +2656,8 @@ class PhoneEngine {
     this._pendingDate = null; // load 后清空进行中约会，避免卡死本周约会名额
     this._disableAutoSave = true;
     try {
-      this.state = this._sanitizeLoadedState(data.state);
+      const migrated = SaveMigrations.migrate(data);
+      this.state = this._sanitizeLoadedState(migrated.state);
       this._rehydrateDailyTaskChecks();
       this._resumePendingWork();
       this.emit('stateChange', this.state);
