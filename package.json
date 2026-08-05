@@ -1,0 +1,13 @@
+{
+  "name": "neon-heart-game",
+  "private": true,
+  "version": "0.1.4",
+  "scripts": {
+    "test:regressions": "node test_regressions.js",
+    "test:story": "node test_story.js",
+    "test:browser": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0"
+  }
+}

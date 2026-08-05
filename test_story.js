@@ -23,8 +23,9 @@ const sandbox = {
 sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
 
-vm.runInContext(fs.readFileSync(path.join(__dirname, 'story.js'), 'utf8'), sandbox);
-vm.runInContext(fs.readFileSync(path.join(__dirname, 'engine.js'), 'utf8'), sandbox);
+for(const file of ['story.js', 'interaction_queue.js', 'save_migrations.js', 'engine.js']){
+  vm.runInContext(fs.readFileSync(path.join(__dirname, file), 'utf8'), sandbox);
+}
 
 const { STORY, PhoneEngine } = sandbox.window;
 
