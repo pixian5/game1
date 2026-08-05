@@ -23,6 +23,7 @@ Downloads/
 tmp/
 .cache/
 coverage/
+test-results/
 .nyc_output/
 .eslintcache
 *.tsbuildinfo
