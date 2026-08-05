@@ -934,7 +934,7 @@ async function run(){
   eng_r.state.affection.shenyan = 8;
   eng_r.checkRelationshipStageUp('shenyan');
   const firedAfter1 = eng_r.state.firedEvents[critId];
-  check('Bug21: 首次阶段提升已进入延迟队列', eng_r._scheduledEvents.has(critId) === true);
+  check('Bug21: 首次阶段提升已进入延迟队列', eng_r.state.pendingEventDispatches.some(item=>item.eventId === critId));
   // 好感度降到阶段2，再升回阶段3
   eng_r.state.affection.shenyan = 5;
   eng_r.checkRelationshipStageUp('shenyan');  // 降级
