@@ -25,10 +25,10 @@ const sandbox = {
 };
 sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
-for(const file of ['story.js', 'engine.js']){
+for(const file of ['story.js', 'interaction_queue.js', 'save_migrations.js', 'engine.js']){
   vm.runInContext(fs.readFileSync(path.join(__dirname, file), 'utf8'), sandbox);
 }
-const {STORY, PhoneEngine} = sandbox.window;
+const {STORY, PhoneEngine, SaveMigrations} = sandbox.window;
 
 function engine(){ return new PhoneEngine(STORY); }
 function test(name, fn){
@@ -272,6 +272,39 @@ test('读档会恢复梦境、追问、临界事件与时间推进', ()=>{
   assert.equal(restoredTime.state.pendingTimeAdvances.length, 1);
   resumedTimeTimers.shift()();
   assert.equal(restoredTime.state.day, 2);
+});
+
+test('v2 单例交互存档会迁移为 v3 队列', ()=>{
+  const e = engine();
+  const routeEventId = Object.entries(STORY.events).find(([, evt])=>evt.type === 'route_choice')[0];
+  const legacy = {
+    v: 2,
+    slot: 'slot1',
+    state: {
+      route: null,
+      pendingInteraction: {type:'route_choice', eventId:routeEventId},
+      conversations: {susu:{messages:[]}}
+    }
+  };
+  const migrated = SaveMigrations.migrate(legacy);
+  assert.equal(migrated.v, 3);
+  assert.equal(migrated.state.pendingInteractions.length, 1);
+  assert.equal(migrated.state.pendingInteractions[0].eventId, routeEventId);
+  assert.equal(e.importSave(legacy, 'slot1').ok, true);
+  assert.equal(e.load('slot1'), true);
+  assert.equal(e.getPendingInteractions()[0].type, 'route_choice');
+});
+
+test('多个来电可并发排队并逐个处理', ()=>{
+  const e = engine();
+  e.story.events.test_call_secondary = {...e.story.events.jiangyu_call_night, from:'shenyan'};
+  e._setTimeout = () => 1;
+  e.triggerCall('jiangyu_call_night', Date.now() + 60000);
+  e.triggerCall('test_call_secondary', Date.now() + 60000);
+  assert.equal(e.getPendingInteractions().filter(item=>item.type === 'call').length, 2);
+  e.declineCall('jiangyu_call_night');
+  assert.equal(e.getPendingInteractions().filter(item=>item.type === 'call').length, 1);
+  assert.equal(e.getPendingInteractions()[0].eventId, 'test_call_secondary');
 });
 
 test('停止自动存档会注销状态监听器', ()=>{
