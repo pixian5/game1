@@ -40,7 +40,6 @@
   let timeoutTimer = null;
   let selectedMomentArt = '';
   const uiTimers = new Set();
-  let pendingRouteChoice = null;
 
   function setUiTimeout(fn, delay){
     const id = window.setTimeout(()=>{
@@ -59,6 +58,7 @@
     currentEncounter = null;
     currentNightmare = null;
     window._currentCall = null;
+    if($('time-adv')) $('time-adv').hidden = true;
     document.getElementById('route-choice-modal')?.remove();
     document.getElementById('narrator-choice-modal')?.remove();
   }
@@ -115,7 +115,7 @@
 
   // ===== 锁屏 =====
   $('lock-screen').addEventListener('click', ()=>{
-    showScreen('home');
+    if(!restorePendingUi()) showScreen('home');
   });
   let lockSwipeStart = null;
   $('lock-screen').addEventListener('touchstart', e=>{
@@ -124,7 +124,7 @@
   $('lock-screen').addEventListener('touchend', e=>{
     if(lockSwipeStart === null) return;
     const dy = e.changedTouches[0].clientY - lockSwipeStart;
-    if(dy < -30) showScreen('home');
+    if(dy < -30 && !restorePendingUi()) showScreen('home');
     lockSwipeStart = null;
   });
 
@@ -152,9 +152,9 @@
     if(continueBtn){
       const ok = engine.continueGame();
       if(ok){
-        afterLoadRefresh();
+        const restored = afterLoadRefresh();
         toast('已继续游戏');
-        showScreen('home');
+        if(!restored) showScreen('home');
       } else {
         toast('没有可继续的存档');
       }
@@ -766,9 +766,12 @@
     }
   }
 
-  engine.on('timeAdvance', ({text})=>{
+  function showTimeAdvanceOverlay(text){
     $('time-adv-text').textContent = text || '时间流逝…';
     $('time-adv').hidden = false;
+  }
+  engine.on('timeAdvance', ({text})=>{
+    showTimeAdvanceOverlay(text);
   });
   engine.on('timeAdvanceEnd', ()=>{
     $('time-adv').hidden = true;
@@ -776,7 +779,7 @@
   });
 
   // ===== 来电 =====
-  engine.on('incomingCall', ({from, name, script, eventId})=>{
+  function showIncomingCall({from, name, script, eventId}){
     const char = STORY.characters[from];
     $('call-name').textContent = name;
     $('call-bg').style.background = `radial-gradient(ellipse at center, ${char?.bg || '#2a2f5a'}, #000)`;
@@ -786,6 +789,9 @@
     $('call-script').hidden = true;
     showScreen('incomingCall');
     window._currentCall = {from, name, script, eventId, step:0};
+  }
+  engine.on('incomingCall', (call)=>{
+    showIncomingCall(call);
   });
 
   function handleCallAction(action){
@@ -1114,7 +1120,6 @@
   // ===== 路线选择 =====
   engine.on('routeChoiceReady', (routeChoice)=>{
     if(currentNightmare || engine.state.activeNightmare){
-      pendingRouteChoice = routeChoice;
       return;
     }
     showRouteChoiceModal(routeChoice);
@@ -1322,7 +1327,8 @@
   });
 
   // ===== 梦境 =====
-  engine.on('dreamStart', ({dreamId, dream})=>{
+  function openDreamScreen(dreamId, dream){
+    if(!dream) return;
     $('dream-title').textContent = dream.title;
     $('dream-desc').textContent = dream.desc;
     const opts = $('dream-options');
@@ -1336,6 +1342,9 @@
       opts.appendChild(btn);
     });
     showScreen('dream');
+  }
+  engine.on('dreamStart', ({dreamId, dream})=>{
+    openDreamScreen(dreamId, dream);
   });
   engine.on('dreamResolved', ({choice})=>{
     setUiTimeout(()=>{
@@ -1786,6 +1795,10 @@
 
   // ===== 通话未接提醒 =====
   engine.on('callMissed', (eventId)=>{
+    if(window._currentCall?.eventId === eventId){
+      window._currentCall = null;
+      if(screens.incomingCall?.classList.contains('active')) showScreen('home');
+    }
     toast('未接来电');
   });
 
@@ -3128,13 +3141,7 @@
   }
   function closeNightmareScreen(){
     currentNightmare = null;
-    if(pendingRouteChoice){
-      const routeChoice = pendingRouteChoice;
-      pendingRouteChoice = null;
-      showRouteChoiceModal(routeChoice);
-      return;
-    }
-    showScreen('home');
+    if(!restorePendingUi()) showScreen('home');
   }
   function handleNightmareOpt(optIdx){
     if(!currentNightmare) return;
@@ -3142,13 +3149,48 @@
     if(!engine.resolveNightmare(nm.id, optIdx)) return;
     toast('梦魇已解');
     currentNightmare = null;
-    if(pendingRouteChoice){
-      const routeChoice = pendingRouteChoice;
-      pendingRouteChoice = null;
-      showRouteChoiceModal(routeChoice);
-    } else {
-      showScreen('home');
+    if(!restorePendingUi()) showScreen('home');
+  }
+
+  function restorePendingUi(){
+    const activeNightmareId = engine.state.activeNightmare;
+    if(activeNightmareId && STORY.nightmares?.[activeNightmareId]){
+      openNightmareScreen(STORY.nightmares[activeNightmareId]);
+      return true;
     }
+    const activeDreamId = engine.state.activeDream;
+    if(activeDreamId && STORY.dreams?.[activeDreamId]){
+      openDreamScreen(activeDreamId, STORY.dreams[activeDreamId]);
+      return true;
+    }
+    const pending = engine.state.pendingInteraction;
+    if(pending?.type === 'call'){
+      const evt = STORY.events?.[pending.eventId];
+      const char = evt && STORY.characters?.[evt.from];
+      if(evt?.type === 'call' && char){
+        showIncomingCall({from:evt.from, name:char.name, script:evt.script, eventId:pending.eventId});
+        return true;
+      }
+    }
+    if(pending?.type === 'encounter'){
+      const encounter = engine.getPendingEncounter?.();
+      if(encounter){
+        showEncounter(encounter);
+        return true;
+      }
+    }
+    if(pending?.type === 'narrator_choice' && pending.choice){
+      showScreen('home');
+      showNarratorChoice(pending.choice);
+      return true;
+    }
+    if(pending?.type === 'route_choice' && !engine.state.route){
+      showRouteChoiceModal(STORY.routeChoice);
+      return true;
+    }
+    const advancing = engine.state.pendingTimeAdvances?.[0];
+    if(advancing) showTimeAdvanceOverlay(STORY.events?.[advancing.eventId]?.text);
+    return false;
   }
 
   // ===== v0.0.16 智能提示 App =====
@@ -3275,14 +3317,11 @@
     updateLockContinueBtn();
     applyThemeToBody();
     applyAmbienceToBody(engine.getCurrentAmbience ? engine.getCurrentAmbience() : null);
-    // 关闭可能残留的覆盖层；未解决的梦魇会按保存状态恢复。
+    // 关闭可能残留的覆盖层，再按存档中的进行中状态恢复。
     currentDateScene = null;
     if(screens.dateScene) screens.dateScene.classList.remove('active');
     if(screens.nightmare) screens.nightmare.classList.remove('active');
-    const activeNightmareId = engine.state.activeNightmare;
-    if(activeNightmareId && STORY.nightmares?.[activeNightmareId]){
-      openNightmareScreen(STORY.nightmares[activeNightmareId]);
-    }
+    return restorePendingUi();
   }
   function renderSaves(){
     const content = $('saves-content');
@@ -3334,9 +3373,9 @@
     if(action === 'load'){
       const ok = engine.load(slot);
       if(ok){
-        afterLoadRefresh();
+        const restored = afterLoadRefresh();
         toast(`已读取 ${slotDisplayName(slot)}`);
-        showScreen('home');
+        if(!restored) showScreen('home');
       } else toast('读取失败');
       return;
     }
