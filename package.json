@@ -1,7 +1,7 @@
 {
   "name": "neon-heart-game",
   "private": true,
-  "version": "0.1.4",
+  "version": "0.1.5",
   "scripts": {
     "test:regressions": "node test_regressions.js",
     "test:story": "node test_story.js",

@@ -40,3 +40,13 @@ venv/
 .env.local
 .env.*
 !.env.example
+
+# 本地应用数据
+.freebuff/
+*.db
+*.db-shm
+*.db-wal
+
+# 临时文档
+Kimi开发建议.md
+glm.md
