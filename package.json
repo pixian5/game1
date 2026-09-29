@@ -1,11 +1,15 @@
 {
   "name": "neon-heart-game",
   "private": true,
-  "version": "0.1.5",
+  "version": "0.1.6",
   "scripts": {
     "test:regressions": "node test_regressions.js",
     "test:story": "node test_story.js",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "validate:story": "node validate_story.js",
+    "check:version": "node check_version.js",
+    "test:all": "npm run check:version && npm run validate:story && npm run test:regressions && npm run test:story && npm run test:browser",
+    "serve": "node test_server.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0"
