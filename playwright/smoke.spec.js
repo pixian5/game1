@@ -40,3 +40,16 @@ test('关闭偶遇会清理待处理交互', async ({page}) => {
   expect(visible.pending.some(item => item.type === 'encounter')).toBe(false);
   expect(visible.screen).toBe(true);
 });
+
+test('闪回按数据渲染时间标签与标题（v0.1.6）', async ({page}) => {
+  await page.goto('/');
+  await page.evaluate(() => {
+    const e = window.__neonTest.engine;
+    e.state.affection.shenyan = 5;
+    e.state.flags.intel_shenyan_ex = true;
+    e.checkFlashbacks();
+  });
+  await expect(page.locator('#flashback-screen')).toHaveClass(/active/);
+  await expect(page.locator('#flashback-label')).toHaveText('五年前');
+  await expect(page.locator('#flashback-title')).toContainText('五年前的美术馆');
+});

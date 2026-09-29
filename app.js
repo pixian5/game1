@@ -1737,6 +1737,9 @@
   let currentFlashback = null;
   function showFlashback(fbId, fb){
     currentFlashback = {fbId, fb, choices:[]};
+    // v0.1.6: 闪回时间标签改为按数据读取（原先固定显示"五年前"，与九年/八年前内容矛盾）
+    const flashbackLabel = $('flashback-label');
+    if(flashbackLabel) flashbackLabel.textContent = fb.time || '闪回';
     $('flashback-title').textContent = fb.title;
     const scenesEl = $('flashback-scenes');
     scenesEl.innerHTML = '';

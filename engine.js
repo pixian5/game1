@@ -395,6 +395,8 @@ class PhoneEngine {
     this._scheduledEvents.add(eventId);
     this.state.firedEvents[eventId] = true;
     if(evt.collectible) this.collectItem(evt.collectible);
+    // v0.1.6: 事件级 effects（可选）：让数据层可以直接设置 flag / 好感 / 性格，无需依赖玩家选项
+    if(evt.effects) this._applyEffects(evt.effects);
     // 立即触发的消息事件
     if(evt.type === 'message_batch'){
       const n = evt.messages.length;

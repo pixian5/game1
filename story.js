@@ -397,6 +397,8 @@ const STORY = {
     },
     'route_shenyan_south': {
       type:'advance_day', text:'南方出差', hour:20, collectible:'postcard_sea',
+      // v0.1.6: 补上 flag 写入，否则「海雾」主题（themes.sea）永远无法解锁
+      effects:{ flags:{ shenyan_south:true } },
       then:'route_shenyan_dinner'
     },
     'route_shenyan_dinner': {
@@ -951,6 +953,11 @@ STORY.locations = {
       }
     ]
   },
+  school: {
+    name:'旧学校', icon:'🏫', bg:'linear-gradient(160deg,#1a2e0a 0%,#071208 100%)',
+    hint:'操场边的银杏又长高了，九年的落叶堆在台阶上',
+    encounters: []
+  },
   gallery: {
     name:'砚美术馆', icon:'🎨', bg:'linear-gradient(160deg,#2a0f4a 0%,#0a0712 100%)',
     hint:'空旷的展厅，回声里都是秘密',
@@ -1359,10 +1366,11 @@ STORY.profiles = {
 };
 
 // ===== 闪回/前传章节 =====
-// 通过特定条件触发，进入独立时间线，揭示五年前的过去
+// 通过特定条件触发，进入独立时间线，揭示过去的记忆
 STORY.flashbacks = {
   'fb_highschool_luci': {
-    title:'闪回 · 五年前的军训操场',
+    title:'闪回 · 九年前的军训操场',
+    time:'九年前',
     trigger: s => s.affection.luci >= 4 && s.flags.intel_luci_milan && !s.flags.fb_highschool_luci,
     desc:'你看着陆辞发来的旧照片，眼前模糊起来。\n蝉鸣声突然变得很近。你回到了高一军训的那个下午。',
     scenes:[
@@ -1378,12 +1386,13 @@ STORY.flashbacks = {
       }}
     ],
     reward:{photo:'luci_album', flag:'fb_highschool_luci'},
-    then:null
+    then:'fb_highschool_luci_after'
   },
   'fb_highschool_jiangyu': {
-    title:'闪回 · 五年前的天台',
+    title:'闪回 · 八年前的天台',
+    time:'八年前',
     trigger: s => s.affection.jiangyu >= 4 && s.flags.want_listen && !s.flags.fb_highschool_jiangyu,
-    desc:'江屿唱《夏》的那个夜晚，你突然想起来了——\n五年前，你听过同样的副歌。在另一座天台。',
+    desc:'江屿唱《夏》的那个夜晚，你突然想起来了——\n八年前，你听过同样的副歌。在另一座天台。',
     scenes:[
       {text:'高二夏天。隔壁学校的天台。\n一个抱吉他的男生在唱副歌，唱到"夏"字就停。\n你路过，停下来听。'},
       {text:'他回头看见你：\n"嘿。这首歌的副歌我写不出来。你叫什么？"\n你说："林夏。"\n他愣住，然后笑了：\n"……原来夏字是这样写的。"', choice:{
@@ -1396,12 +1405,69 @@ STORY.flashbacks = {
       }}
     ],
     reward:{photo:'rooftop_night', flag:'fb_highschool_jiangyu'},
-    then:null
+    then:'fb_highschool_jiangyu_after'
+  },
+  // v0.1.6: 补上沈砚之的闪回（原先只有陆辞/江屿两条），与"真相结局"呼应但不剧透
+  'fb_gallery_shenyan': {
+    title:'闪回 · 五年前的美术馆',
+    time:'五年前',
+    trigger: s => s.affection.shenyan >= 4 && s.flags.intel_shenyan_ex && !s.flags.fb_gallery_shenyan,
+    desc:'你路过砚美术馆的旧展厅，脚步忽然慢了下来——\n五年前的那个下午，你好像来过这里。',
+    scenes:[
+      {text:'五年前。你还在读大二，跟着来霓城办展的陆辞，第一次走进这间美术馆。\n展厅最里面，有个人站在一幅画前，站了很久。'},
+      {text:'你在旁边一幅画前停下了。\n画上是一片没有人的海。\n临走前，你回头，对等在门口的陆辞笑了一下：\n"以后，我想在这样的地方工作。"', choice:{
+        prompt:'你想起来了。',
+        options:[
+          {text:'原来策展人的梦，是从那天开始的', personality:{active:1, rational:1}, shard:'没有人的海'},
+          {text:'那时候的陆辞，一直站在门口等我', personality:{emotional:1, dependent:1}, shard:'门口的身影'},
+          {text:'我没有多看那个人一眼', personality:{independent:2}, shard:'错过的目光'}
+        ]
+      }},
+      {text:'你没有注意到——展厅的角落里，有人在你回头笑的那一刻，停住了笔。\n那天之后，他开始画一幅新的画。\n那幅画，他画了五年。'}
+    ],
+    reward:{flag:'fb_gallery_shenyan'},
+    then:'fb_gallery_shenyan_after'
   }
 };
 
 // 闪回触发检查（由 engine.checkFlashbacks 调用）
-// 闪回完成后的回调事件（可选）
+// 闪回完成后的回调事件（v0.1.6：补上原先 then:null 的断链，让闪回有落点）
+STORY.events['fb_highschool_luci_after'] = {
+  type:'message_batch', delay:1,
+  messages:[
+    {from:'luci', text:'照片看完了？', then:'fb_highschool_luci_after_2'}
+  ]
+};
+STORY.events['fb_highschool_luci_after_2'] = {
+  type:'message_batch', delay:0,
+  messages:[
+    {from:'luci', text:'别笑我。这九年，我一直没敢给你看。\n现在敢了——因为你回来了。'}
+  ]
+};
+STORY.events['fb_highschool_jiangyu_after'] = {
+  type:'message_batch', delay:1,
+  messages:[
+    {from:'jiangyu', text:'……还没睡吧。', then:'fb_highschool_jiangyu_after_2'}
+  ]
+};
+STORY.events['fb_highschool_jiangyu_after_2'] = {
+  type:'message_batch', delay:0,
+  messages:[
+    {from:'jiangyu', text:'副歌那两句，今晚突然写完了。\n原来它缺的不是旋律，是一个人。'}
+  ]
+};
+STORY.events['fb_gallery_shenyan_after'] = {
+  type:'message_batch', delay:1,
+  messages:[
+    {from:'shenyan', text:'……你今天去了旧展厅。', then:'fb_gallery_shenyan_after_2'}
+  ]
+};
+STORY.events['fb_gallery_shenyan_after_2'] = {
+  type:'message_batch', delay:0,
+  messages:[
+    {from:'shenyan', text:'那面墙上的《海》，挂了五年。\n它是从一个下午开始画的——那天，展厅里有个人站着看了很久。'}
+  ]
+};
 
 // ===== 礼物商城+喜好系统 =====
 // 礼物分类：每个男主有"最爱/喜欢/一般/讨厌"四档，对应好感倍率
@@ -1532,7 +1598,7 @@ STORY.achievements = {
     return set.size >= 4;
   }},
   // 剧情类
-  flashback_seen:{ id:'flashback_seen',name:'回望五年前',   icon:'⏳', desc:'触发闪回/前传章节', condition: s => Object.keys(s.flashbacksSeen||{}).length >= 1 },
+  flashback_seen:{ id:'flashback_seen',name:'回望那年',   icon:'⏳', desc:'触发闪回/前传章节', condition: s => Object.keys(s.flashbacksSeen||{}).length >= 1 },
   invitation_accepted:{ id:'invitation_accepted', name:'赴约之人', icon:'💌', desc:'接受过一次邀约', condition: s => Object.values(s.resolvedInvitations||{}).some(v=>v==='accepted') },
   // 隐藏成就
   three_routes:  { id:'three_routes',  name:'心三向',       icon:'💗', desc:'(隐藏) 同时被三位男主的好感度推到5以上', condition: s => s.affection.shenyan>=5 && s.affection.luci>=5 && s.affection.jiangyu>=5 },
@@ -1718,7 +1784,7 @@ STORY.malePerspectives = {
     ],
     truthEnding:{
       title:'真相 · 沈砚之',
-      text:'他第一次见你，不是在导师给联系方式的那个清晨。\n\n是五年前。你还是高中生，跟着陆辞来美术馆参观。你站在一幅画前看了很久，回头对陆辞笑了一下。\n\n那个笑，他画了五年，没画完。\n\n直到你以策展人的身份，重新出现在他的展厅。'
+      text:'他第一次见你，不是在导师给联系方式的那个清晨。\n\n是五年前。你还在读大二，跟着陆辞来霓城看展，第一次走进这间美术馆。你站在一幅画前看了很久，回头对陆辞笑了一下。\n\n那个笑，他画了五年，没画完。\n\n直到你以策展人的身份，重新出现在他的展厅。'
     }
   },
   luci: {
@@ -1847,7 +1913,7 @@ STORY.playerCustomization = {
       id: 'pq1',
       question: '深夜接到陌生来电，你的第一反应是？',
       options: [
-        { text: '立刻接起', effects:{ personality:{active:1, brave:1} }, label:'主动型' },
+        { text: '立刻接起', effects:{ personality:{active:1, independent:1} }, label:'主动型' },
         { text: '看一眼来电，犹豫后再接', effects:{ personality:{passive:1, rational:1} }, label:'谨慎型' },
         { text: '不接，等对方留言', effects:{ personality:{independent:1, passive:1} }, label:'独立型' }
       ]
@@ -1865,7 +1931,7 @@ STORY.playerCustomization = {
       id: 'pq3',
       question: '遇到一个让你心动的人，你会？',
       options: [
-        { text: '主动找机会接近', effects:{ personality:{active:1, brave:1} }, label:'直球型' },
+        { text: '主动找机会接近', effects:{ personality:{active:1, independent:1} }, label:'直球型' },
         { text: '默默观察一段时间', effects:{ personality:{rational:1, passive:1} }, label:'观察型' },
         { text: '假装不在意，等他先开口', effects:{ personality:{passive:1, emotional:1} }, label:'等待型' }
       ]
@@ -1935,15 +2001,31 @@ STORY.criticalEvents = {
       { from:'shenyan', text:'明天有空吗。', choice:{
         prompt:'沈砚之想约你。',
         options:[
-          { text:'有。', effects:{ affection:{shenyan:1}, flags:{shenyan_critical_3_accepted:true}, thenEvent:'shenyan_critical_3_reply' }, hint:'沈砚之 +1' },
-          { text:'最近有点忙…', effects:{ affection:{shenyan:0}, thenEvent:'shenyan_critical_3_reply' }, hint:'他会等你' }
+          { text:'有。', effects:{ affection:{shenyan:1}, flags:{shenyan_critical_3_accepted:true}, thenEvent:'shenyan_critical_3_reply_yes' }, hint:'沈砚之 +1' },
+          { text:'最近有点忙…', effects:{ affection:{shenyan:0}, thenEvent:'shenyan_critical_3_reply_no' }, hint:'他会等你' }
         ]
       }}
     ]
   },
-  shenyan_critical_3_reply: {
+  shenyan_critical_3_reply_yes: {
     type:'message_batch', delay:1,
-    messages:[{ from:'shenyan', text:'好。那就改天。' }]
+    messages:[
+      { from:'shenyan', text:'明天，办公室。', then:'shenyan_critical_3_reply_yes_2' }
+    ]
+  },
+  shenyan_critical_3_reply_yes_2: {
+    type:'message_batch', delay:0,
+    messages:[{ from:'shenyan', text:'……谢谢。有些话，我憋了很久。' }]
+  },
+  shenyan_critical_3_reply_no: {
+    type:'message_batch', delay:1,
+    messages:[
+      { from:'shenyan', text:'好。那就改天。', then:'shenyan_critical_3_reply_no_2' }
+    ]
+  },
+  shenyan_critical_3_reply_no_2: {
+    type:'message_batch', delay:0,
+    messages:[{ from:'shenyan', text:'我不催你。但我会记得，你欠我一次。' }]
   },
   luci_critical_3: {
     id:'luci_critical_3', charId:'luci', stage:3,
@@ -1958,15 +2040,31 @@ STORY.criticalEvents = {
       { from:'luci', text:'是我们以前的学校。九年了，我想带你回去看看。', choice:{
         prompt:'陆辞想带你去旧学校。',
         options:[
-          { text:'好。', effects:{ affection:{luci:1}, flags:{luci_critical_3_accepted:true}, thenEvent:'luci_critical_3_reply' }, hint:'陆辞 +1' },
-          { text:'现在…还不行。', effects:{ affection:{luci:0}, thenEvent:'luci_critical_3_reply' }, hint:'他会等你准备好' }
+          { text:'好。', effects:{ affection:{luci:1}, flags:{luci_critical_3_accepted:true}, thenEvent:'luci_critical_3_reply_yes' }, hint:'陆辞 +1' },
+          { text:'现在…还不行。', effects:{ affection:{luci:0}, thenEvent:'luci_critical_3_reply_no' }, hint:'他会等你准备好' }
         ]
       }}
     ]
   },
-  luci_critical_3_reply: {
+  luci_critical_3_reply_yes: {
     type:'message_batch', delay:1,
-    messages:[{ from:'luci', text:'没事。我等。' }]
+    messages:[
+      { from:'luci', text:'说定了！明天下午三点，校门口见。', then:'luci_critical_3_reply_yes_2' }
+    ]
+  },
+  luci_critical_3_reply_yes_2: {
+    type:'message_batch', delay:0,
+    messages:[{ from:'luci', text:'带双舒服的鞋。要走很多路——我想带你看完每一处。' }]
+  },
+  luci_critical_3_reply_no: {
+    type:'message_batch', delay:1,
+    messages:[
+      { from:'luci', text:'没事。我等。', then:'luci_critical_3_reply_no_2' }
+    ]
+  },
+  luci_critical_3_reply_no_2: {
+    type:'message_batch', delay:0,
+    messages:[{ from:'luci', text:'九年都等了，不差这几天。' }]
   },
   jiangyu_critical_3: {
     id:'jiangyu_critical_3', charId:'jiangyu', stage:3,
@@ -1981,15 +2079,31 @@ STORY.criticalEvents = {
       { from:'jiangyu', text:'你来吗。', choice:{
         prompt:'江屿邀请你听首唱。',
         options:[
-          { text:'去。', effects:{ affection:{jiangyu:1}, flags:{jiangyu_critical_3_accepted:true}, thenEvent:'jiangyu_critical_3_reply' }, hint:'江屿 +1' },
-          { text:'今晚有事…', effects:{ affection:{jiangyu:0}, thenEvent:'jiangyu_critical_3_reply' }, hint:'他会等你下次' }
+          { text:'去。', effects:{ affection:{jiangyu:1}, flags:{jiangyu_critical_3_accepted:true}, thenEvent:'jiangyu_critical_3_reply_yes' }, hint:'江屿 +1' },
+          { text:'今晚有事…', effects:{ affection:{jiangyu:0}, thenEvent:'jiangyu_critical_3_reply_no' }, hint:'他会等你下次' }
         ]
       }}
     ]
   },
-  jiangyu_critical_3_reply: {
+  jiangyu_critical_3_reply_yes: {
     type:'message_batch', delay:1,
-    messages:[{ from:'jiangyu', text:'……好。' }]
+    messages:[
+      { from:'jiangyu', text:'……好。位置我留着。', then:'jiangyu_critical_3_reply_yes_2' }
+    ]
+  },
+  jiangyu_critical_3_reply_yes_2: {
+    type:'message_batch', delay:0,
+    messages:[{ from:'jiangyu', text:'第一排。只有你一个位子。' }]
+  },
+  jiangyu_critical_3_reply_no: {
+    type:'message_batch', delay:1,
+    messages:[
+      { from:'jiangyu', text:'……好。', then:'jiangyu_critical_3_reply_no_2' }
+    ]
+  },
+  jiangyu_critical_3_reply_no_2: {
+    type:'message_batch', delay:0,
+    messages:[{ from:'jiangyu', text:'歌会留着。等你哪天想听。' }]
   }
 };
 

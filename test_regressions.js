@@ -336,4 +336,54 @@ test('存储写入异常会显式失败', ()=>{
   sandbox.localStorage.setItem = saved;
 });
 
+// ===== v0.1.6 新增 =====
+test('事件级 effects 会生效（南方出差解锁海雾主题）', ()=>{
+  const e = engine();
+  const queued = [];
+  e._setTimeout = fn => { queued.push(fn); return queued.length; };
+  e.scheduleEvent('route_shenyan_south');
+  assert.equal(e.state.flags.shenyan_south, true);
+  e.checkThemeUnlocks();
+  assert.equal(e.state.unlockedThemes.sea, true);
+});
+
+test('沈砚之闪回可触发并衔接到后续消息，不再断链', ()=>{
+  const e = engine();
+  const queued = [];
+  e._setTimeout = fn => { queued.push(fn); return queued.length; };
+  e.state.affection.shenyan = 5;
+  e.state.flags.intel_shenyan_ex = true;
+  e.checkFlashbacks();
+  assert.equal(e.state.flashbacksSeen.fb_gallery_shenyan, true);
+  e.resolveFlashback('fb_gallery_shenyan', [{sceneIdx:1, optIdx:0}]);
+  assert.ok(e.state.flashbackShards.some(s=>s.fbId==='fb_gallery_shenyan'));
+  let guard = 0;
+  while(queued.length && guard++ < 30) queued.shift()();
+  const shenyanMsgs = e.state.conversations.shenyan.messages.filter(m=>m.from==='shenyan');
+  assert.ok(shenyanMsgs.some(m=>m.text.includes('旧展厅')), '闪回结束应触发沈砚之的后续消息');
+});
+
+test('三条临界事件的接受/婉拒回复不同（不再是同一句）', ()=>{
+  const pairs = [
+    ['shenyan_critical_3_reply_yes', 'shenyan_critical_3_reply_no'],
+    ['luci_critical_3_reply_yes',    'luci_critical_3_reply_no'],
+    ['jiangyu_critical_3_reply_yes', 'jiangyu_critical_3_reply_no']
+  ];
+  // 递归拼接 then 链上的所有文本（回复被拆成 2 条消息，分属两个事件）
+  const collectText = (evtId, depth=0)=>{
+    const evt = STORY.criticalEvents[evtId];
+    if(!evt || depth > 3) return '';
+    const own = (evt.messages || []).map(m=>m.text || '').join('');
+    const next = (evt.messages || []).map(m=>m.then).find(Boolean);
+    return own + (next ? collectText(next, depth + 1) : '');
+  };
+  for(const [yesId, noId] of pairs){
+    assert.ok(STORY.criticalEvents[yesId] && STORY.criticalEvents[noId], `${yesId} / ${noId} 应存在`);
+    const yesText = collectText(yesId);
+    const noText = collectText(noId);
+    assert.notEqual(yesText, noText, `${yesId} 与 ${noId} 回复应不同`);
+    assert.ok(yesText.length > 8 && noText.length > 8, `回复内容不应过短：${yesId}=${yesText.length} / ${noId}=${noText.length}`);
+  }
+});
+
 console.log('全部回归测试通过');
