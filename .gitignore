@@ -8,15 +8,15 @@ Thumbs.db
 # 编辑器
 .vscode/
 .idea/
+.claude/
 *.code-workspace
 
-# 截图与下载
+# 截图与下载（精确匹配，避免误伤将来的美术资源）
 Downloads/
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.webp
+screenshot*.png
+screenshot*.jpg
+screenshot*.jpeg
+/screenshots/
 
 # 日志与临时
 *.log
