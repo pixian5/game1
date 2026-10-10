@@ -644,6 +644,7 @@ Object.assign(PhoneEngine.prototype, {
     }
     this.emit('tarotDrawn', fortune);
     this.emit('stateChange', this.state);
+    this.emit('ambienceChange', this.getCurrentAmbience());  // v0.1.8: 抽牌立即叠加幸运/沉重氛围
     this.checkAchievements();
     return {ok:true, fortune};
   },

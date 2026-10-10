@@ -65,7 +65,8 @@ STORY.computeEnding = function(state, route){
   if(!endingChoice) return null;
   const [choiceKey, goodChoice, badChoice] = endingChoice;
   const hiddenRequired = {shenyan:'memento_pen',luci:'evidence_letter',jiangyu:'evidence_lyrics'}[route];
-  if(flags['_' + route + '_hidden'] || (flags[choiceKey] === goodChoice && (state.collected||[]).includes(hiddenRequired))) return route + '_hidden';
+  // v0.1.8: 数值闭环——选了好结局分支且该线好感 ≥15，也能解锁隐藏结局（与隐藏收集品二选一，只增不拦）
+  if(flags['_' + route + '_hidden'] || (flags[choiceKey] === goodChoice && ((state.collected||[]).includes(hiddenRequired) || (state.affection?.[route] || 0) >= 15))) return route + '_hidden';
   const positives = {shenyan:['shenyan_resist','shenyan_awaken'],luci:['luci_confess','luci_stop','luci_chase'],jiangyu:['jiangyu_hold','jiangyu_stand']}[route];
   const negatives = {shenyan:['shenyan_obey','shenyan_deny'],luci:['luci_avoid','luci_letgo','luci_giveup'],jiangyu:['jiangyu_leave','jiangyu_silent']}[route];
   const goodCount = positives.filter(key=>flags[key]).length;

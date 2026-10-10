@@ -121,7 +121,10 @@ STORY.ambiences = {
   night:   { id:'night',   name:'夜晚', wallpaperOverlay:'rgba(0,0,30,0.35)', cond: s => { const h=Math.floor(s.minute/60); return h >= 20 || h < 6; } },
   dawn:    { id:'dawn',    name:'黎明', wallpaperOverlay:'rgba(255,200,180,0.06)', cond: s => { const h=Math.floor(s.minute/60); return h >= 6 && h < 8; } },
   rainy:   { id:'rainy',   name:'雨天', wallpaperOverlay:'rgba(80,120,180,0.10)', cond: s => s.flags._weather === 'rainy' },
-  anxious: { id:'anxious', name:'心绪不宁', wallpaperOverlay:'rgba(120,40,80,0.12)', cond: s => s.mood === 'anxious' }
+  anxious: { id:'anxious', name:'心绪不宁', wallpaperOverlay:'rgba(120,40,80,0.12)', cond: s => s.mood === 'anxious' },
+  // v0.1.8: 塔罗运势接入氛围——抽牌当天叠加一层「幸运/沉重」色调（优先级低于心情与天气）
+  lucky:   { id:'lucky',   name:'幸运', wallpaperOverlay:'rgba(255,160,210,0.07)', cond: s => s.todayFortune && s.todayFortune.day === s.day && s.todayFortune.reversed === false },
+  unlucky: { id:'unlucky', name:'沉重', wallpaperOverlay:'rgba(60,60,90,0.14)', cond: s => s.todayFortune && s.todayFortune.day === s.day && s.todayFortune.reversed === true }
 };
 
 if (typeof window !== 'undefined') window.STORY = STORY;

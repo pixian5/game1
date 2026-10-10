@@ -6,7 +6,7 @@
 
 纯前端实现（HTML / CSS / 原生 JS），**运行时零依赖、无构建步骤**。
 
-- 当前版本：**v0.1.7**（版本唯一来源：[VERSION](VERSION)）
+- 当前版本：**v0.1.8**（版本唯一来源：[VERSION](VERSION)）
 - 主角：林夏（策展人）｜路线：沈砚之 / 陆辞 / 江屿 / 独行线（真结局）
 - 内容体量：147 个剧情事件 · 17 个结局（含 4 个隐藏）· 14 件收集品 · 15 个成就 · 3 个谜题 · 16 张塔罗 · 7 套主题（含真实壁纸）· 6 个地点
 
@@ -27,6 +27,7 @@ node test_server.js     # 打开 http://127.0.0.1:4187
 ```bash
 npm install                # 首次：安装测试依赖（@playwright/test）
 npm run check:version      # 版本号一致性（VERSION / package.json / index.html / sw.js）
+npm run check:ui           # 前端语法合并编译 + 引用完整性（index.html/sw.js 交叉核对）
 npm run validate:story     # 剧情数据一致性（事件引用 / 收集品路径 / flag 读写 / 结局图鉴）
 npm run test:regressions   # 引擎回归测试（19 项）
 npm run test:story         # 剧情链路测试（294 项断言）
@@ -45,22 +46,22 @@ app.js→ui/ 22 个文件，拆分经快照深度比对验证）；**4 条死 fl
 新增 WebAudio 音效系统与主题环境音；6 套程序化主题壁纸；PWA（manifest + Service Worker
 离线可玩）；GitHub Pages 上线；测试端口改 4187 避开本机冲突。全部测试通过。
 
-👉 详细进度：[docs/202610110222-当前开发进度-GLM.md](docs/202610110222-当前开发进度-GLM.md)
-👉 技术细节：[docs/202610110222-v0.1.7-全面修复与模块化拆分-GLM.md](docs/202610110222-v0.1.7-全面修复与模块化拆分-GLM.md)
+👉 详细进度：[docs/20261011-0222-当前开发进度-GLM.md](docs/20261011-0222-当前开发进度-GLM.md)
+👉 技术细节：[docs/20261011-0222-v0.1.7-全面修复与模块化拆分-GLM.md](docs/20261011-0222-v0.1.7-全面修复与模块化拆分-GLM.md)
 
 ## 下一步待实现
 
 优先：数值闭环推进（好感/塔罗对结局判定）、照片 AI 生图接入（待图像 API）、
 `story/18_patches.js` 收编、音频丰富度。另有需拍板项（文档命名、素材去留、是否要桌面版）。
 
-👉 详细清单：[docs/202610110222-下一步待实现-GLM.md](docs/202610110222-下一步待实现-GLM.md)
+👉 详细清单：[docs/20261011-0222-下一步待实现-GLM.md](docs/20261011-0222-下一步待实现-GLM.md)
 
 ## 目录结构
 
 | 路径 | 作用 |
 |---|---|
 | `index.html` | 手机外壳与全部屏幕（App）结构 + 脚本加载清单 |
-| `story/` | **剧情数据层**（19 个文件）：事件 / 朋友圈 / 结局 / 收集品 / 约会 / 梦魇等按板块分域（纯数据，改剧情不用动逻辑） |
+| `story/` | **剧情数据层**（18 个文件）：事件 / 朋友圈 / 结局 / 收集品 / 约会 / 梦魇等按板块分域（纯数据，改剧情不用动逻辑） |
 | `engine.js` | 引擎核心：状态机、时间系统、事件调度、定时器管理 |
 | `engine_social.js` / `engine_content.js` / `engine_progress.js` / `engine_save.js` | 引擎混入：消息通话群聊 / 内容玩法 / 成长系统 / 存档 |
 | `ui/` | **UI 层**（22 个文件）：30+ 个 App 屏幕的渲染与交互，按功能分区 |
@@ -73,6 +74,7 @@ app.js→ui/ 22 个文件，拆分经快照深度比对验证）；**4 条死 fl
 | `tools/` | 资产生成脚本（Python + PIL，可重跑再生成） |
 | `validate_story.js` | 剧情数据一致性校验器（CI 使用） |
 | `check_version.js` | 版本号一致性校验（CI 使用，含 sw.js 缓存版本） |
+| `check_ui.js` | 前端语法与引用完整性校验（CI 使用，v0.1.8 新增） |
 | `test_helper.js` | 测试共享：源码文件清单动态生成（拆文件后测试自动跟进） |
 | `test_server.js` | 本地静态服务器（开发/测试用，端口 4187） |
 | `test_regressions.js` / `test_story.js` | 引擎回归 / 剧情链路自动化测试（Node） |

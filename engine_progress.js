@@ -748,8 +748,9 @@ Object.assign(PhoneEngine.prototype, {
 
   getCurrentAmbience(){
     const list = this.story.ambiences || {};
-    // 优先级：anxious > rainy > night > dusk > dawn > day
-    const priority = ['anxious','rainy','night','dusk','dawn','day'];
+    // 优先级：anxious > rainy > unlucky > night > dusk > dawn > lucky > day
+    // （v0.1.8: unlucky/lucky 为塔罗运势层，低于心情与天气，高于白昼底色）
+    const priority = ['anxious','rainy','unlucky','night','dusk','dawn','lucky','day'];
     for(const id of priority){
       const a = list[id];
       if(!a) continue;
