@@ -6,25 +6,27 @@
 
 纯前端实现（HTML / CSS / 原生 JS），**运行时零依赖、无构建步骤**。
 
-- 当前版本：**v0.1.6**（版本唯一来源：[VERSION](VERSION)）
+- 当前版本：**v0.1.7**（版本唯一来源：[VERSION](VERSION)）
 - 主角：林夏（策展人）｜路线：沈砚之 / 陆辞 / 江屿 / 独行线（真结局）
-- 内容体量：143 个剧情事件 · 17 个结局（含 4 个隐藏）· 14 件收集品 · 15 个成就 · 3 个谜题 · 16 张塔罗 · 7 套主题 · 6 个地点
+- 内容体量：147 个剧情事件 · 17 个结局（含 4 个隐藏）· 14 件收集品 · 15 个成就 · 3 个谜题 · 16 张塔罗 · 7 套主题（含真实壁纸）· 6 个地点
 
 ## 快速开始
 
-直接双击 `index.html` 即可游玩（无构建、无依赖）。
+**在线游玩**（GitHub Pages，自动跟随 main 部署）：https://pixian5.github.io/game1/
 
-推荐本地起服务（避免个别浏览器对 `file://` 的限制）：
+本地游玩：直接双击 `index.html`（无构建、无依赖），或：
 
 ```bash
-node test_server.js     # 打开 http://127.0.0.1:4173
+node test_server.js     # 打开 http://127.0.0.1:4187
 ```
+
+支持 PWA：在线版可「添加到主屏幕」并离线游玩。
 
 运行全部校验与测试：
 
 ```bash
 npm install                # 首次：安装测试依赖（@playwright/test）
-npm run check:version      # 版本号一致性（VERSION / package.json / index.html）
+npm run check:version      # 版本号一致性（VERSION / package.json / index.html / sw.js）
 npm run validate:story     # 剧情数据一致性（事件引用 / 收集品路径 / flag 读写 / 结局图鉴）
 npm run test:regressions   # 引擎回归测试（19 项）
 npm run test:story         # 剧情链路测试（294 项断言）
@@ -32,67 +34,66 @@ npm run test:browser       # 浏览器端到端（Playwright，4 项）
 npm run test:all           # 一键跑全部
 ```
 
-CI（[.github/workflows/test.yml](.github/workflows/test.yml)）在每次 push / PR 时自动执行以上全部检查。
+CI（[.github/workflows/test.yml](.github/workflows/test.yml)）在每次 push / PR 时自动执行以上全部检查；
+[deploy.yml](.github/workflows/deploy.yml) 在 push main 后自动部署到 GitHub Pages。
 
 ## 当前开发进度
 
-v0.1.6 完成：仓库收口（双远端分叉清零）、仓库清理（移除 legacy_avg 等）、版本号单源化、
-新增剧情数据校验器、时间线与闪回断链修复、补沈砚之闪回、临界事件分支差异化、修复"海雾"
-主题无法解锁等问题；三套测试 + 校验器全部通过。
+v0.1.7 完成：**三大文件模块化拆分**（story.js→story/ 19 个文件、engine.js→核心+4 混入、
+app.js→ui/ 22 个文件，拆分经快照深度比对验证）；**4 条死 flag 清零**（凌晨来电/幽灵消息/
+每日天气/隐藏结局备用条件，校验器 0 错误 0 警告）；收集品重复发放去重；存档内存缓存优化；
+新增 WebAudio 音效系统与主题环境音；6 套程序化主题壁纸；PWA（manifest + Service Worker
+离线可玩）；GitHub Pages 上线；测试端口改 4187 避开本机冲突。全部测试通过。
 
-👉 详细进度：[docs/202609300008当前开发进度.md](docs/202609300008当前开发进度.md)
+👉 详细进度：[docs/202610110222-当前开发进度-GLM.md](docs/202610110222-当前开发进度-GLM.md)
+👉 技术细节：[docs/202610110222-v0.1.7-全面修复与模块化拆分-GLM.md](docs/202610110222-v0.1.7-全面修复与模块化拆分-GLM.md)
 
 ## 下一步待实现
 
-优先：story.js / app.js 拆分、在线部署 + PWA、存档性能优化、死 flag 补功能或删除。
-另有一批需要拍板的决策项（部署方式、文档命名、素材去留、是否要桌面版）。
+优先：数值闭环推进（好感/塔罗对结局判定）、照片 AI 生图接入（待图像 API）、
+`story/18_patches.js` 收编、音频丰富度。另有需拍板项（文档命名、素材去留、是否要桌面版）。
 
-👉 详细清单：[docs/202609300008下一步待实现.md](docs/202609300008下一步待实现.md)
+👉 详细清单：[docs/202610110222-下一步待实现-GLM.md](docs/202610110222-下一步待实现-GLM.md)
 
 ## 目录结构
 
 | 路径 | 作用 |
 |---|---|
-| `index.html` | 手机外壳与全部屏幕（App）结构 |
-| `story.js` | 剧情数据层：事件 / 朋友圈 / 结局 / 各玩法配置（纯数据，改剧情不用动逻辑） |
-| `engine.js` | 引擎：状态机、时间系统、事件调度、消息/电话/存档等全部玩法逻辑 |
-| `app.js` | UI 层：30+ 个 App 屏幕的渲染与交互 |
+| `index.html` | 手机外壳与全部屏幕（App）结构 + 脚本加载清单 |
+| `story/` | **剧情数据层**（19 个文件）：事件 / 朋友圈 / 结局 / 收集品 / 约会 / 梦魇等按板块分域（纯数据，改剧情不用动逻辑） |
+| `engine.js` | 引擎核心：状态机、时间系统、事件调度、定时器管理 |
+| `engine_social.js` / `engine_content.js` / `engine_progress.js` / `engine_save.js` | 引擎混入：消息通话群聊 / 内容玩法 / 成长系统 / 存档 |
+| `ui/` | **UI 层**（22 个文件）：30+ 个 App 屏幕的渲染与交互，按功能分区 |
+| `audio.js` | WebAudio 音效系统（消息/来电/按键音效 + 主题环境音） |
 | `style.css` | 视觉样式（手机 UI、各 App、动画） |
 | `interaction_queue.js` | 交互队列（并发来电/偶遇/选择的排队与读档恢复） |
 | `save_migrations.js` | 存档版本迁移 |
+| `manifest.json` / `sw.js` / `pwa.js` | PWA：应用清单 / 离线缓存 / 注册 |
+| `assets/` | 壁纸（`tools/generate_wallpapers.py` 生成）与图标（`tools/generate_icons.py` 生成） |
+| `tools/` | 资产生成脚本（Python + PIL，可重跑再生成） |
 | `validate_story.js` | 剧情数据一致性校验器（CI 使用） |
-| `check_version.js` | 版本号一致性校验（CI 使用） |
-| `test_server.js` | 本地静态服务器（开发/测试用） |
-| `test_regressions.js` | 引擎回归测试（Node，无浏览器） |
-| `test_story.js` | 剧情链路自动化测试（Node） |
+| `check_version.js` | 版本号一致性校验（CI 使用，含 sw.js 缓存版本） |
+| `test_helper.js` | 测试共享：源码文件清单动态生成（拆文件后测试自动跟进） |
+| `test_server.js` | 本地静态服务器（开发/测试用，端口 4187） |
+| `test_regressions.js` / `test_story.js` | 引擎回归 / 剧情链路自动化测试（Node） |
 | `playwright/` | 浏览器端到端测试 |
+| [文档索引.md](文档索引.md) | **docs/ 全部文档的作用索引** |
 
-## 文档索引（docs/ 每个文件的作用）
+## 文档索引
 
-| 文档 | 作用 |
-|---|---|
-| [docs/玩法.md](docs/玩法.md) | 玩法设计文档：核心机制（消息队列、打字延迟、已读不回）、三轴好感等 |
-| [docs/202609300008当前开发进度.md](docs/202609300008当前开发进度.md) | 当前进度与质量基线（每次大轮次更新） |
-| [docs/202609300008下一步待实现.md](docs/202609300008下一步待实现.md) | 下一步开发清单与待拍板事项 |
-| [docs/v0.1.0-完整性修复.md](docs/v0.1.0-完整性修复.md) | v0.1.0 修复记录（存档/剧情边界） |
-| [docs/v0.1.2-存档恢复修复.md](docs/v0.1.2-存档恢复修复.md) | v0.1.2 存档异步恢复修复 |
-| [docs/v0.1.3-交互与延迟剧情恢复.md](docs/v0.1.3-交互与延迟剧情恢复.md) | v0.1.3 交互与延迟剧情读档恢复 |
-| [docs/v0.1.4-交互队列与测试基础设施.md](docs/v0.1.4-交互队列与测试基础设施.md) | v0.1.4 交互队列 v3 与测试/CI 建设 |
-| [docs/glm开发建议.md](docs/glm开发建议.md) | GLM 的剧情梳理与开发建议（**部分条目已过时**，以代码与 `validate_story.js` 为准） |
-| [docs/seed开发方案.md](docs/seed开发方案.md) | Seed 的剧情梳理与开发方案（同上，作历史参考） |
-| [代码审查m3.md](代码审查m3.md) | 代码审查报告（其中部分问题已修复，作历史参考） |
-| [qwen开发方案.md](qwen开发方案.md)、[seed开发建议.md](seed开发建议.md) | 早期 AI 开发建议文档（历史参考） |
-| [两性差距.md](两性差距.md) / `两性差距.docx` | 剧情创作参考素材（与游戏代码无关，去留待定） |
+全部文档（进度/规划/玩法设计/版本修复记录/AI 建议历史）的作用一览：
+👉 [文档索引.md](文档索引.md)
 
 ## 版本管理
 
 - `VERSION` 是唯一版本源；每次修改 **+0.0.1**（每一位满十进一）
-- 修改后必须同步 `package.json` / `package-lock.json` / `index.html`（标题、meta、所有 `?v=` 缓存参数），并运行 `npm run check:version`（CI 会拦截不一致）
-- 每个版本的问题/经验记录写入 `docs/`，命名与规则见「下一步待实现」中的待定项
+- 修改后必须同步 `package.json` / `package-lock.json` / `index.html`（标题、meta、所有 `?v=` 缓存参数）/**`sw.js` 的 `CACHE_VERSION`**，并运行 `npm run check:version`（CI 会拦截不一致）
+- 每个版本的问题/经验记录写入 `docs/`（命名：`年月日时分-标题-模型名.md`）
 
 ## 开发约定
 
 - 这是开发测试版：重构无需考虑旧存档兼容与旧数据，但必须先备份/可回溯
 - 提交信息使用中文；每轮修改完成后提交并推送（gitee 与 github 双远端）
 - 每次修改后必须跑通 `npm run test:all` 才能停下
-- 新增剧情数据后先跑 `npm run validate:story`，让引用错误在 CI 就被拦住
+- 新增剧情数据 → 写进 `story/` 对应板块文件（不要在 `18_patches.js` 叠补丁），先跑 `npm run validate:story`
+- 新增源码文件 → `story/`、`engine_*.js` 会被测试清单自动包含；`ui/`、`audio.js`、`pwa.js` 需手动加入 `index.html` 与 `sw.js` 的 PRECACHE

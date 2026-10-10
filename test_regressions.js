@@ -25,7 +25,8 @@ const sandbox = {
 };
 sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
-for(const file of ['story.js', 'interaction_queue.js', 'save_migrations.js', 'engine.js']){
+
+for(const file of require('./test_helper.js').SOURCE_FILES){
   vm.runInContext(fs.readFileSync(path.join(__dirname, file), 'utf8'), sandbox);
 }
 const {STORY, PhoneEngine, SaveMigrations} = sandbox.window;

@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const root = __dirname;
-const port = Number(process.env.TEST_PORT || 4173);
+const port = Number(process.env.TEST_PORT || 4187)  // v0.1.7: 4173 易与其他本机项目冲突;
 const mime = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',

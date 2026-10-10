@@ -49,6 +49,11 @@ else {
   else notes.push(`✓ index.html 静态资源参数: ${versioned.length} 处全部为 ${canonical}`);
 }
 
+// 4) sw.js：Service Worker 缓存版本必须与 VERSION 同步（否则离线用户拿不到新资源）
+const sw = readText('sw.js');
+const swMatch = sw.match(/CACHE_VERSION\s*=\s*['"]neon-heart-v([\d.]+)['"]/);
+report('sw.js CACHE_VERSION', swMatch ? swMatch[1] : '(未找到)', canonical);
+
 for(const line of notes) console.log(line);
 if(failures.length){
   for(const line of failures) console.error(line);

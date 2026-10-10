@@ -1,0 +1,753 @@
+/* ===== 霓虹心事 · 剧情数据：剧情事件主线（全部 events） =====
+ * 本文件由 story.js 拆分而来（v0.1.7），内容逐字搬移。
+ * 拆分方案：见 docs/ 与 README「目录结构」。修改剧情数据后请运行 npm run validate:story。
+ */
+
+Object.assign(STORY, {
+
+  events: {
+    // ===== 序章：抵达霓城 =====
+    'intro_susu': {
+      type:'message_batch', delay:0, collectible:'postcard_neon',
+      messages:[
+        {from:'susu', text:'林夏！！！你到霓城了吗？？', then:'intro_susu_2'}
+      ]
+    },
+    'intro_susu_2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'听说你明天去砚美术馆报到？那里可是出了名的难进！', then:'intro_susu_3'}
+      ]
+    },
+    'intro_susu_3': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'到了回我一声！别让我担心！', choice:{
+          prompt:'苏苏在等你的回复：',
+          options:[
+            {text:'刚到，累死了，先睡了', effects:{affection:{}, thenEvent:'dream_day1_evt', personality:{passive:1, emotional:1}}, hint:'入睡 · 梦境'},
+            {text:'到了！明天报到，紧张', effects:{affection:{}, thenEvent:'dream_day1_evt', personality:{active:1, emotional:1}}, hint:'入睡 · 梦境'},
+            {text:'（暂时不回）', effects:{affection:{}, thenEvent:'dream_day1_evt', personality:{independent:1, passive:1}}, hint:'入睡 · 梦境'}
+          ]
+        }}
+      ]
+    },
+    // 第一夜梦境（事件包装）
+    'dream_day1_evt': { type:'dream', dream:'dream_day1' },
+
+    // ===== 第一天：报到 =====
+    'day2_morning': {
+      type:'advance_day', text:'次日清晨', hour:8,
+      collectible:'stamp_first',  // v0.1.7: 序章完成的唯一发放点（霓城首日戳，与收集柜 how 描述一致）
+      then:'shenyan_first_msg'
+    },
+    'shenyan_first_msg': {
+      type:'message_batch', delay:2,
+      messages:[
+        {from:'shenyan', text:'林夏。我是沈砚之。', then:'shenyan_first_msg_2'}
+      ]
+    },
+    'shenyan_first_msg_2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'shenyan', text:'导师把你的联系方式给我了。九点报到，别迟到。', then:'shenyan_first_msg_3'}
+      ]
+    },
+    'shenyan_first_msg_3': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'shenyan', text:'我这个人，最讨厌不守时。', then:'moment_shenyan_opening_evt'}
+      ]
+    },
+    'moment_shenyan_opening_evt': {
+      type:'moment_post', moment:'moment_shenyan_opening', collectible:'ticket_gallery',
+      then:'luci_reunion_msg'
+    },
+    // 陆辞的重逢（并发会话）
+    'luci_reunion_msg': {
+      type:'message_batch', delay:3,
+      messages:[
+        {from:'luci', text:'诶诶诶！！！林夏是你吗？？？', then:'luci_reunion_msg_2'}
+      ]
+    },
+    'luci_reunion_msg_2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'luci', text:'我听说砚美术馆新来个策展人，没想到是你！', then:'luci_reunion_msg_3'}
+      ]
+    },
+    'luci_reunion_msg_3': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'luci', text:'高中之后多少年没见了？九年？十年？', then:'luci_reunion_msg_4'}
+      ]
+    },
+    'luci_reunion_msg_4': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'luci', text:'晚上一起吃饭？我带你认认霓城！', choice:{
+          prompt:'陆辞约你晚上吃饭。',
+          options:[
+            {text:'好啊，下班联系', effects:{affection:{luci:2}, thenEvent:'bar_invitation'}, hint:'陆辞 +2'},
+            {text:'今天太累了，下次吧', effects:{affection:{luci:1}, thenEvent:'bar_invitation'}, hint:'陆辞 +1（他还是来了）'}
+          ]
+        }}
+      ]
+    },
+
+    // 雾港酒吧
+    'bar_invitation': {
+      type:'advance_time', text:'下班后', minutes:600, collectible:'ticket_bar',
+      then:'bar_invitation_msg'
+    },
+    'bar_invitation_msg': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'luci', text:'下班了吧？来"雾港"，巷子深处那家酒吧', then:'bar_invitation_msg_2'}
+      ]
+    },
+    'bar_invitation_msg_2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'luci', text:'我朋友开的，特调全霓城第一', then:'photo_neon_city'}
+      ]
+    },
+    'photo_neon_city': {
+      type:'photo_unlock', photo:'neon_city',
+      then:'moment_luci_neon_evt'
+    },
+    'moment_luci_neon_evt': {
+      type:'moment_post', moment:'moment_luci_neon',
+      then:'jiangyu_first_msg'
+    },
+    // 江屿登场
+    'jiangyu_first_msg': {
+      type:'message_batch', delay:3,
+      messages:[
+        {from:'jiangyu', text:'……', then:'jiangyu_first_msg_2'}
+      ]
+    },
+    'jiangyu_first_msg_2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'jiangyu', text:'今天那杯酒，算我请的。我是江屿。', then:'jiangyu_first_msg_3'}
+      ]
+    },
+    'jiangyu_first_msg_3': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'jiangyu', text:'你叫林夏。', then:'jiangyu_first_msg_4'}
+      ]
+    },
+    'jiangyu_first_msg_4': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'jiangyu', text:'名字不错。', choice:{
+          prompt:'他要加你好友。',
+          options:[
+            {text:'通过', effects:{affection:{jiangyu:1}, thenEvent:'jiangyu_call_night'}, hint:'江屿 +1'},
+            {text:'（不通过）', effects:{affection:{jiangyu:0}, thenEvent:'jiangyu_call_night'}, hint:'他还是会打来'}
+          ]
+        }}
+      ]
+    },
+
+    // 江屿来电
+    'jiangyu_call_night': {
+      type:'call', delay:2,
+      from:'jiangyu',
+      script:[
+        {who:'him', text:'……喂。'},
+        {who:'him', text:'我是江屿。今天的酒，味道还好吗。'},
+        {who:'choice', options:[
+          {text:'好喝。怎么突然打电话？'},
+          {text:'还行。有事吗？'}
+        ]},
+        {who:'him', text:'没什么事。只是想确认一下。'},
+        {who:'him', text:'我写过一首歌，叫《夏》。歌词里的人，也叫林夏。'},
+        {who:'him', text:'但那是很多年前的事了。别多想。只是巧合。'},
+        {who:'choice', options:[
+          {text:'真的只是巧合吗？', effects:{affection:{jiangyu:2}}},
+          {text:'好。我不问。', effects:{affection:{jiangyu:1}}}
+        ]},
+        {who:'him', text:'……晚安。'}
+      ],
+      onDecline:'jiangyu_call_declined',
+      then:'music_xia_unlock'
+    },
+    'jiangyu_call_declined': {
+      type:'message_batch', delay:1,
+      messages:[{from:'jiangyu', text:'……没事。晚安。'}],
+      then:'music_xia_unlock'
+    },
+    'music_xia_unlock': {
+      type:'music_unlock', music:'xia',
+      then:'moment_jiangyu_bar_evt'
+    },
+    'moment_jiangyu_bar_evt': {
+      type:'moment_post', moment:'moment_jiangyu_bar',
+      then:'dream_day2_evt'
+    },
+    // 第二夜梦境（事件包装）
+    'dream_day2_evt': { type:'dream', dream:'dream_day2' },
+
+    // ===== 第三天：沈砚之的考验 =====
+    'day3_shenyan_test': {
+      type:'advance_day', text:'第三天', hour:10,
+      then:'shenyan_test_msg'
+    },
+    'shenyan_test_msg': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'shenyan', text:'来我办公室。', then:'shenyan_test_msg_2'}
+      ]
+    },
+    'shenyan_test_msg_2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'shenyan', text:'下周开幕式，你来盯。', then:'shenyan_test_msg_3'}
+      ]
+    },
+    'shenyan_test_msg_3': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'shenyan', text:'你不是说你相信直觉吗。', then:'shenyan_test_choice'}
+      ]
+    },
+    'shenyan_test_choice': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'shenyan', text:'怎么，不愿意？', choice:{
+          prompt:'沈砚之的考验。你的回复：',
+          options:[
+            {text:'好，我来盯。', effects:{affection:{shenyan:2}, flags:{shenyan_brave:1}, thenEvent:'shenyan_test_reply_1'}, hint:'沈砚之 +2'},
+            {text:'我可能还不够资格…', effects:{affection:{shenyan:0}, thenEvent:'shenyan_test_reply_2'}, hint:'沈砚之 +0'},
+            {text:'为什么选我？', effects:{affection:{shenyan:1}, thenEvent:'shenyan_test_reply_3'}, hint:'沈砚之 +1'}
+          ]
+        }}
+      ]
+    },
+    'shenyan_test_reply_1': {
+      type:'message_batch', delay:1,
+      messages:[{from:'shenyan', text:'不错。比我想的，要勇敢。明天九点，会议室见。'}],
+      then:'luci_care_msg'
+    },
+    'shenyan_test_reply_2': {
+      type:'message_batch', delay:1,
+      messages:[{from:'shenyan', text:'是吗。那就算了。我自己来。'}],
+      then:'luci_care_msg'
+    },
+    'shenyan_test_reply_3': {
+      type:'message_batch', delay:1,
+      messages:[{from:'shenyan', text:'因为你不会问"为什么"。结果你问了。不过没关系。'}],
+      then:'luci_care_msg'
+    },
+
+    // 陆辞的关心
+    'luci_care_msg': {
+      type:'message_batch', delay:3,
+      messages:[
+        {from:'luci', text:'听说你被沈砚之点名盯开幕式了？', then:'luci_care_msg_2'}
+      ]
+    },
+    'luci_care_msg_2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'luci', text:'那家伙……你离他远点。', choice:{
+          prompt:'陆辞的话里似乎有别的意思。',
+          options:[
+            {text:'你说"离他远点"是什么意思？', effects:{affection:{luci:2}, thenEvent:'luci_care_reply_1'}, hint:'陆辞 +2'},
+            {text:'谢谢你啦，我会注意的', effects:{affection:{luci:1}, thenEvent:'luci_care_reply_2'}, hint:'陆辞 +1'}
+          ]
+        }}
+      ]
+    },
+    'luci_care_reply_1': {
+      type:'message_batch', delay:1,
+      messages:[{from:'luci', text:'我之前给他拍过封面。他看人的眼神，像在估价。我不希望你被他那样看。'}],
+      then:'dream_day3_evt'
+    },
+    'luci_care_reply_2': {
+      type:'message_batch', delay:1,
+      messages:[{from:'luci', text:'嗯……有什么事，随时找我。'}],
+      then:'dream_day3_evt'
+    },
+    // 第三夜梦境（事件包装）
+    'dream_day3_evt': { type:'dream', dream:'dream_day3' },
+
+    // ===== 开幕式当天 =====
+    'opening_day': {
+      type:'advance_day', text:'开幕式当天', hour:18,
+      then:'opening_shenyan_msg'
+    },
+    'opening_shenyan_msg': {
+      type:'message_batch', delay:1,
+      messages:[{from:'shenyan', text:'林夏，开幕式还有一小时开始。你来一下展厅。', then:'moment_shenyan_opening_day_evt'}]
+    },
+    'moment_shenyan_opening_day_evt': {
+      type:'moment_post', moment:'moment_shenyan_opening_day',
+      then:'opening_tension'
+    },
+    'opening_tension': {
+      type:'message_batch', delay:3,
+      messages:[
+        {from:'luci', text:'林夏，给你拍张工作照？', choice:{
+          prompt:'两个男人之间的气氛微妙。',
+          options:[
+            {text:'陪沈砚之应酬', effects:{affection:{shenyan:2}, thenEvent:'opening_choice_shenyan'}, hint:'沈砚之 +2'},
+            {text:'陪陆辞拍照', effects:{affection:{luci:2}, thenEvent:'opening_choice_luci'}, hint:'陆辞 +2'},
+            {text:'借口去后台', effects:{affection:{}, thenEvent:'opening_choice_neutral'}, hint:'保持中立'}
+          ]
+        }}
+      ]
+    },
+    'opening_choice_shenyan': {
+      type:'message_batch', delay:1,
+      messages:[{from:'shenyan', text:'走吧，给你介绍几个人。'}],
+      then:'rooftop_jiangyu'
+    },
+    'opening_choice_luci': {
+      type:'message_batch', delay:1,
+      messages:[{from:'luci', text:'看这边——笑一个。你笑起来，比那幅画好看多了。'}],
+      then:'rooftop_jiangyu'
+    },
+    'opening_choice_neutral': {
+      type:'message_batch', delay:1,
+      messages:[{from:'narrator', text:'（你借口去后台，留下两个男人意味深长的沉默。）'}],
+      then:'rooftop_jiangyu'
+    },
+
+    // 天台
+    'rooftop_jiangyu': {
+      type:'advance_time', text:'夜深了', minutes:240,
+      then:'rooftop_jiangyu_msg'
+    },
+    'rooftop_jiangyu_msg': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'jiangyu', text:'你在天台吗。', then:'rooftop_jiangyu_msg_2'}
+      ]
+    },
+    'rooftop_jiangyu_msg_2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'jiangyu', text:'我也在。今天累吧。', then:'rooftop_jiangyu_msg_3'}
+      ]
+    },
+    'rooftop_jiangyu_msg_3': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'jiangyu', text:'累的时候，适合看灯。霓城的夜，像谁的心事，亮着却没人懂。', choice:{
+          prompt:'夜风里，你的心跳漏了一拍。',
+          options:[
+            {text:'靠近他一点', effects:{affection:{jiangyu:2}, thenEvent:'rooftop_jiangyu_close'}, hint:'江屿 +2'},
+            {text:'礼貌保持距离', effects:{affection:{jiangyu:0}, thenEvent:'rooftop_jiangyu_distanced'}, hint:'江屿 +0'}
+          ]
+        }}
+      ]
+    },
+    'rooftop_jiangyu_close': {
+      type:'message_batch', delay:1,
+      messages:[{from:'jiangyu', text:'你这个人，总让人想靠近。'}],
+      then:'photo_rooftop'
+    },
+    'rooftop_jiangyu_distanced': {
+      type:'message_batch', delay:1,
+      messages:[{from:'jiangyu', text:'……早点回去休息。'}],
+      then:'photo_rooftop'
+    },
+    'photo_rooftop': {
+      type:'photo_unlock', photo:'rooftop_night',
+      then:'route_choice_night'
+    },
+
+    // ===== 路线选择之夜 =====
+    'route_choice_night': {
+      type:'advance_day', text:'一个无眠的夜晚', hour:23,
+      then:'route_choice_msgs'
+    },
+    'route_choice_msgs': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'shenyan', text:'早些休息。'},
+        {from:'luci', text:'今天谢谢你。晚安。'},
+        {from:'jiangyu', text:'……'},
+        {from:'narrator', text:'（三个人同时发来消息。你回谁，将决定你的心属于谁。）'}
+      ],
+      then:'route_choice_trigger'
+    },
+    'route_choice_trigger': {
+      type:'route_choice'
+    },
+
+    // ===== 沈砚之线 =====
+    'route_shenyan_start': {
+      type:'message_batch', delay:1,
+      messages:[{from:'shenyan', text:'明天来办公室。有个出差，跟我一起去南方。', then:'route_shenyan_start_2'}]
+    },
+    'route_shenyan_start_2': {
+      type:'message_batch', delay:0,
+      messages:[{from:'shenyan', text:'别人我不放心。', then:'route_shenyan_south'}]
+    },
+    'route_shenyan_south': {
+      type:'advance_day', text:'南方出差', hour:20, collectible:'postcard_sea',
+      // v0.1.6: 补上 flag 写入，否则「海雾」主题（themes.sea）永远无法解锁
+      effects:{ flags:{ shenyan_south:true } },
+      then:'route_shenyan_dinner'
+    },
+    'route_shenyan_dinner': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'shenyan', text:'这位是周先生。林夏，我新来的策展人。', then:'route_shenyan_dinner_2'}
+      ]
+    },
+    'route_shenyan_dinner_2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'narrator', text:'（他介绍你时，像在介绍一件作品。你感到不适。）', choice:{
+          prompt:'晚宴上你感到被"展示"。',
+          options:[
+            {text:'配合他，回去再说', effects:{affection:{shenyan:1}, flags:{shenyan_obey:1}, thenEvent:'route_shenyan_rain'}, hint:'向 BAD END'},
+            {text:'当场夺回主动', effects:{affection:{shenyan:2}, flags:{shenyan_resist:1}, thenEvent:'route_shenyan_rain'}, hint:'向 GOOD END'}
+          ]
+        }}
+      ]
+    },
+    'route_shenyan_rain': {
+      type:'advance_time', text:'雨夜回程', minutes:180,
+      then:'route_shenyan_rain_msg'
+    },
+    'route_shenyan_rain_msg': {
+      type:'message_batch', delay:1,
+      messages:[{from:'shenyan', text:'对不起。我忘了你不是我。家里逼我活成一个"沈砚之"。只有遇见你时，我才是我自己。', then:'route_shenyan_control'}]
+    },
+    'route_shenyan_control': {
+      type:'advance_day', text:'半个月后', hour:9,
+      then:'route_shenyan_control_msg'
+    },
+    'route_shenyan_control_msg': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'shenyan', text:'今天别穿白衬衫，不适合你。', then:'route_shenyan_control_msg_2'}
+      ]
+    },
+    'route_shenyan_control_msg_2': {
+      type:'message_batch', delay:2,
+      messages:[
+        {from:'luci', text:'林夏！你最近怎么了？我给你打了五个电话，都是沈砚之接的。', then:'route_shenyan_control_msg_3'}
+      ]
+    },
+    'route_shenyan_control_msg_3': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'luci', text:'他说你忙。可你根本没收到过那些电话，对吧？', choice:{
+          prompt:'你意识到沈砚之在替你"过滤"外界。',
+          options:[
+            {text:'立刻去找陆辞问清楚', effects:{affection:{}, flags:{shenyan_awaken:1}, thenEvent:'route_shenyan_cafe'}, hint:'决心破局'},
+            {text:'替沈砚之解释', effects:{affection:{}, flags:{shenyan_deny:1}, thenEvent:'route_shenyan_end_check'}, hint:'滑向 BAD END'}
+          ]
+        }}
+      ]
+    },
+    'route_shenyan_cafe': {
+      type:'message_batch', delay:1,
+      messages:[{from:'luci', text:'无论你选谁，都不能选一个让你"消失"的人。', then:'route_shenyan_end_check'}]
+    },
+    'route_shenyan_end_check': {
+      type:'message_batch', delay:2,
+      messages:[
+        {from:'narrator', text:'（你意识到这段关系出了问题。你的选择是？）', choice:{
+          prompt:'你的最后抉择：',
+          options:[
+            {text:'和他正面对峙', effects:{affection:{}, flags:{shenyan_choice:'confront'}, thenEvent:'__shenyan_end_judge'}, hint:'决心破局'},
+            {text:'默默忍受', effects:{affection:{}, flags:{shenyan_choice:'endure'}, thenEvent:'__shenyan_end_judge'}, hint:'滑向 BAD END'}
+          ]
+        }}
+      ]
+    },
+    // 结局判定：累积 flag 决定走向，最终选择作为修正
+    '__shenyan_end_judge': {
+      type:'ending', delay:0,
+      _compute: s => STORY.computeEnding(s, 'shenyan')
+    },
+    'ending_shenyan_good': { type:'ending', ending:'shenyan_good' },
+    'ending_shenyan_bad': { type:'ending', ending:'shenyan_bad' },
+
+    // ===== 陆辞线 =====
+    'route_luci_start': {
+      type:'message_batch', delay:1, collectible:'memento_camera',
+      messages:[{from:'luci', text:'明天周末，带你重走一遍我们以前的学校？往返四小时，赶得及吃晚饭。', then:'route_luci_school'}]
+    },
+    'route_luci_school': {
+      type:'advance_day', text:'母校之行', hour:19, collectible:'postcard_school',
+      then:'route_luci_rooftop'
+    },
+    'route_luci_rooftop': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'luci', text:'就是这儿。高二那年，被人堵的就是这里。是你把我拉出来的。', then:'route_luci_rooftop_2'}
+      ]
+    },
+    'route_luci_rooftop_2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'luci', text:'从那天起，我就告诉自己，要变强。强到，可以站到你身边。', then:'route_luci_rooftop_3'}
+      ]
+    },
+    'route_luci_rooftop_3': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'luci', text:'林夏，有句话我憋了九年。我喜欢你。从高一你借我橡皮那天，到现在。', choice:{
+          prompt:'他说出口了。',
+          options:[
+            {text:'让他继续说', effects:{affection:{luci:2}, flags:{luci_confess:1}, thenEvent:'route_luci_after_confess'}, hint:'向 GOOD END'},
+            {text:'岔开话题', effects:{affection:{luci:1}, flags:{luci_avoid:1}, thenEvent:'route_luci_after_confess'}, hint:'向 BAD END'}
+          ]
+        }}
+      ]
+    },
+    'route_luci_after_confess': {
+      type:'advance_day', text:'此后的日子', hour:10,
+      then:'route_luci_album'
+    },
+    'route_luci_album': {
+      type:'photo_unlock', photo:'luci_album',
+      then:'route_luci_milan'
+    },
+    'route_luci_milan': {
+      type:'message_batch', delay:2,
+      messages:[
+        {from:'luci', text:'林夏，米兰那边的工作室邀我过去驻半年。下个月的飞机。', then:'route_luci_milan_2'}
+      ]
+    },
+    'route_luci_milan_2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'luci', text:'你不用回答我。我只是……来道个别。', choice:{
+          prompt:'他就要走了。',
+          options:[
+            {text:'喊住他，不让他走', effects:{affection:{}, flags:{luci_stop:1}, thenEvent:'route_luci_chase_rain'}},
+            {text:'看着他离开', effects:{affection:{}, flags:{luci_letgo:1}, thenEvent:'route_luci_rain_night'}}
+          ]
+        }}
+      ]
+    },
+    'route_luci_chase_rain': {
+      type:'message_batch', delay:1,
+      messages:[{from:'luci', text:'……你来了。'}],
+      then:'route_luci_end_check'
+    },
+    'route_luci_rain_night': {
+      type:'advance_time', text:'雨夜', minutes:120,
+      then:'route_luci_ticket'
+    },
+    'route_luci_ticket': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'luci', text:'（信封里是一张去米兰的机票，名字写着：林夏。背面：如果你愿意，我们一起走。）', choice:{
+          prompt:'雨水模糊了视线。',
+          options:[
+            {text:'追去他家', effects:{affection:{}, flags:{luci_chase:1}, thenEvent:'route_luci_end_check'}},
+            {text:'站在雨里直到天亮', effects:{affection:{}, flags:{luci_giveup:1}, thenEvent:'route_luci_end_check'}}
+          ]
+        }}
+      ]
+    },
+    'route_luci_end_check': {
+      type:'message_batch', delay:2,
+      messages:[
+        {from:'narrator', text:'（看到他藏了九年的心意。你的选择是？）', choice:{
+          prompt:'你的最后抉择：',
+          options:[
+            {text:'去找他，回应他', effects:{affection:{}, flags:{luci_choice:'accept'}, thenEvent:'__luci_end_judge'}, hint:'向 GOOD END'},
+            {text:'错过时机', effects:{affection:{}, flags:{luci_choice:'miss'}, thenEvent:'__luci_end_judge'}, hint:'向 BAD END'}
+          ]
+        }}
+      ]
+    },
+    '__luci_end_judge': {
+      type:'ending', delay:0,
+      _compute: s => STORY.computeEnding(s, 'luci')
+    },
+    'ending_luci_good': { type:'ending', ending:'luci_good' },
+    'ending_luci_bad': { type:'ending', ending:'luci_bad' },
+
+    // ===== 江屿线 =====
+    'route_jiangyu_start': {
+      type:'message_batch', delay:1, collectible:'recording_xia',
+      messages:[{from:'jiangyu', text:'今晚来雾港。想跟你说说话。', then:'route_jiangyu_sister'}]
+    },
+    'route_jiangyu_sister': {
+      type:'advance_day', text:'几天后', hour:9,
+      then:'route_jiangyu_grave_msg'
+    },
+    'route_jiangyu_grave_msg': {
+      type:'message_batch', delay:1,
+      messages:[{from:'jiangyu', text:'今天，能陪我去个地方吗。', then:'route_jiangyu_grave'}]
+    },
+    'route_jiangyu_grave': {
+      type:'advance_time', text:'墓园', minutes:120,
+      then:'route_jiangyu_grave_2'
+    },
+    'route_jiangyu_grave_2': {
+      type:'message_batch', delay:1,
+      messages:[{from:'jiangyu', text:'我妹妹，也叫林夏。十四年前的夏天，白血病。小夏，哥带了个人来看你。她跟你一样倔。', then:'route_jiangyu_death_anniv'}]
+    },
+    'route_jiangyu_death_anniv': {
+      type:'advance_day', text:'鼓手忌日', hour:23,
+      then:'route_jiangyu_breakdown'
+    },
+    'route_jiangyu_breakdown': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'jiangyu', text:'三年了。我一闭上眼，就看见他笑着回头跟我说："江屿，最后一首了！"', then:'route_jiangyu_breakdown_2'}
+      ]
+    },
+    'route_jiangyu_breakdown_2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'jiangyu', text:'我活着，有什么用。', choice:{
+          prompt:'他在崩溃的边缘。',
+          options:[
+            {text:'抱住他，什么都不说', effects:{affection:{jiangyu:2}, flags:{jiangyu_hold:1}, thenEvent:'route_jiangyu_relic'}, hint:'向 GOOD END'},
+            {text:'让他一个人静一静', effects:{affection:{jiangyu:1}, flags:{jiangyu_leave:1}, thenEvent:'route_jiangyu_relic'}, hint:'向 BAD END'}
+          ]
+        }}
+      ]
+    },
+    'route_jiangyu_relic': {
+      type:'advance_day', text:'三天后', hour:14,
+      then:'route_jiangyu_relic_msg'
+    },
+    'route_jiangyu_relic_msg': {
+      type:'message_batch', delay:1,
+      messages:[{from:'jiangyu', text:'整理阿哲的遗物时，发现他没写完的副歌。我想把它写完。可我每次写到副歌，就写不下去。', then:'route_jiangyu_show'}]
+    },
+    'route_jiangyu_show': {
+      type:'advance_day', text:'一个月后', hour:21, collectible:'evidence_photo',
+      then:'route_jiangyu_show_msg'
+    },
+    'route_jiangyu_show_msg': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'jiangyu', text:'今晚雾港，我想试试登台。只请了你一个人。', then:'route_jiangyu_show_msg_2'}
+      ]
+    },
+    'route_jiangyu_show_msg_2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'jiangyu', text:'我可能唱不完。但我想试。', choice:{
+          prompt:'他唱到副歌前，停了。',
+          options:[
+            {text:'站起来，走到台前', effects:{affection:{}, flags:{jiangyu_stand:1}, thenEvent:'route_jiangyu_end_check'}},
+            {text:'安静等他自己开口', effects:{affection:{}, flags:{jiangyu_silent:1}, thenEvent:'route_jiangyu_end_check'}}
+          ]
+        }}
+      ]
+    },
+    'route_jiangyu_end_check': {
+      type:'message_batch', delay:2,
+      messages:[
+        {from:'narrator', text:'（你看到他在泥潭里挣扎。你的选择是？）', choice:{
+          prompt:'你的最后抉择：',
+          options:[
+            {text:'陪他一起写完那首歌', effects:{affection:{}, flags:{jiangyu_choice:'stay'}, thenEvent:'__jiangyu_end_judge'}, hint:'向 GOOD END'},
+            {text:'让他独自面对过去', effects:{affection:{}, flags:{jiangyu_choice:'leave'}, thenEvent:'__jiangyu_end_judge'}, hint:'向 BAD END'}
+          ]
+        }}
+      ]
+    },
+    '__jiangyu_end_judge': {
+      type:'ending', delay:0,
+      _compute: s => STORY.computeEnding(s, 'jiangyu')
+    },
+    'ending_jiangyu_good': { type:'ending', ending:'jiangyu_good' },
+    'ending_jiangyu_bad': { type:'ending', ending:'jiangyu_bad' },
+
+    // ===== 真结局线 =====
+    'route_solo_start': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'narrator', text:'（你把手机扣在桌上，谁都没回。今天，太累了。）'}
+      ],
+      then:'route_solo_day2'
+    },
+    'route_solo_day2': {
+      type:'advance_day', text:'第二天', hour:10,
+      then:'route_solo_day2_msg'
+    },
+    'route_solo_day2_msg': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'shenyan', text:'昨晚的消息，你没回。'},
+        {from:'luci', text:'林夏，昨晚……没事吧？'},
+        {from:'jiangyu', text:'睡不着的时候，喝这个。不用回。（附一张"夏"特调的图）'}
+      ],
+      then:'route_solo_work'
+    },
+    'route_solo_work': {
+      type:'advance_day', text:'一个月后', hour:3,
+      then:'route_solo_work_msg'
+    },
+    'route_solo_work_msg': {
+      type:'message_batch', delay:1,
+      messages:[{from:'shenyan', text:'你这种拼命法，是想让我心疼，还是想让我心疼死。', then:'route_solo_help'}]
+    },
+    'route_solo_help': {
+      type:'advance_day', text:'开幕前一周', hour:19,
+      then:'route_solo_help_msgs'
+    },
+    'route_solo_help_msgs': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'luci', text:'夜景素材，不要钱，只想帮你。'},
+        {from:'jiangyu', text:'展厅背景音，我重新编的简版。你挑挑。'},
+        {from:'shenyan', text:'不用谢。这是你应得的。'}
+      ],
+      then:'route_solo_end_choice'
+    },
+    'route_solo_end_choice': {
+      type:'message_batch', delay:2,
+      messages:[
+        {from:'narrator', text:'（三个人都在等你。你的回应是？）', choice:{
+          prompt:'你的最后抉择：',
+          options:[
+            {text:'感谢，但婉拒所有暧昧', effects:{affection:{}, flags:{solo_independent:1}, thenEvent:'ending_true'}},
+            {text:'接受帮助，保持距离', effects:{affection:{}, flags:{solo_accept:1}, thenEvent:'ending_true'}}
+          ]
+        }}
+      ]
+    },
+    'ending_true': { type:'ending', _compute: s => STORY.computeEnding(s, 'solo') },
+
+    // ===== v0.1.7: 幽灵消息彩蛋（egg_ghost_msg 的达成条件） =====
+    // 第 4 天凌晨 2 点送达——一条迟到五年的消息。advanceToNextDay 现在会补查睡眠跨过的中间小时，
+    // 所以无论玩家当晚几点睡下都能收到。
+    'ghost_msg_5y': {
+      type:'message_batch', delay:0,
+      trigger:{ day:4, hour:2 },
+      effects:{ flags:{ ghost_msg_triggered:true } },
+      messages:[
+        {from:'luci', text:'……睡了吗？', then:'ghost_msg_5y_2'}
+      ]
+    },
+    'ghost_msg_5y_2': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'luci', text:'翻旧手机，翻到五年前的一条草稿。打了很长，一直没敢发。', then:'ghost_msg_5y_3'}
+      ]
+    },
+    'ghost_msg_5y_3': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'luci', text:'"今天你回头笑的样子，像整个夏天。"', then:'ghost_msg_5y_4'}
+      ]
+    },
+    'ghost_msg_5y_4': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'luci', text:'迟到了五年的晚安。快睡吧，明天还要去美术馆报到。'}
+      ]
+    }
+  },
+});

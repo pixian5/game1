@@ -15,7 +15,8 @@ const sandbox = {
 };
 sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
-for(const file of ['story.js', 'interaction_queue.js', 'save_migrations.js', 'engine.js']){
+
+for(const file of require('./test_helper.js').SOURCE_FILES){
   vm.runInContext(fs.readFileSync(path.join(__dirname, file), 'utf8'), sandbox);
 }
 const { STORY, PhoneEngine } = sandbox.window;
@@ -207,8 +208,14 @@ Object.entries(STORY.puzzles || {}).forEach(([id, p]) => { if(p.reward?.collecti
 Object.entries(STORY.seasons?.holidays || {}).forEach(([day, h]) => { if(h.effect?.collectible) addGrant(h.effect.collectible, `holidays.${day}`); });
 (STORY.dailyTasks?.streakRewards || []).forEach(r => { if(r.reward?.collectible) addGrant(r.reward.collectible, `streakRewards.${r.days}天`); });
 // 引擎代码里硬编码的发放路径（stamp_route / recording_msg 等）
-const engineText = fs.readFileSync(path.join(__dirname, 'engine.js'), 'utf8');
-for(const m of engineText.matchAll(/collectItem\('([^']+)'\)/g)) addGrant(m[1], 'engine.js');
+// v0.1.7: engine.js / story.js / app.js 已拆分为多文件，这里扫描全部源码
+const listDirJs = d => fs.readdirSync(path.join(__dirname, d)).filter(f => f.endsWith('.js')).sort().map(f => path.join(d, f));
+const readSrc = files => files.map(f => fs.readFileSync(path.join(__dirname, f), 'utf8')).join('\n');
+const engineFiles = ['engine.js', ...fs.readdirSync(__dirname).filter(f => /^engine_.+\.js$/.test(f)).sort()];
+const engineText = readSrc(engineFiles);
+const uiText = readSrc(listDirJs('ui'));
+const storyText = readSrc(listDirJs('story'));
+for(const m of engineText.matchAll(/collectItem\('([^']+)'\)/g)) addGrant(m[1], 'engine');
 Object.keys(STORY.collectibles || {}).forEach(id=>{
   const sources = grants.get(id) || [];
   if(!sources.length) warn(`收集品「${id}」没有任何获取路径`);
@@ -216,8 +223,8 @@ Object.keys(STORY.collectibles || {}).forEach(id=>{
 });
 
 // ---------- 10. flag 读写一致性（警告级） ----------
-const appText = fs.readFileSync(path.join(__dirname, 'app.js'), 'utf8');
-const allText = fs.readFileSync(path.join(__dirname, 'story.js'), 'utf8') + engineText + appText;
+const appText = uiText;
+const allText = storyText + engineText + appText;
 const flagReaders = new Set();
 for(const m of allText.matchAll(/(?:state|s|self)\.flags\.([A-Za-z_][A-Za-z0-9_]*)/g)) flagReaders.add(m[1]);
 for(const m of allText.matchAll(/\bflags\[([^\]]+)\]/g)){
