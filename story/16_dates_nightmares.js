@@ -20,6 +20,14 @@ STORY.dateScenes = {
       {who:'me',  text:'画的是……'},
       {who:'him', text:'是你。'},
       {who:'him', text:'从你来的第一天开始。'}
+    ]},
+    { id:'date_shenyan_archive', name:'雨夜档案馆', desc:'暴雨夜，他约你在美术馆地下档案室整理捐赠文献', effects:{affectionDetail:{shenyan:{closeness:2,trust:4,tension:1}}}, unlockPhoto:null, dialogue:[
+      {who:'him', text:'小心纸屑。这批文献比你我岁数都大。'},
+      {who:'me',  text:'为什么挑下雨天做这个？'},
+      {who:'him', text:'雨天闭馆。档案室只放得下两个人的安静。'},
+      {who:'me',  text:'……你提前查过天气预报吧。'},
+      {who:'him', text:'查了一周。'},
+      {who:'him', text:'有些话，只在雨天说得出口。比如：今晚别走那么早。'}
     ]}
   ],
   luci: [
@@ -34,6 +42,15 @@ STORY.dateScenes = {
       {who:'me',  text:'这张……是我？'},
       {who:'him', text:'你笑起来，比那幅画好看多了。'},
       {who:'him', text:'原来这话，我九年前就想说。'}
+    ]},
+    { id:'date_luci_bookstore',  name:'旧书店寻踪', desc:'他不知从哪听说旧书店里有你们高中的校刊合订本', effects:{affectionDetail:{luci:{closeness:4,trust:2,tension:1}}}, unlockPhoto:null, dialogue:[
+      {who:'him', text:'老板说在架子最顶层。要我爬，还是你爬？'},
+      {who:'me',  text:'你爬。你高。'},
+      {who:'him', text:'……行。九年了，使唤起来还是这么顺手。'},
+      {who:'me',  text:'找到了！《霓城一中校刊·合订本》！'},
+      {who:'him', text:'翻到运动会那页。第三张。'},
+      {who:'me',  text:'……你偷拍我冲线这张，居然被登出来了？'},
+      {who:'him', text:'是我投的稿。标题我起的：「她跑起来的样子，比夏天先到」。'}
     ]}
   ],
   jiangyu: [
@@ -48,6 +65,14 @@ STORY.dateScenes = {
       {who:'me',  text:'为什么今天唱给我？'},
       {who:'him', text:'……因为是你。'},
       {who:'him', text:'因为这首歌，本来就是要唱给你听的。'}
+    ]},
+    { id:'date_jiangyu_market',  name:'凌晨鱼市',   desc:'天没亮，他骑车带你去海边鱼市挑食材做早餐', effects:{affectionDetail:{jiangyu:{closeness:3,trust:2,tension:2}}}, unlockPhoto:null, dialogue:[
+      {who:'him', text:'挑吧。今晚想吃什么，早上说了算。'},
+      {who:'me',  text:'你还会做菜？'},
+      {who:'him', text:'乐队散了那两年，我在大排档掌勺。'},
+      {who:'me',  text:'……那你的歌里有没有海鲜的味道？'},
+      {who:'him', text:'有。下一张专辑就叫这个。'},
+      {who:'him', text:'开玩笑的。不过——跟你逛菜市场这种日子，我可以天天有。'}
     ]}
   ]
 };

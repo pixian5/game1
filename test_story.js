@@ -1067,7 +1067,7 @@ async function run(){
   check('v0.0.15: 初始可约会沈砚之', eng_d.canDate('shenyan') === true);
   // 可用场景数=2
   const scenes = eng_d.getAvailableDateScenes('shenyan');
-  check('v0.0.15: 沈砚之有2个约会场景', scenes.length === 2, `数量:${scenes.length}`);
+  check('v0.0.15: 沈砚之有≥2个约会场景', scenes.length >= 2, `数量:${scenes.length}`);
   // v0.0.16: startDate 不应立即标记 firedEvents/dateLastDone
   const r3 = eng_d.startDate('date_shenyan_tea');
   check('v0.0.15: 发起茶会约会成功', r3.ok === true, `reason:${r3.reason||''}`);

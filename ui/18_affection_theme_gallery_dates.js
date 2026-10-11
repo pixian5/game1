@@ -59,8 +59,12 @@
     Object.values(themes).forEach(t => {
       const unlocked = !!engine.state.unlockedThemes[t.id];
       const selected = t.id === curTheme;
+      // v0.1.11: 预览与实际效果一致——壁纸图叠在渐变上层（与 applyThemeToBody 同规则）
+      const bg = t.wallpaperImage
+        ? `background:url('${t.wallpaperImage}') center/cover no-repeat, ${t.wallpaperVar || 'none'};`
+        : (t.wallpaperVar ? `background:${t.wallpaperVar};` : '');
       html += `<div class="theme-card ${unlocked?'':'locked'} ${selected?'selected':''}" data-theme="${escapeHtml(t.id)}">
-        <div class="theme-card-bg ${escapeHtml(t.wallpaper||'gradient')}"></div>
+        <div class="theme-card-bg" style="${bg}"></div>
         <div class="theme-card-overlay">
           <div class="theme-card-name">${escapeHtml(t.name)}</div>
           <div class="theme-card-unlock">${unlocked ? '已解锁' : escapeHtml(t.unlockDesc||'未解锁')}</div>
