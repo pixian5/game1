@@ -661,7 +661,14 @@ Object.assign(PhoneEngine.prototype, {
   },
 
   _resetDailyFortune(){
-    if(this.state.todayFortune && this.state.todayFortune.day !== this.state.day){
+    const f = this.state.todayFortune;
+    if(f && f.day !== this.state.day){
+      // v0.1.12: 昨日运势早报——换日时按牌面 hint 类型派发一条晨间指引（每张牌至多一次）
+      const evtId = 'tarot_morning_' + (f.hint?.type || 'luck');
+      if(this.story.events?.[evtId] && !this.state.flags['tarot_morning_day' + f.day]){
+        this.state.flags['tarot_morning_day' + f.day] = true;
+        this._queueEventDispatch(evtId, 2500);
+      }
       this.state.todayFortune = null;
     }
   },

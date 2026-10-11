@@ -874,6 +874,95 @@ Object.assign(STORY, {
         {from:'jiangyu', text:'新写的旋律，还差一句词。'},
         {from:'jiangyu', text:'词是：「深夜的风把你吹进我梦里」。睡觉。'}
       ]
+    },
+
+    // ===== v0.1.12: 塔罗次日指引——换日早晨按昨日牌面 hint 类型播报（苏苏人设：运势播报担当） =====
+    'tarot_morning_encounter': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'夏夏早！昨日牌面提示：今天「相遇」的运势很高——走哪条路都可能撞见熟人哦。'},
+        {from:'susu', text:'出门前记得照镜子，把最好看的样子带上！'}
+      ]
+    },
+    'tarot_morning_affection': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'夏夏早！昨日牌面全是恋爱的味道——今天谁对你好一点，都不是巧合。'},
+        {from:'susu', text:'心跳的时候别否认，是你自己的心在跳。'}
+      ]
+    },
+    'tarot_morning_memory': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'夏夏早！昨日牌面指向「过去」——旧东西、旧地方、旧话题，今天都可能翻出来。'},
+        {from:'susu', text:'翻到旧照片别急着划走，说不定有你想不起来的细节。'}
+      ]
+    },
+    'tarot_morning_rational': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'夏夏早！昨日牌面提示：今天适合动脑子不适合动心。'},
+        {from:'susu', text:'有决定要做的话，列个清单再选。'}
+      ]
+    },
+    'tarot_morning_independent': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'夏夏早！昨日牌面只有两个字：「自己」。'},
+        {from:'susu', text:'今天谁的话都可以听一半——包括这句。'}
+      ]
+    },
+    'tarot_morning_luck': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'夏夏早！昨日牌面是好运预备——今天买咖啡可能买一送一，记得领！'},
+        {from:'susu', text:'运气这东西，用掉才有。冲！'}
+      ]
+    },
+    'tarot_morning_ending_hint': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'夏夏早！昨天那张牌……有点重，是「结局」的牌。'},
+        {from:'susu', text:'最近做的每个决定，都在悄悄写结局。慎重，但别怕。'}
+      ]
+    },
+    'tarot_morning_dream': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'夏夏早！昨日牌面与「梦」有关——今晚睡前别刷手机，梦会给你答案。'},
+        {from:'susu', text:'醒来记得记下来，梦是限时的。'}
+      ]
+    },
+
+    // ===== v0.1.12: 群聊第二波——周末聚餐投票（day6 晚上触发，群 choice 写性格与 flag） =====
+    'group_neon_wave2_vote': {
+      type:'group_message_batch', delay:0, groupId:'group_neon',
+      trigger:{ day:6, hour:21 },
+      messages:[
+        {from:'susu', text:'通知！本周六「霓城小分队」首次线下聚餐！地点投票，现在开始！', then:'group_neon_wave2_vote2'}
+      ]
+    },
+    'group_neon_wave2_vote2': {
+      type:'group_message_batch', delay:1, groupId:'group_neon',
+      messages:[
+        {from:'luci', text:'+1！我可以负责摄影记录。'},
+        {from:'jiangyu', text:'都行。别选要我唱歌的地方。'},
+        {from:'shenyan', text:'看日程。若在美术馆附近，可预留包间。', choice:{
+          prompt:'聚餐地点投票：',
+          options:[
+            {text:'火锅——热闹最重要', effects:{flags:{group_dinner_hotpot:1}, personality:{emotional:1, active:1}}, thenEvent:'group_neon_wave2_after', hint:'苏苏喜欢'},
+            {text:'居酒屋——喝一点刚好', effects:{affection:{jiangyu:1}, flags:{group_dinner_izakaya:1}, personality:{rational:1}}, thenEvent:'group_neon_wave2_after', hint:'江屿主场'},
+            {text:'美术馆包间——安静', effects:{affection:{shenyan:1}, flags:{group_dinner_gallery:1}, personality:{passive:1}}, thenEvent:'group_neon_wave2_after', hint:'沈砚之主场'}
+          ]
+        }}
+      ]
+    },
+    'group_neon_wave2_after': {
+      type:'group_message_batch', delay:1, groupId:'group_neon',
+      messages:[
+        {from:'susu', text:'投票有效！周六晚上七点，不许请假，不许迟到！'},
+        {from:'susu', text:'（本群唯一的宗旨：盯紧我们夏夏的幸福进度。）'}
+      ]
     }
   },
 });
