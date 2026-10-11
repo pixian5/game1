@@ -384,6 +384,7 @@ class PhoneEngine {
     this.checkHoliday();
     this.checkEasterEggs();
     this.checkDailyTasks();
+    this.checkTensionWhispers();  // v0.1.10: 暧昧度深夜独白
   }
   _checkTimeEventsForRange(fromDay, fromHour, toDay, toHour){
     // 枚举 (day, hour) 范围内可能被跳过的时间触发事件

@@ -273,6 +273,11 @@ Object.assign(PhoneEngine.prototype, {
     if(!opt) return false;
     // 应用 effects
     this._applyEffects({affection: opt.affection, personality: opt.personality, flags: opt.flags});
+    // v0.1.10: 亲密度分项——偶遇是"一起经历过的事"，完成一次偶遇该角色 closeness +1
+    // （closeness+1 经三轴反向同步对综合好感的影响为 round(1/3)=0，只动分项）
+    if(enc.char && this.state.affectionDetail?.[enc.char]){
+      this._applyEffects({affectionDetail: {[enc.char]: {closeness: 1}}});
+    }
     // 角色回复（若有）
     if(opt.reply){
       const conv = this.state.conversations[enc.char];
@@ -556,6 +561,12 @@ Object.assign(PhoneEngine.prototype, {
     const baseAff = Math.max(1, Math.round(item.price / 50));
     const gain = Math.round(baseAff * mult);
     this._applyEffects({affection:{[toCharId]:gain}});
+    // v0.1.10: 信任度分项——投其所好（喜好倍率>1）信任 +1；普通礼物只是多相处，亲密 +1
+    // （+1 经三轴反向同步对综合好感影响为 0，只动分项）
+    if(this.state.affectionDetail?.[toCharId]){
+      if(mult > 1) this._applyEffects({affectionDetail:{[toCharId]:{trust:1}}});
+      else this._applyEffects({affectionDetail:{[toCharId]:{closeness:1}}});
+    }
     const giftRec = {to:toCharId, itemId, mult, gain, ts:Date.now(), day:this.state.day};
     this.state.gifts.push(giftRec);
     // 触发男主反应消息

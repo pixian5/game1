@@ -387,4 +387,63 @@ test('三条临界事件的接受/婉拒回复不同（不再是同一句）', (
   }
 });
 
+// ===== v0.1.10: 三轴好感分项细化 =====
+
+test('v0.1.10: 偶遇完成 → 亲密度额外+1（综合好感只随选项走）', ()=>{
+  const e = engine();
+  e.newGame();
+  e.state.currentLocation = 'bar';
+  e.state.day = 3;
+  const okEnc = e.tryEncounter('bar');
+  assert.ok(okEnc, '应触发酒吧偶遇');
+  const enc = e.getPendingEncounter();
+  assert.ok(enc && enc.char === 'jiangyu', '挂起偶遇应为江屿');
+  const ad0 = e.state.affectionDetail.jiangyu.closeness;
+  const main0 = e.state.affection.jiangyu;
+  e.resolveEncounter(enc, 0);
+  // 选项给 jiangyu+2：自动折算 closeness round(2*0.5)=1，新规则再加 1 → 共 +2
+  assert.equal(e.state.affectionDetail.jiangyu.closeness, ad0 + 2);
+  // 综合好感只随选项走（closeness+1 反向同步 round(1/3)=0）
+  assert.equal(e.state.affection.jiangyu, main0 + 2);
+});
+
+test('v0.1.10: 送投其所好的礼物 → 信任+1；普通礼物 → 亲密+1', ()=>{
+  const e = engine();
+  e.newGame();
+  // 沈砚之喜欢 art_book（偏好倍率 2，价格 280 → baseAff 6 → gain 12）
+  e.state.inventory.push({id:'art_book', ts:Date.now()});
+  const t0 = e.state.affectionDetail.shenyan.trust;
+  e.giveGift('shenyan', 'art_book');
+  // 自动折算 trust round(12*0.3)=4，投其所好再加 1
+  assert.equal(e.state.affectionDetail.shenyan.trust, t0 + 5);
+  // 普通礼物：vinyl_blank（倍率 1，价格 150 → gain 3）
+  e.state.inventory.push({id:'vinyl_blank', ts:Date.now()});
+  const c0 = e.state.affectionDetail.shenyan.closeness;
+  e.giveGift('shenyan', 'vinyl_blank');
+  // 自动折算 closeness round(3*0.5)=2，普通礼物再加 1
+  assert.equal(e.state.affectionDetail.shenyan.closeness, c0 + 3);
+});
+
+test('v0.1.10: 暧昧度≥10 且深夜 → 心动独白触发并去重', ()=>{
+  const e = engine();
+  e.newGame();
+  e.state.day = 3;
+  e.state.minute = 23 * 60;  // 23:00
+  e.state.affectionDetail.shenyan.tension = 10;
+  e.checkTensionWhispers();
+  assert.equal(e.state.firedEvents['tension_whisper_shenyan'], true);
+  assert.equal(e.state.flags.whisper_shenyan_done, true);
+  // tension 不足不触发
+  e.state.affectionDetail.luci.tension = 5;
+  e.checkTensionWhispers();
+  assert.equal(e.state.firedEvents['tension_whisper_luci'], undefined);
+  // 白天不触发
+  const e2 = engine();
+  e2.newGame();
+  e2.state.minute = 12 * 60;
+  e2.state.affectionDetail.jiangyu.tension = 15;
+  e2.checkTensionWhispers();
+  assert.equal(e2.state.firedEvents['tension_whisper_jiangyu'], undefined);
+});
+
 console.log('全部回归测试通过');

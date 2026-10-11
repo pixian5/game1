@@ -646,6 +646,23 @@ Object.assign(PhoneEngine.prototype, {
     });
   },
 
+  // v0.1.10: 暧昧度分项——深夜（23 点后）心动独白
+  // tension≥10 的男主发来一条独白消息（每角色一次，flag 去重）；呼应「心跳加速的瞬间累积」
+  checkTensionWhispers(){
+    if(this.state.ended) return;
+    const hour = Math.floor(this.state.minute / 60);
+    if(hour < 23) return;
+    for(const cid of ['shenyan','luci','jiangyu']){
+      const ad = this.state.affectionDetail?.[cid];
+      if(!ad || ad.tension < 10) continue;
+      const flag = 'whisper_' + cid + '_done';
+      if(this.state.flags[flag]) continue;
+      const evtId = 'tension_whisper_' + cid;
+      if(!this.story.events?.[evtId] || this.state.firedEvents[evtId]) continue;
+      this.scheduleEvent(evtId);
+    }
+  },
+
   checkNightmare(){
     if(this.state.ended) return null;
     // 同一天不重复触发

@@ -19,17 +19,42 @@ Object.assign(STORY, {
         {from:'susu', text:'听说你明天去砚美术馆报到？那里可是出了名的难进！', then:'intro_susu_3'}
       ]
     },
+    // v0.1.10: 汇流节点差异化——第一晚的回复不再直连梦境，苏苏的回应因你的选择而不同
     'intro_susu_3': {
-      type:'message_batch', delay:0,
+      type:'message_batch', delay: 0,
       messages:[
         {from:'susu', text:'到了回我一声！别让我担心！', choice:{
           prompt:'苏苏在等你的回复：',
           options:[
-            {text:'刚到，累死了，先睡了', effects:{affection:{}, thenEvent:'dream_day1_evt', personality:{passive:1, emotional:1}}, hint:'入睡 · 梦境'},
-            {text:'到了！明天报到，紧张', effects:{affection:{}, thenEvent:'dream_day1_evt', personality:{active:1, emotional:1}}, hint:'入睡 · 梦境'},
-            {text:'（暂时不回）', effects:{affection:{}, thenEvent:'dream_day1_evt', personality:{independent:1, passive:1}}, hint:'入睡 · 梦境'}
+            {text:'刚到，累死了，先睡了', effects:{affection:{}, thenEvent:'intro_reply_sleep', personality:{passive:1, emotional:1}}, hint:'入睡 · 梦境'},
+            {text:'到了！明天报到，紧张', effects:{affection:{}, thenEvent:'intro_reply_report', personality:{active:1, emotional:1}}, hint:'入睡 · 梦境'},
+            {text:'（暂时不回）', effects:{affection:{}, thenEvent:'intro_reply_silent', personality:{independent:1, passive:1}}, hint:'入睡 · 梦境'}
           ]
         }}
+      ]
+    },
+    'intro_reply_sleep': {
+      type:'message_batch', delay:1,
+      effects:{ flags:{ intro_vibe_sleep: 1 } },
+      messages:[
+        {from:'susu', text:'晚安！梦里也要替我逛逛霓城哦～'},
+        {from:'narrator', text:'（你抱着满身行李箱的味道睡着了。梦里有蝉鸣。）', then:'dream_day1_evt'}
+      ]
+    },
+    'intro_reply_report': {
+      type:'message_batch', delay:1,
+      effects:{ flags:{ intro_vibe_report: 1 } },
+      messages:[
+        {from:'susu', text:'紧张什么！你可是我认识的人里最靠谱的！'},
+        {from:'susu', text:'明天报到完给我发消息！不许消失！', then:'dream_day1_evt'}
+      ]
+    },
+    'intro_reply_silent': {
+      type:'message_batch', delay:1,
+      effects:{ flags:{ intro_vibe_silent: 1 } },
+      messages:[
+        {from:'narrator', text:'（你把手机扣在桌上，没有回。窗外霓城亮得像另一颗星球。）'},
+        {from:'narrator', text:'（睡意来得比回复快。）', then:'dream_day1_evt'}
       ]
     },
     // 第一夜梦境（事件包装）
@@ -82,16 +107,33 @@ Object.assign(STORY, {
         {from:'luci', text:'高中之后多少年没见了？九年？十年？', then:'luci_reunion_msg_4'}
       ]
     },
+    // v0.1.10: 汇流节点差异化——陆辞的晚餐邀约，答应与改天各有后续反应
     'luci_reunion_msg_4': {
-      type:'message_batch', delay:0,
+      type:'message_batch', delay: 0,
       messages:[
         {from:'luci', text:'晚上一起吃饭？我带你认认霓城！', choice:{
           prompt:'陆辞约你晚上吃饭。',
           options:[
-            {text:'好啊，下班联系', effects:{affection:{luci:2}, thenEvent:'bar_invitation'}, hint:'陆辞 +2'},
-            {text:'今天太累了，下次吧', effects:{affection:{luci:1}, thenEvent:'bar_invitation'}, hint:'陆辞 +1（他还是来了）'}
+            {text:'好啊，下班联系', effects:{affection:{luci:2}, thenEvent:'luci_dinner_yes'}, hint:'陆辞 +2'},
+            {text:'今天太累了，下次吧', effects:{affection:{luci:1}, thenEvent:'luci_dinner_next'}, hint:'陆辞 +1（他还是来了）'}
           ]
         }}
+      ]
+    },
+    'luci_dinner_yes': {
+      type:'message_batch', delay:1,
+      effects:{ flags:{ luci_dinner_yes: 1 } },
+      messages:[
+        {from:'luci', text:'好！！下班我去美术馆门口接你。'},
+        {from:'luci', text:'霓城第一课：别信导航，信我。', then:'bar_invitation'}
+      ]
+    },
+    'luci_dinner_next': {
+      type:'message_batch', delay:1,
+      effects:{ flags:{ luci_dinner_next: 1 } },
+      messages:[
+        {from:'luci', text:'……那说好了，下次。'},
+        {from:'luci', text:'食堂难吃的话，记得保重胃。别学高中那样啃面包凑合。', then:'bar_invitation'}
       ]
     },
 
@@ -139,16 +181,33 @@ Object.assign(STORY, {
         {from:'jiangyu', text:'你叫林夏。', then:'jiangyu_first_msg_4'}
       ]
     },
+    // v0.1.10: 汇流节点差异化——是否通过好友申请，他的反应不同（但深夜电话都会来）
     'jiangyu_first_msg_4': {
-      type:'message_batch', delay:1,
+      type:'message_batch', delay: 1,
       messages:[
         {from:'jiangyu', text:'名字不错。', choice:{
           prompt:'他要加你好友。',
           options:[
-            {text:'通过', effects:{affection:{jiangyu:1}, thenEvent:'jiangyu_call_night'}, hint:'江屿 +1'},
-            {text:'（不通过）', effects:{affection:{jiangyu:0}, thenEvent:'jiangyu_call_night'}, hint:'他还是会打来'}
+            {text:'通过', effects:{affection:{jiangyu:1}, thenEvent:'jiangyu_friend_yes'}, hint:'江屿 +1'},
+            {text:'（不通过）', effects:{affection:{jiangyu:0}, thenEvent:'jiangyu_friend_no'}, hint:'他还是会打来'}
           ]
         }}
+      ]
+    },
+    'jiangyu_friend_yes': {
+      type:'message_batch', delay:1,
+      effects:{ flags:{ jiangyu_friend_yes: 1 } },
+      messages:[
+        {from:'narrator', text:'（通过好友申请的那一秒，对面就发来一个举杯的表情。）'},
+        {from:'jiangyu', text:'雾港见。', then:'jiangyu_call_night'}
+      ]
+    },
+    'jiangyu_friend_no': {
+      type:'message_batch', delay:1,
+      effects:{ flags:{ jiangyu_friend_no: 1 } },
+      messages:[
+        {from:'narrator', text:'（你没有通过。手机安静了三分钟，然后又震了一下——第二条好友申请，验证消息写着：）'},
+        {from:'jiangyu', text:'不留也行。反正霓城不大。', then:'jiangyu_call_night'}
       ]
     },
 
@@ -788,6 +847,32 @@ Object.assign(STORY, {
       type:'message_batch', delay:1,
       messages:[
         {from:'luci', text:'迟到了五年的晚安。快睡吧，明天还要去美术馆报到。'}
+      ]
+    },
+
+    // ===== v0.1.10: 暧昧度分项——深夜心动独白（tension≥10 时 23 点后触发，每角色一次） =====
+    'tension_whisper_shenyan': {
+      type:'message_batch', delay:0,
+      effects:{ flags:{ whisper_shenyan_done: 1 } },
+      messages:[
+        {from:'shenyan', text:'还没睡。'},
+        {from:'shenyan', text:'……美术馆的灯，替你留了一盏。'}
+      ]
+    },
+    'tension_whisper_luci': {
+      type:'message_batch', delay:0,
+      effects:{ flags:{ whisper_luci_done: 1 } },
+      messages:[
+        {from:'luci', text:'想你想到睡不着，很幼稚吧。'},
+        {from:'luci', text:'——当我没发。快睡。'}
+      ]
+    },
+    'tension_whisper_jiangyu': {
+      type:'message_batch', delay:0,
+      effects:{ flags:{ whisper_jiangyu_done: 1 } },
+      messages:[
+        {from:'jiangyu', text:'新写的旋律，还差一句词。'},
+        {from:'jiangyu', text:'词是：「深夜的风把你吹进我梦里」。睡觉。'}
       ]
     }
   },
