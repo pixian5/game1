@@ -58,6 +58,14 @@ async function wait(predicate, timeout=12000, desc='event'){
     await sleep(80);
   }
   console.log(`  [timeout] 等待 ${desc} 超时`);
+  // 诊断：超时时打印日志尾部与相关事件触发情况，便于定位断链
+  const tail = eventLog.slice(-6).map(e=>e.type + (e.text?`(${String(e.text).slice(0,12)})`:'')).join(', ');
+  console.log(`  [诊断] 日志尾部: ${tail || '(空)'}`);
+  try {
+    const keys = Object.keys(engine.state.firedEvents)
+      .filter(k=>/opening|walk|rooftop|night/.test(k)).join(',');
+    console.log(`  [诊断] 相关已触发事件: ${keys || '(无)'}`);
+  } catch(_) {}
   return null;
 }
 
@@ -270,7 +278,9 @@ async function run(){
   check('开幕式选项', ok7);
 
   console.log('[16] 天台');
-  const night = await wait(e=>e.type==='timeAdvance' && e.text==='夜深了', 8000, '夜深了');
+  // v0.1.9: 开幕夜选择后新增 1-2 段"同行去天台"过渡（打字延迟+600ms 事件间隔），
+  // 链路总耗时约 6-9s，超时从 8s 放宽到 15s
+  const night = await wait(e=>e.type==='timeAdvance' && e.text==='夜深了', 15000, '夜深了');
   check('夜深了', !!night);
   const ok8 = await doChoice('jiangyu', 0, '天台选项');
   check('天台选项', ok8);

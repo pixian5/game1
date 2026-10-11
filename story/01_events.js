@@ -301,20 +301,61 @@ Object.assign(STORY, {
         }}
       ]
     },
+    // v0.1.9: 三分支差异化——开幕夜选择不再直接汇流，各插入一段"同行去天台"的专属过渡
+    // （shenyan/luci/neutral 三条路径各有一段独有剧情与 flag，之后仍汇流到天台主线）
     'opening_choice_shenyan': {
       type:'message_batch', delay:1,
-      messages:[{from:'shenyan', text:'走吧，给你介绍几个人。'}],
-      then:'rooftop_jiangyu'
+      effects:{ flags:{ opening_vibe_shenyan: 1 } },
+      messages:[
+        {from:'shenyan', text:'走吧，给你介绍几个人。', then:'opening_walk_shenyan'}
+      ]
     },
     'opening_choice_luci': {
       type:'message_batch', delay:1,
-      messages:[{from:'luci', text:'看这边——笑一个。你笑起来，比那幅画好看多了。'}],
-      then:'rooftop_jiangyu'
+      effects:{ flags:{ opening_vibe_luci: 1 } },
+      messages:[
+        {from:'luci', text:'看这边——笑一个。你笑起来，比那幅画好看多了。', then:'opening_walk_luci'}
+      ]
     },
     'opening_choice_neutral': {
       type:'message_batch', delay:1,
-      messages:[{from:'narrator', text:'（你借口去后台，留下两个男人意味深长的沉默。）'}],
-      then:'rooftop_jiangyu'
+      effects:{ flags:{ opening_vibe_neutral: 1 } },
+      messages:[
+        {from:'narrator', text:'（你借口去后台，留下两个男人意味深长的沉默。）', then:'opening_walk_neutral'}
+      ]
+    },
+    'opening_walk_shenyan': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'narrator', text:'（沈砚之走在你左侧，步子不快，替你挡开举着相机的人群。）'},
+        {from:'shenyan', text:'介绍就免了。他们的画会替自己说话。', then:'opening_walk_shenyan_2'}
+      ]
+    },
+    'opening_walk_shenyan_2': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'shenyan', text:'天台有个陌生人，不归我管。', then:'rooftop_jiangyu'}
+      ]
+    },
+    'opening_walk_luci': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'narrator', text:'（陆辞半跑着在前面带路，像高中放学时那样回头喊你跟上。）'},
+        {from:'luci', text:'天台！我刚才踩过点了，视野最好——咳，不是，我什么都还没喝。', then:'opening_walk_luci_2'}
+      ]
+    },
+    'opening_walk_luci_2': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'luci', text:'……上面那个人看你的眼神有点复杂。认识的朋友？', then:'rooftop_jiangyu'}
+      ]
+    },
+    'opening_walk_neutral': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'narrator', text:'（你自己穿过人群，在通往天台的楼梯口遇到一个刚抽完烟的人。他掐了烟，侧身让你先走。）'},
+        {from:'narrator', text:'（酒气混着夜风。他跟在你后面上了楼，谁也没说话。）', then:'rooftop_jiangyu'}
+      ]
     },
 
     // 天台

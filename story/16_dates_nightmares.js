@@ -114,5 +114,35 @@ STORY.nightmares = {
         {text:'假装不知道', effects:{personality:{dependent:1}}, moodAfter:'anxious'}
       ]
     }
+  },
+
+  // v0.1.9: 新增第三种梦魇——江屿线暧昧累积后的舞台梦
+  nightmare_stage: {
+    id:'nightmare_stage',
+    name:'空舞台',
+    desc:'梦里你站在雾港的舞台上，追光灯白得晃眼。台下坐满了人，却没有一张脸是清楚的。\n你张嘴想唱，歌词全是空白。台下有人开始鼓掌，掌声越来越响，像潮水漫过头顶。',
+    trigger: s => {
+      // 江屿线暧昧度累积到 8 以上（第 6 天起），心跳太吵的夜晚
+      const ad = s.affectionDetail?.jiangyu;
+      return !!(ad && ad.tension >= 8 && s.day >= 6);
+    },
+    effects: {
+      personality: { emotional: 1, dependent: 1 },
+      flags: { nightmare_seen_stage: 1 }
+    },
+    moodAfter: 'anxious',
+    dialogue: [
+      {who:'narrator', text:'（追光灯很烫。台下黑压压的一片。）'},
+      {who:'me', text:'歌词……歌词是什么来着？'},
+      {who:'narrator', text:'（掌声轰然响起。你在掌声里惊醒，心跳快得像唱完了一整首歌。）'}
+    ],
+    resolve: {
+      prompt:'醒来后你决定：',
+      options:[
+        {text:'把梦里的鼓掌声写下来', effects:{personality:{emotional:1, active:1}}, moodAfter:'reflective'},
+        {text:'给江屿发条消息，什么都不说', effects:{personality:{dependent:1, emotional:1}}, moodAfter:'tangled'},
+        {text:'深呼吸，把灯全打开', effects:{personality:{rational:1, independent:1}}, moodAfter:'calm'}
+      ]
+    }
   }
 };

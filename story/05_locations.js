@@ -41,7 +41,35 @@ STORY.locations = {
   school: {
     name:'旧学校', icon:'🏫', bg:'linear-gradient(160deg,#1a2e0a 0%,#071208 100%)',
     hint:'操场边的银杏又长高了，九年的落叶堆在台阶上',
-    encounters: []
+    // v0.1.9: 补齐旧学校偶遇（此前为空）
+    encounters: [
+      { id:'school_luci_ginkgo', char:'luci',
+        condition: s => s.day >= 3 && s.affection.luci >= 0,
+        once:true,
+        title:'银杏树下的第九年',
+        desc:'陆辞站在操场边的银杏树下，手里捏着一张泛黄的照片。\n看见你，他扬了扬照片："高一军训。你晒得比我还黑。"\n风把落叶卷到你们中间。',
+        choice: { prompt:'他把照片递过来。',
+          options:[
+            {text:'接过照片仔细看', affection:{luci:2}, reply:'"背面还有。"照片背后是一行小字：今天她笑了，记一笔。', personality:{emotional:1}},
+            {text:'笑他当时太傻', affection:{luci:1}, reply:'"傻？"他也笑，"傻了九年，恒心奖该发我。"', personality:{active:1}},
+            {text:'还给他，说风大', affection:{luci:0}, reply:'"……嗯。"他把照片收回口袋，动作很轻，像收起一段没说完的话。', personality:{independent:1}}
+          ]
+        }
+      },
+      { id:'school_shenyan_sketch', char:'shenyan',
+        condition: s => s.day >= 4 && s.affection.shenyan >= 0,
+        once:true,
+        title:'写生簿里的旧学校',
+        desc:'放学后的走廊尽头，沈砚之支着画架在写生。\n画的是这栋旧教学楼，笔触比他平时的画柔软很多。\n"美术馆收城市记忆。"他没回头，"有人把青春存在这里，我来取件。"',
+        choice: { prompt:'夕阳落在他的画纸上。',
+          options:[
+            {text:'问画里画了谁的记忆', affection:{shenyan:2}, reply:'他顿了一下："……一个在这里待了九年的人的。"\n画角落有棵银杏。你想起陆辞说他在树下站了九年。', personality:{rational:1}},
+            {text:'夸他画得好', affection:{shenyan:1}, reply:'"普通。"他嘴上否定，却把画纸往你那边偏了偏，"……构图还可以。"', personality:{emotional:1}},
+            {text:'安静地看他画完', affection:{shenyan:1}, reply:'他没再说话。粉笔灰在光里浮动。\n画完时他说："陪我取件的人，也算共犯。"', personality:{passive:1}}
+          ]
+        }
+      }
+    ]
   },
   gallery: {
     name:'砚美术馆', icon:'🎨', bg:'linear-gradient(160deg,#2a0f4a 0%,#0a0712 100%)',
