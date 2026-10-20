@@ -6,13 +6,14 @@
 
 纯前端实现（HTML / CSS / 原生 JS），**运行时零依赖、无构建步骤**。
 
-- 当前版本：**v0.1.13**（版本唯一来源：[VERSION](VERSION)）
+- 当前版本：**v0.1.14**（版本唯一来源：[VERSION](VERSION)）
 - 主角：林夏（策展人）｜路线：沈砚之 / 陆辞 / 江屿 / 独行线（真结局）
 - 内容体量：173 个剧情事件 · 17 个结局（含 4 个隐藏）· 14 件收集品 · 15 个成就 · 3 个谜题 · 16 张塔罗 · 7 套主题（含真实壁纸）· 6 个地点
 
 ## 快速开始
 
-**在线游玩**（GitHub Pages，自动跟随 main 部署）：https://pixian5.github.io/game1/
+**在线游玩**（自有服务器，主入口）：https://oh.sbbz.tech:9443/
+备份线（GitHub Pages，push main 自动部署）：https://pixian5.github.io/game1/
 
 本地游玩：直接双击 `index.html`（无构建、无依赖），或：
 
@@ -72,6 +73,7 @@ app.js→ui/ 22 个文件，拆分经快照深度比对验证）；**4 条死 fl
 | `manifest.json` / `sw.js` / `pwa.js` | PWA：应用清单 / 离线缓存 / 注册 |
 | `assets/` | 壁纸（`tools/generate_wallpapers.py` 生成）与图标（`tools/generate_icons.py` 生成） |
 | `tools/` | 资产生成脚本（Python + PIL，可重跑再生成） |
+| `deploy.sh` | 一键部署到自有服务器（oh.sbbz.tech:9443，先跑通 test:all 再执行） |
 | `validate_story.js` | 剧情数据一致性校验器（CI 使用） |
 | `check_version.js` | 版本号一致性校验（CI 使用，含 sw.js 缓存版本） |
 | `check_ui.js` | 前端语法与引用完整性校验（CI 使用，v0.1.8 新增） |
