@@ -24,6 +24,7 @@ const uiFiles = fs.readdirSync(path.join(root, 'ui')).filter(f => f.endsWith('.j
 compile('ui/*.js 合并', uiFiles.map(f => fs.readFileSync(path.join(root, 'ui', f), 'utf8')).join('\n'));
 compile('audio.js', fs.readFileSync(path.join(root, 'audio.js'), 'utf8'));
 compile('pwa.js', fs.readFileSync(path.join(root, 'pwa.js'), 'utf8'));
+compile('types.js', fs.readFileSync(path.join(root, 'types.js'), 'utf8'));
 compile('sw.js', fs.readFileSync(path.join(root, 'sw.js'), 'utf8'));
 
 // 2) index.html 引用的本地资源存在性

@@ -53,3 +53,26 @@ test('闪回按数据渲染时间标签与标题（v0.1.6）', async ({page}) =>
   await expect(page.locator('#flashback-label')).toHaveText('五年前');
   await expect(page.locator('#flashback-title')).toContainText('五年前的美术馆');
 });
+
+// v0.1.13: PWA 离线能力验证——在线注册 Service Worker 后断网重载，游戏仍可进入
+test('PWA 离线重载可玩（Service Worker 缓存生效）', async ({page, context}) => {
+  await page.goto('/');
+  // 等待 SW 激活并完成预缓存
+  await page.evaluate(async () => {
+    const reg = await navigator.serviceWorker.ready;
+    await navigator.serviceWorker.controller ? null : new Promise(res => {
+      navigator.serviceWorker.addEventListener('controllerchange', res, {once:true});
+    });
+    // 确保预缓存写完（install 完成即 ready，cache.addAll 已在 install 中执行）
+    void reg;
+  });
+  // 断网后重载
+  await context.setOffline(true);
+  await page.reload();
+  await expect(page.locator('#lock-screen')).toHaveClass(/active/, {timeout: 15000});
+  await expect(page.locator('#lock-time')).toBeVisible();
+  // 离线状态下引擎照常初始化（主屏可达）
+  await page.locator('#lock-screen').click();
+  await expect(page.locator('#home-screen')).toHaveClass(/active/);
+  await context.setOffline(false);
+});

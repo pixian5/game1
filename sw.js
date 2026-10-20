@@ -3,7 +3,7 @@
  * 缓存版本号必须与根目录 VERSION 一致——check_version.js 会校验（CACHE_VERSION 行）。
  * 每次发版：VERSION +0.0.1 后同步修改这里的 CACHE_VERSION。
  */
-const CACHE_VERSION = 'neon-heart-v0.1.12';
+const CACHE_VERSION = 'neon-heart-v0.1.13';
 
 // 预缓存核心资源（与 index.html 的脚本清单保持一致）
 const PRECACHE = [
@@ -110,8 +110,10 @@ self.addEventListener('fetch', event => {
     return;
   }
   // 静态资源：cache-first，未命中回网络并写入缓存
+  // v0.1.13: ignoreSearch——页面请求带 ?v=版本号，预缓存存的是无参数路径，
+  // 严格匹配会全部 miss（离线时 JS/CSS 全挂），必须忽略查询参数匹配
   event.respondWith(
-    caches.match(req).then(hit => hit || fetch(req).then(res => {
+    caches.match(req, { ignoreSearch: true }).then(hit => hit || fetch(req).then(res => {
       if(res.ok){
         const copy = res.clone();
         caches.open(CACHE_VERSION).then(c => c.put(req, copy));
