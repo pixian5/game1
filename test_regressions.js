@@ -560,4 +560,39 @@ test('v0.2.2: 幸运日苏苏八卦事件数据层自带 luck 变体（默认文
   assert.equal(sent, msg.flavors.luck);
 });
 
+// ===== v0.2.3: hint 变体横向扩展 + 独行线 day11+ 日常 =====
+
+test('v0.2.3: 聚餐现场 luck 日直播开场用变体（默认文本保留）', ()=>{
+  const e = engine();
+  e.newGame();
+  const evt = e.story.events['group_dinner_scene_hotpot'];
+  const msg = evt.messages[0];
+  assert.ok(msg.text.includes('首聚现场'), '默认文本保留');
+  e.state.todayFortune = {cardId:'wheel', name:'命运之轮', roman:'X', reversed:false, text:'', hint:{type:'luck', value:1}, day:e.state.day};
+  const sent = e._flavoredText(msg);
+  assert.equal(sent, msg.flavors.luck);
+  assert.ok(sent.includes('好运开场'));
+});
+
+test('v0.2.3: 独行线 day11+ 日常按 soloOnly 触发（男主线不触发）', ()=>{
+  // 独行线 day11 12 点 → day11_susu_snack 派发
+  const e = engine();
+  e.newGame();
+  e.chooseRoute('solo');
+  e.state.day = 11; e.state.minute = 12*60;
+  e.checkTimeEvents();
+  assert.equal(e.state.firedEvents['day11_susu_snack'], true);
+  // 男主线 day11 → 不派发
+  const e2 = engine();
+  e2.newGame();
+  e2.chooseRoute('shenyan');
+  e2.state.day = 11; e2.state.minute = 12*60;
+  e2.checkTimeEvents();
+  assert.equal(e2.state.firedEvents['day11_susu_snack'], undefined);
+  // 4 个新日常事件均已注册（引用完整由 validate:story 兜底）
+  for(const id of ['day11_susu_snack','day12_city_walk','day13_art_news','day14_two_weeks']){
+    assert.ok(e.story.events[id], id + ' 存在');
+  }
+});
+
 console.log('全部回归测试通过');

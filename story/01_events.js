@@ -970,7 +970,13 @@ Object.assign(STORY, {
       type:'group_message_batch', delay:0, groupId:'group_neon',
       effects:{ affection:{jiangyu:1}, personality:{emotional:1} },
       messages:[
-        {from:'susu', text:'🔥首聚现场直击：红锅已开，毛肚已下，人齐了！'},
+        // v0.2.3: 塔罗 hint 文案变体——幸运/心动/回忆日，直播开场语气不同
+        {from:'susu', text:'🔥首聚现场直击：红锅已开，毛肚已下，人齐了！',
+          flavors:{
+            luck:'🔥首聚现场直击：红锅已开，人齐了——今天连排队都特别顺，好运开场！',
+            affection:'🔥首聚现场直击：红锅已开，沈老板居然主动坐你旁边！氛围感拉满！',
+            memory:'🔥首聚现场直击：红锅已开，这锅底的味道，和咱们毕业那顿一模一样！'
+          }},
         {from:'luci', text:'[图片] 九宫格。谁点的脑花，站出来。'},
         {from:'jiangyu', text:'我。涮好了给你们留两筷子。'},
         {from:'shenyan', text:'……辣度超预期。水。'},
@@ -981,7 +987,13 @@ Object.assign(STORY, {
       type:'group_message_batch', delay:0, groupId:'group_neon',
       effects:{ affection:{jiangyu:1}, personality:{rational:1} },
       messages:[
-        {from:'susu', text:'🏮首聚现场：居酒屋小间已包，烤串无限追加！'},
+        // v0.2.3: 塔罗 hint 文案变体
+        {from:'susu', text:'🏮首聚现场：居酒屋小间已包，烤串无限追加！',
+          flavors:{
+            luck:'🏮首聚现场：居酒屋小间已包，老板说今天酒水买一送一，好运！',
+            affection:'🏮首聚现场：居酒屋小间已包，江屿点的全是"她的"——就离谱！',
+            memory:'🏮首聚现场：居酒屋小间已包，这个位子，是咱们当年逃课喝酒那间！'
+          }},
         {from:'jiangyu', text:'老板，梅子茶泡饭一份——她的。别的随意。'},
         {from:'luci', text:'[图片] 招牌灯下的合影申请，举手的都入镜。'},
         {from:'shenyan', text:'角落位置已占。观灯，比看人舒服。'},
@@ -992,7 +1004,13 @@ Object.assign(STORY, {
       type:'group_message_batch', delay:0, groupId:'group_neon',
       effects:{ affection:{shenyan:1}, personality:{passive:1} },
       messages:[
-        {from:'susu', text:'🎨首聚现场：美术馆包间，据说菜单都是沈老板亲选。'},
+        // v0.2.3: 塔罗 hint 文案变体
+        {from:'susu', text:'🎨首聚现场：美术馆包间，据说菜单都是沈老板亲选。',
+          flavors:{
+            luck:'🎨首聚现场：美术馆包间，今天闭馆刚好赶上新展布置，运气绝了！',
+            affection:'🎨首聚现场：美术馆包间，沈老板亲选菜单——他什么时候这么用心过！',
+            rational:'🎨首聚现场：美术馆包间，据可靠情报，菜单是他比了三天价的成果。'
+          }},
         {from:'shenyan', text:'闭馆后的展厅，顺路可以看一眼。只一眼。'},
         {from:'luci', text:'[图片] 月光展厅走廊。这张必须发朋友圈。'},
         {from:'jiangyu', text:'这里连酒杯声音都是安静的。有点意思。'},
@@ -1124,6 +1142,60 @@ Object.assign(STORY, {
             {text:'再睡半小时，难得不用赶', effects:{personality:{passive:1}}, reply:'（你把闹钟按掉。十分钟后自然醒，窗外已经亮了。）', hint:'休息'}
           ]
         }}
+      ]
+    },
+
+    // ===== v0.2.3: 独行线中后期日常（day11-14）——纯消息、soloOnly，部分带塔罗 hint 变体 =====
+    'day11_susu_snack': {
+      type:'message_batch', delay:0,
+      trigger:{ day:11, hour:12, soloOnly:true },
+      messages:[
+        // v0.2.3: 塔罗 hint 文案变体——幸运/心动/回忆日语气不同
+        {from:'susu', text:'霓城美食地图更新：城南巷子口新开一家糖水铺，祖传配方！午休走起！',
+          flavors:{
+            luck:'霓城美食地图更新：城南巷子口新开一家糖水铺，第一锅被我们赶上，好运！午休走起！',
+            affection:'霓城美食地图更新：城南巷子口新开一家糖水铺，据说甜到心动那种！午休走起！',
+            memory:'霓城美食地图更新：城南巷子口新开一家糖水铺，老板娘说手艺是跟咱们学校门口那家学的！午休走起！'
+          }}
+      ]
+    },
+    'day12_city_walk': {
+      type:'message_batch', delay:0,
+      trigger:{ day:12, hour:18, soloOnly:true },
+      messages:[
+        // v0.2.3: 塔罗 hint 文案变体——回忆/幸运/梦境日视角不同
+        {from:'narrator', text:'（傍晚的霓城开始点灯。你在江边站了一会儿，身后的城市一点点亮起来。）',
+          flavors:{
+            memory:'（傍晚的霓城开始点灯。江面上浮着旧年的倒影，你忽然想起第一次来这里的那个黄昏。）',
+            luck:'（傍晚的霓城开始点灯。今天运气不错，你看见江对面那栋楼，刚好亮出你的星座。）',
+            dream:'（傍晚的霓城开始点灯。灯亮起来的样子，像极了你昨晚梦里的那片光。）'
+          }}
+      ]
+    },
+    'day13_art_news': {
+      type:'message_batch', delay:0,
+      trigger:{ day:13, hour:10, soloOnly:true },
+      messages:[
+        // v0.2.3: 塔罗 hint 文案变体——清醒/心动/回忆日情报侧重不同
+        {from:'susu', text:'情报：砚美术馆下周办新展，主题「未完成」。沈老板这次亲自下场策展！',
+          flavors:{
+            rational:'情报：砚美术馆下周办新展，主题「未完成」。沈老板亲自策展，据说方案改到第 27 版。',
+            affection:'情报：砚美术馆下周办新展，主题「未完成」。沈老板亲自策展——他上次这么上心，还是给你布展那次！',
+            memory:'情报：砚美术馆下周办新展，主题「未完成」。像不像他那幅画了三年没画完的画？'
+          }}
+      ]
+    },
+    'day14_two_weeks': {
+      type:'message_batch', delay:0,
+      trigger:{ day:14, hour:9, soloOnly:true },
+      messages:[
+        // v0.2.3: 塔罗 hint 文案变体——回忆/幸运日开场不同
+        {from:'narrator', text:'（来霓城第十四天。你已经能分辨每条街的灯牌，哪一盏先亮。）',
+          flavors:{
+            memory:'（来霓城第十四天。你已经能分辨每条街的灯牌，哪一盏先亮——像是认识了很久的老朋友。）',
+            luck:'（来霓城第十四天。今天连红绿灯都在配合你，一路绿灯到公司。）'
+          }},
+        {from:'susu', text:'两周啦！本情报王宣布：你在霓城正式"混开了"！'}
       ]
     }
   },
