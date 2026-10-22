@@ -13,13 +13,14 @@ os.makedirs(OUT, exist_ok=True)
 
 W, H = 1170, 2532  # iPhone 分辨率级别的竖屏
 
-# 每主题：底色渐变（上->下）、辉光斑点（cx, cy, r, 颜色, 强度）
+# 每主题：底色渐变（上->下）、辉光斑点（cx, cy, r, 颜色, 强度）、霓虹垂直光带（cx, 宽, 颜色, 强度）
 THEMES = {
     'default': {
         'stops': [(0.0, (26, 10, 46)), (0.4, (42, 15, 74)), (1.0, (10, 7, 18))],
         'glows': [(0.25, 0.18, 0.55, (255, 95, 168), 0.55),
                   (0.75, 0.42, 0.45, (122, 92, 255), 0.5),
                   (0.45, 0.78, 0.5, (57, 214, 255), 0.28)],
+        'bands': [(0.10, 0.045, (255, 95, 168), 0.5), (0.90, 0.04, (57, 214, 255), 0.42)],
     },
     'starry': {
         'stops': [(0.0, (10, 10, 42)), (0.5, (26, 26, 74)), (1.0, (5, 5, 24))],
@@ -27,17 +28,20 @@ THEMES = {
                   (0.70, 0.60, 0.5, (90, 42, 74), 0.5),
                   (0.50, 0.90, 0.45, (58, 42, 106), 0.35)],
         'stars': 260,
+        'bands': [(0.22, 0.04, (122, 92, 255), 0.4)],
     },
     'sea': {
         'stops': [(0.0, (10, 42, 58)), (0.4, (26, 74, 90)), (1.0, (5, 15, 24))],
         'glows': [(0.50, 0.30, 0.55, (74, 222, 128), 0.4),
                   (0.30, 0.62, 0.5, (57, 214, 255), 0.42),
                   (0.72, 0.88, 0.45, (26, 74, 90), 0.4)],
+        'bands': [(0.86, 0.045, (74, 222, 128), 0.4)],
     },
     'sunset': {
         'stops': [(0.0, (42, 26, 10)), (0.3, (106, 58, 26)), (0.7, (251, 191, 36)), (1.0, (255, 95, 168))],
         'glows': [(0.50, 0.66, 0.5, (255, 200, 90), 0.55),
                   (0.28, 0.30, 0.45, (106, 58, 26), 0.45)],
+        'bands': [(0.72, 0.04, (255, 200, 90), 0.5)],
     },
     'ink': {
         'stops': [(0.0, (26, 26, 26)), (0.5, (58, 58, 58)), (1.0, (10, 10, 10))],
@@ -49,6 +53,7 @@ THEMES = {
         'glows': [(0.30, 0.22, 0.5, (255, 95, 168), 0.5),
                   (0.70, 0.55, 0.5, (180, 40, 100), 0.45),
                   (0.45, 0.85, 0.45, (90, 26, 58), 0.4)],
+        'bands': [(0.32, 0.045, (255, 95, 168), 0.42)],
     },
 }
 
@@ -83,6 +88,17 @@ def add_glow(img, cx, cy, r, color, strength):
     return Image.blend(img, Image.composite(layer, img, layer.convert('L').point(lambda v: int(v * strength))), 0.9)
 
 
+def add_lightband(img, cx, width, color, strength):
+    """v0.2.4: 霓虹垂直光带——全高 soft 光柱，加强"霓虹城市"主题感"""
+    layer = Image.new('RGB', (W, H), (0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    half = int(width * W)
+    cx_px = int(cx * W)
+    d.rectangle([cx_px - half, 0, cx_px + half, H], fill=color)
+    layer = layer.filter(ImageFilter.GaussianBlur(radius=int(W * width * 0.9)))
+    return Image.blend(img, Image.composite(layer, img, layer.convert('L').point(lambda v: int(v * strength))), 0.9)
+
+
 def add_vignette(img):
     mask = Image.new('L', (W, H), 0)
     d = ImageDraw.Draw(mask)
@@ -92,7 +108,7 @@ def add_vignette(img):
     return Image.composite(img, dark, mask)
 
 
-def add_grain(img, amount=7):
+def add_grain(img, amount=6):
     noise = Image.effect_noise((W, H), 28).convert('L')
     base = img.load()
     npx = noise.load()
@@ -119,6 +135,8 @@ for theme_id, cfg in THEMES.items():
     img = diag_gradient(cfg['stops'])
     for cx, cy, r, color, strength in cfg['glows']:
         img = add_glow(img, cx, cy, r, color, strength)
+    for band in cfg.get('bands', []):
+        img = add_lightband(img, *band)
     if cfg.get('stars'):
         img = add_stars(img, cfg['stars'])
     img = add_vignette(img)

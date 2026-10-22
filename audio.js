@@ -1,5 +1,6 @@
 /* ===== 霓虹心事 · WebAudio 音效系统 =====
- * 零依赖纯合成：消息提示、来电铃声、点击、收集/成就、主题环境音（BGM）。
+ * 零依赖纯合成：消息提示、来电铃声、点击、收集/成就、分层环境音（BGM）。
+ * v0.2.4: 环境音分层——主题琶音层 + 时段底噪层（雨声/夜晚底噪）+ 心绪不安的心跳脉冲。
  * 浏览器自动播放策略：首次用户手势（pointerdown）时解锁 AudioContext。
  * 开关持久化：localStorage 'neon_sound'（音效，默认开）/ 'neon_bgm'（环境音，默认关）。
  */
@@ -9,6 +10,10 @@ const AudioSys = (() => {
   let musicTimer = null;
   let step = 0;
   let currentTheme = 'default';
+  let currentAmbId = 'day';   // 当前氛围 id（day/dusk/night/rainy/anxious/lucky/unlucky/dawn）
+  let ambience = null;        // 当前底噪档：'rain' | 'night' | null
+  let ambNodes = null;        // 底噪节点组 {src, gain, lfo}
+  let _noiseBuf = null;       // 复用噪声 buffer（粉噪倾向，比白噪柔和）
 
   const readPref = (key, fallback) => {
     try { return localStorage.getItem(key) === null ? fallback : localStorage.getItem(key) === '1'; }
@@ -52,6 +57,65 @@ const AudioSys = (() => {
     dream()  { [392,330,262].forEach((f,i)=>tone({freq:f, dur:0.5, when:i*0.28, gain:0.032})); },
   };
 
+  // ===== v0.2.4: 底噪层（本地合成，无外部素材） =====
+
+  // 一阶低通噪声 buffer：白噪 + 单极低通，比纯白噪更"像空气"，作为雨声/夜晚底噪的原料
+  function noiseBuffer(c){
+    if(_noiseBuf) return _noiseBuf;
+    const len = Math.floor(c.sampleRate * 2);
+    _noiseBuf = c.createBuffer(1, len, c.sampleRate);
+    const d = _noiseBuf.getChannelData(0);
+    let last = 0;
+    for(let i=0;i<len;i++){
+      const white = Math.random() * 2 - 1;
+      last = (last + 0.08 * white) / 1.08;
+      d[i] = last * 3.2;
+    }
+    return _noiseBuf;
+  }
+
+  // 启动底噪层：rain=雨声（中频滤波 + 慢起伏 LFO）；night=夜晚底噪（低频滤波，极低音量）
+  function startAmbience(kind){
+    stopAmbience();
+    if(!kind) return;
+    const c = ensure(); if(!c) return;
+    const src = c.createBufferSource();
+    src.buffer = noiseBuffer(c);
+    src.loop = true;
+    const filter = c.createBiquadFilter();
+    const gain = c.createGain();
+    const base = kind === 'rain' ? 0.014 : 0.005;
+    filter.type = 'lowpass';
+    filter.frequency.value = kind === 'rain' ? 1400 : 320;
+    filter.Q.value = 0.8;
+    gain.gain.setValueAtTime(base, c.currentTime);
+    src.connect(filter).connect(gain).connect(c.destination);
+    src.start();
+    let lfo = null;
+    if(kind === 'rain'){
+      // 雨声起伏：0.13Hz 正弦调制音量 ±40%
+      lfo = c.createOscillator();
+      const lfoGain = c.createGain();
+      lfo.frequency.value = 0.13;
+      lfoGain.gain.value = base * 0.4;
+      lfo.connect(lfoGain).connect(gain.gain);
+      lfo.start();
+    }
+    ambNodes = {src, gain, lfo};
+    ambience = kind;
+  }
+
+  function stopAmbience(){
+    if(!ambNodes) return;
+    try {
+      if(ambNodes.lfo) ambNodes.lfo.stop();
+      ambNodes.src.stop();
+      ambNodes.gain.disconnect();
+    } catch(_) {}
+    ambNodes = null;
+    ambience = null;
+  }
+
   // 主题环境音：每主题一组琶音（极简、音量很低）
   const BGM_THEMES = {
     default: [220.00, 277.18, 329.63, 415.30, 329.63, 277.18],
@@ -63,21 +127,33 @@ const AudioSys = (() => {
     dark:    [146.83, 185.00, 220.00, 277.18, 220.00, 185.00],
   };
   function stopMusic(){
-    if(musicTimer){ clearInterval(musicTimer); musicTimer = null; }
+    if(musicTimer){ clearTimeout(musicTimer); musicTimer = null; }
     step = 0;
+    stopAmbience();
+  }
+  // setTimeout 链：可随时调整节奏（心绪不安时放慢并加入心跳脉冲）
+  function musicLoop(){
+    const slow = currentAmbId === 'anxious';  // 不安时放慢到 1.5s/拍
+    musicTimer = setTimeout(()=>{
+      if(!bgmOn) { stopMusic(); return; }
+      const notes = BGM_THEMES[currentTheme] || BGM_THEMES.default;
+      const anxious = currentAmbId === 'anxious';
+      const dur = anxious ? 0.7 : 0.9;
+      const f = notes[step % notes.length];
+      // 琶音 + 低八度垫音，营造氛围
+      tone({freq:f, dur:dur, type:'sine', gain:0.018});
+      if(step % notes.length === 0) tone({freq:f/2, dur:anxious ? 2.2 : 1.6, type:'sine', gain:0.012});
+      // v0.2.4: 心绪不安时每两拍一个低频心跳脉冲（55Hz，几乎不可闻但压心）
+      if(anxious && step % 2 === 0) tone({freq:55, dur:0.5, type:'sine', gain:0.02});
+      step++;
+      musicLoop();
+    }, slow ? 1500 : 900);
   }
   function startMusic(){
     stopMusic();
     if(!bgmOn || !unlocked) return;
-    const notes = BGM_THEMES[currentTheme] || BGM_THEMES.default;
-    musicTimer = setInterval(()=>{
-      if(!bgmOn) { stopMusic(); return; }
-      const f = notes[step % notes.length];
-      // 琶音 + 低八度垫音，营造氛围
-      tone({freq:f, dur:0.9, type:'sine', gain:0.018});
-      if(step % notes.length === 0) tone({freq:f/2, dur:1.6, type:'sine', gain:0.012});
-      step++;
-    }, 900);
+    musicLoop();
+    startAmbience(ambience);
   }
 
   // 首次手势解锁（浏览器自动播放策略）
@@ -107,6 +183,17 @@ const AudioSys = (() => {
     applyTheme(themeId){
       currentTheme = BGM_THEMES[themeId] ? themeId : 'default';
       if(musicTimer) startMusic();  // 正在播则切换音组
+    },
+    // v0.2.4: 氛围切换时切换底噪档（rainy→雨声；night/dusk/anxious→夜晚底噪；其余无底噪）
+    applyAmbience(ambId){
+      currentAmbId = ambId || 'day';
+      const kind = ambId === 'rainy' ? 'rain'
+        : (ambId === 'night' || ambId === 'dusk' || ambId === 'anxious') ? 'night' : null;
+      if(kind !== ambience){
+        // 正在播放环境音则切换底噪；未播放只记档，开 BGM 时生效
+        if(bgmOn && unlocked) startAmbience(kind);
+        else ambience = kind;
+      }
     },
   };
 })();

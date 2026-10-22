@@ -200,6 +200,8 @@
   });
   engine.on('ambienceChange', (amb)=>{
     applyAmbienceToBody(amb);
+    // v0.2.4: 氛围变化同步切换环境音底噪档（雨声/夜晚底噪）
+    AudioSys.applyAmbience(amb?.id || 'day');
   });
   engine.on('momentCommentsGenerated', ({momentId, comments})=>{
     // 把评论写到对应 moment 对象上（供 renderMoments 显示）

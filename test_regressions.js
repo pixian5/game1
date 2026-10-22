@@ -595,4 +595,33 @@ test('v0.2.3: 独行线 day11+ 日常按 soloOnly 触发（男主线不触发）
   }
 });
 
+// ===== v0.2.4: hint 变体再扩展（群聊投票 + 抽牌即时反馈） =====
+
+test('v0.2.4: 群聊投票消息数据层自带 luck 变体（默认文本保留）', ()=>{
+  const e = engine();
+  e.newGame();
+  const vote = e.story.events['group_neon_wave2_vote'].messages[0];
+  assert.ok(vote.text.includes('地点投票'), '投票通知默认文本保留');
+  assert.ok(vote.flavors.luck.includes('手气旺'), vote.flavors.luck);
+  const after = e.story.events['group_neon_wave2_after'].messages[0];
+  assert.ok(after.text.includes('投票有效'), '投票结果默认文本保留');
+  assert.ok(after.flavors.memory.includes('合影'), after.flavors.memory);
+});
+
+test('v0.2.4: 抽牌后按牌面 hint 类型派发苏苏即时反馈（当日新牌面联动）', ()=>{
+  const e = engine();
+  e.newGame();
+  // 8 类反馈事件全部注册
+  for(const t of ['encounter','affection','memory','rational','independent','luck','ending_hint','dream']){
+    assert.ok(e.story.events['tarot_draw_reaction_' + t], t + ' 反馈事件存在');
+  }
+  const r = e.drawTarot();
+  assert.ok(r.ok, r.reason || 'ok');
+  const type = r.fortune.hint?.type;
+  if(type){
+    const hit = e.state.pendingEventDispatches.some(p => p.eventId === 'tarot_draw_reaction_' + type);
+    assert.ok(hit, '抽牌后派发 ' + type + ' 反馈事件');
+  }
+});
+
 console.log('全部回归测试通过');

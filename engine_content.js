@@ -673,6 +673,10 @@ Object.assign(PhoneEngine.prototype, {
     if(card.hint){
       this.state.flags['tarot_' + card.hint.type] = card.hint.value;
     }
+    // v0.2.4: 抽牌即时反馈——按当日牌面 hint 类型派发苏苏评论（当日新牌面联动）
+    if(card.hint && this.story.events?.['tarot_draw_reaction_' + card.hint.type]){
+      this._queueEventDispatch('tarot_draw_reaction_' + card.hint.type, 800);
+    }
     this.emit('tarotDrawn', fortune);
     this.emit('stateChange', this.state);
     this.emit('ambienceChange', this.getCurrentAmbience());  // v0.1.8: 抽牌立即叠加幸运/沉重氛围

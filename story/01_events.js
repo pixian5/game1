@@ -934,12 +934,69 @@ Object.assign(STORY, {
       ]
     },
 
+    // ===== v0.2.4: 塔罗抽牌即时反馈——当日新牌面抽中后，苏苏立刻评论（当日牌面联动） =====
+    // 由 engine.drawTarot 按 hint.type 派发；纯消息不带 choice
+    'tarot_draw_reaction_encounter': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'🔮 夏夏！这张牌……今天会"遇见"重要的人。别低头走路，抬头！'}
+      ]
+    },
+    'tarot_draw_reaction_affection': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'🔮 夏夏！这牌面甜到齁——今天谁多看你一眼，都不是偶然。'}
+      ]
+    },
+    'tarot_draw_reaction_memory': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'🔮 夏夏！这张牌在翻旧账——旧照片、旧消息，今天别删，会有发现。'}
+      ]
+    },
+    'tarot_draw_reaction_rational': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'🔮 夏夏！今天是清醒牌——适合算清楚，不适合上头。'}
+      ]
+    },
+    'tarot_draw_reaction_independent': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'🔮 夏夏！今天这张牌是"自己"——别人的意见，参考就好。'}
+      ]
+    },
+    'tarot_draw_reaction_luck': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'🔮 夏夏！好牌！今天运气在线，第一杯咖啡都该是买一送一！'}
+      ]
+    },
+    'tarot_draw_reaction_ending_hint': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'🔮 夏夏……这张牌有点重。最近的决定，都在悄悄写结局。慢慢来，别怕。'}
+      ]
+    },
+    'tarot_draw_reaction_dream': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'🔮 夏夏！今天梦运会很灵——睡前记得把明天的愿望想好。'}
+      ]
+    },
+
     // ===== v0.1.12: 群聊第二波——周末聚餐投票（day6 晚上触发，群 choice 写性格与 flag） =====
     'group_neon_wave2_vote': {
       type:'group_message_batch', delay:0, groupId:'group_neon',
       trigger:{ day:6, hour:21 },
       messages:[
-        {from:'susu', text:'通知！本周六「霓城小分队」首次线下聚餐！地点投票，现在开始！', then:'group_neon_wave2_vote2'}
+        // v0.2.4: 塔罗 hint 文案变体——投票通知随当日运势
+        {from:'susu', text:'通知！本周六「霓城小分队」首次线下聚餐！地点投票，现在开始！',
+          flavors:{
+            luck:'通知！本周六「霓城小分队」首次线下聚餐！地点投票，现在开始！今天你手气旺，选哪家都好吃！',
+            affection:'通知！本周六「霓城小分队」首次线下聚餐！地点投票，现在开始！选对地方，某人会开心哦～',
+            rational:'通知！本周六「霓城小分队」首次线下聚餐！地点投票，现在开始！三个选项都附了攻略，理性选择！'
+          }, then:'group_neon_wave2_vote2'}
       ]
     },
     'group_neon_wave2_vote2': {
@@ -960,7 +1017,14 @@ Object.assign(STORY, {
     'group_neon_wave2_after': {
       type:'group_message_batch', delay:1, groupId:'group_neon',
       messages:[
-        {from:'susu', text:'投票有效！周六晚上七点，不许请假，不许迟到！'},
+        // v0.2.4: 塔罗 hint 文案变体——投票结果公布随当日运势
+        {from:'susu', text:'投票有效！周六晚上七点，不许请假，不许迟到！',
+          flavors:{
+            luck:'投票有效！周六晚上七点，不许请假，不许迟到！今天你运气好，抢位子都顺！',
+            affection:'投票有效！周六晚上七点，不许请假，不许迟到！坐得离谁近，你懂的～',
+            rational:'投票有效！周六晚上七点，不许请假，不许迟到！攻略已发群公告，预习一下！',
+            memory:'投票有效！周六晚上七点，不许请假，不许迟到！这顿吃完，得拍张合影挂群相册！'
+          }},
         {from:'susu', text:'（本群唯一的宗旨：盯紧我们夏夏的幸福进度。）'}
       ]
     },
