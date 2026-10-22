@@ -6,7 +6,7 @@
 
 纯前端实现（HTML / CSS / 原生 JS），**运行时零依赖、无构建步骤**。
 
-- 当前版本：**v0.2.1**（版本唯一来源：[VERSION](VERSION)）
+- 当前版本：**v0.2.2**（版本唯一来源：[VERSION](VERSION)）
 - 主角：林夏（策展人）｜路线：沈砚之 / 陆辞 / 江屿 / 独行线（真结局）
 - 内容体量：184 个剧情事件 · 17 个结局（含 4 个隐藏）· 14 件收集品 · 15 个成就 · 3 个谜题 · 16 张塔罗 · 7 套主题（含真实壁纸）· 6 个地点
 
@@ -31,7 +31,7 @@ npm run check:version      # 版本号一致性（VERSION / package.json / index
 npm run check:ui           # 前端语法合并编译 + 引用完整性（index.html/sw.js 交叉核对）
 npm run validate:story     # 剧情数据一致性（事件引用 / 收集品路径 / flag 读写 / 结局图鉴）
 npm run lint               # ESLint 静态检查（v0.2.1 接入）
-npm run test:regressions   # 引擎回归测试（26 项）
+npm run test:regressions   # 引擎回归测试（28 项）
 npm run test:story         # 剧情链路测试（294 项断言）
 npm run test:browser       # 浏览器端到端（Playwright，5 项）
 npm run test:all           # 一键跑全部
@@ -42,23 +42,24 @@ CI（[.github/workflows/test.yml](.github/workflows/test.yml)）在每次 push /
 
 ## 当前开发进度
 
-v0.2.1 完成：**ESLint 接入**（分环境配置，lint 接入 test:all 与 CI）；**一键发版脚本**
-`tools/bump_version.py`（版本五处同步 + 自动 check:version）；**塔罗 hint 落地为玩法**
-（「遇见」补偶遇、「好运」购物立减，buyGift 返回实付价）；**群聊聚餐现场**（day7 按投票
-flag 三分歧）；**雨天限定剧情**（苏苏带伞 choice 三分支）；**中后期日常**（day7-10 六事件）；
-**前端错误上报**（sendBeacon → /collect-error，30s 节流）；**无障碍起步**（aria-live）；
-**通用日常线路隔离修复**（trigger.soloOnly：通用日常仅未进男主线触发，修复 294→291 回归，
-test:story 294/294 全过）；回归测试 26 项全过。
+v0.2.2 完成：**塔罗 hint 文案变体**——今日牌面运势类型改变日常消息文案与语气
+（消息级 `flavors` 数据驱动，引擎 `_flavoredText` 统一注入；雨天带伞/布展邀约/扫街照片/
+新歌副歌/苏苏八卦 5 事件 10 条消息配好变体，覆盖幸运/心动/清醒/回忆/梦境五类运势；
+无牌面自动回退默认文本，零兼容影响）。回归测试 28 项全过。
 
-👉 详细进度：[docs/20261022-2144-当前开发进度-Doubao.md](docs/20261022-2144-当前开发进度-Doubao.md)
-👉 技术细节：[docs/20261022-2144-v0.2.1-通用日常隔离与版本收尾-Doubao.md](docs/20261022-2144-v0.2.1-通用日常隔离与版本收尾-Doubao.md)
+上一轮（v0.2.1）：ESLint 接入、一键发版脚本、塔罗 hint 落地玩法（遇见补偶遇/好运折扣）、
+群聊聚餐现场、雨天限定剧情、day7-10 中后期日常、前端错误上报、无障碍起步；
+通用日常线路隔离修复（trigger.soloOnly，修复 294→291 回归）。
+
+👉 详细进度：[docs/20261022-2229-当前开发进度-Doubao.md](docs/20261022-2229-当前开发进度-Doubao.md)
+👉 技术细节：[docs/20261022-2229-v0.2.2-塔罗hint文案变体-Doubao.md](docs/20261022-2229-v0.2.2-塔罗hint文案变体-Doubao.md)
 
 ## 下一步待实现
 
-优先：确认自有服务器 `/collect-error` 部署侧配置（前端错误上报依赖）；独行线中后期
-内容观察；壁纸视觉验收与音频丰富度；塔罗 hint 文案变体。
+优先：hint 变体横向扩展（群聊/独行线新日常/晨间播报联动）；音频丰富度（本地合成）；
+壁纸视觉验收；确认自有服务器 `/collect-error` 部署侧配置。
 
-👉 详细清单：[docs/20261022-2144-下一步待实现-Doubao.md](docs/20261022-2144-下一步待实现-Doubao.md)
+👉 详细清单：[docs/20261022-2229-下一步待实现-Doubao.md](docs/20261022-2229-下一步待实现-Doubao.md)
 
 ## 目录结构
 

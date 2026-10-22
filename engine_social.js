@@ -3,9 +3,17 @@
  */
 
 Object.assign(PhoneEngine.prototype, {
+  // v0.2.2: 塔罗 hint 文案变体——消息可带 flavors: {hintType: '替代文本'}，
+  // 今日牌面 hint.type 命中时用变体文本，否则用默认 text（数据驱动，逐条消息可配）
+  _flavoredText(msg){
+    if(!msg || !msg.flavors) return typeof msg.text === 'string' ? msg.text : '';
+    const type = this._fortuneType();
+    if(type && typeof msg.flavors[type] === 'string') return msg.flavors[type];
+    return typeof msg.text === 'string' ? msg.text : '';
+  },
   queueMessage(msg, delay=0){
     if(!msg || !['narrator', ...Object.keys(this.state.conversations)].includes(msg.from)) return;
-    const text = typeof msg.text === 'string' ? msg.text : '';
+    const text = this._flavoredText(msg);
     const typingTime = msg.from === 'narrator' ? 0 : Math.min(2200, Math.max(700, text.length * 50));
     const item = {
       id:this._newPendingId('message'), from:msg.from, text,
@@ -212,7 +220,7 @@ Object.assign(PhoneEngine.prototype, {
       this.state.groups[groupId] = {id:groupId, name:gdef.name, members:gdef.members, messages:[], unread:0, typing:false};
     }
     const g = this.state.groups[groupId];
-    const text = typeof msg.text === 'string' ? msg.text : '';
+    const text = this._flavoredText(msg);
     const typingTime = Math.min(2200, Math.max(700, text.length * 50));
     const item = {id:this._newPendingId('group-message'), groupId, from:msg.from, text,
       choice:msg.choice || null, thenEvent:msg.then || null,

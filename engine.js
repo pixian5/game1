@@ -394,6 +394,11 @@ class PhoneEngine {
     const f = this.state.todayFortune;
     return f && f.day === this.state.day && f.hint?.type === type ? (f.hint.value || 1) : 0;
   }
+  // v0.2.2: 今日塔罗 hint 类型（无牌面或非当日返回 null），供文案变体等读取
+  _fortuneType(){
+    const f = this.state.todayFortune;
+    return f && f.day === this.state.day && f.hint?.type ? f.hint.type : null;
+  }
   // v0.2.0: 群聊聚餐后续——day7 晚按投票 flag 派发对应现场（每局一次）
   checkGroupDinner(){
     if(this.state.ended || this.state.flags.group_dinner_done) return;

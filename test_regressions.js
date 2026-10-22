@@ -525,4 +525,39 @@ test('v0.2.1: 已进男主线时不触发 soloOnly 通用日常（week1_review �
   assert.equal(e4.state.flags.rain_event_done, undefined);
 });
 
+// ===== v0.2.2: 塔罗 hint 文案变体 =====
+
+test('v0.2.2: 塔罗 hint 命中时消息文本切换为 flavors 变体', ()=>{
+  const e = engine();
+  e.newGame();
+  e.state.todayFortune = {cardId:'wheel', name:'命运之轮', roman:'X', reversed:false, text:'', hint:{type:'luck', value:1}, day:e.state.day};
+  // 命中 luck → 用变体
+  assert.equal(e._flavoredText({from:'susu', text:'默认', flavors:{luck:'幸运版', affection:'心动版'}}), '幸运版');
+  // 未命中 type → 默认 text
+  assert.equal(e._flavoredText({from:'susu', text:'默认', flavors:{affection:'心动版'}}), '默认');
+  // 无 flavors → 原样
+  assert.equal(e._flavoredText({from:'susu', text:'原样'}), '原样');
+  // 非当日牌面 → 默认 text
+  e.state.todayFortune.day = e.state.day - 1;
+  assert.equal(e._flavoredText({from:'susu', text:'默认', flavors:{luck:'幸运版'}}), '默认');
+  // queueMessage 入队即用变体文本（取入队前的最后一条，避开 newGame 已入队的开场消息）
+  e.state.todayFortune.day = e.state.day;
+  const before = e.state.pendingMessages.length;
+  e.queueMessage({from:'susu', text:'默认', flavors:{luck:'幸运版'}});
+  const item = e.state.pendingMessages[before];
+  assert.equal(item && item.text, '幸运版');
+});
+
+test('v0.2.2: 幸运日苏苏八卦事件数据层自带 luck 变体（默认文本保留）', ()=>{
+  const e = engine();
+  e.newGame();
+  const evt = e.story.events['day9_susu_gossip'];
+  const msg = evt.messages[0];
+  assert.ok(msg.text.includes('重大情报'), '默认文本保留');
+  assert.ok(msg.flavors.luck.includes('幸运值拉满'), msg.flavors.luck);
+  e.state.todayFortune = {cardId:'star', name:'星星', roman:'XVII', reversed:false, text:'', hint:{type:'luck', value:1.5}, day:e.state.day};
+  const sent = e._flavoredText(msg);
+  assert.equal(sent, msg.flavors.luck);
+});
+
 console.log('全部回归测试通过');

@@ -1004,7 +1004,14 @@ Object.assign(STORY, {
     'rain_ambush_msg': {
       type:'message_batch', delay:0,
       messages:[
-        {from:'susu', text:'下雨了！！你带伞没？我看气象雷达，那片一时半会停不了！'},
+        // v0.2.2: 塔罗 hint 文案变体——幸运/心动/清醒/回忆日语气不同
+        {from:'susu', text:'下雨了！！你带伞没？我看气象雷达，那片一时半会停不了！',
+          flavors:{
+            luck:'下雨了！！但你看窗外，雨把灯牌的光都点亮了，淋这一场说不定是好运开场！！',
+            affection:'下雨了！！你站屋檐下别动！我拿伞去接你——这种天气最适合说点心里话！！',
+            rational:'下雨了！！雷达显示四十分钟后停。找个屋檐待着，别冲，淋感冒不划算！！',
+            memory:'下雨了！！这雨让我想起去年春天，你也是忘带伞，站在美术馆门口等雨停。'
+          }},
         {from:'susu', text:'（窗外，霓城泡在雨里。灯牌的光晕被雨拉成一条条彩线。）', choice:{
           prompt:'雨越下越大。你决定：',
           options:[
@@ -1043,8 +1050,18 @@ Object.assign(STORY, {
       // v0.2.1: soloOnly——通用日常仅未进男主线时触发
       trigger:{ day:7, hour:19, soloOnly:true },
       messages:[
-        {from:'shenyan', text:'布展方案通过了。今晚不留下来加班？——这是陈述，不是命令。'},
-        {from:'shenyan', text:'（你注意到，他开始区分"命令"和"请求"了。）'}
+        // v0.2.2: 塔罗 hint 文案变体——心动/幸运/清醒日语气不同
+        {from:'shenyan', text:'布展方案通过了。今晚不留下来加班？——这是陈述，不是命令。',
+          flavors:{
+            affection:'布展方案通过了。闭馆后只留一盏灯，你要不要来看看它独自发光的样子？',
+            luck:'布展方案通过了，还顺带抽到个好档期。今晚不忙的话，陪我验收一下？',
+            rational:'布展方案通过了。流程都核过了，你今晚不必陪跑，好好休息。'
+          }},
+        {from:'shenyan', text:'（你注意到，他开始区分"命令"和"请求"了。）',
+          flavors:{
+            affection:'（他这句话说得很慢，像在练习怎么把"命令"换成"邀请"。）',
+            rational:'（他说完自己顿了一下，像是意识到刚才那句话已经不再是命令了。）'
+          }}
       ]
     },
     'day8_luci_photos': {
@@ -1052,7 +1069,13 @@ Object.assign(STORY, {
       // v0.2.1: soloOnly——通用日常仅未进男主线时触发
       trigger:{ day:8, hour:13, soloOnly:true },
       messages:[
-        {from:'luci', text:'[图片] 早上扫街拍的。霓城早上七点和晚上七点，是两个城市。'},
+        // v0.2.2: 塔罗 hint 文案变体——幸运/回忆/心动日语气不同
+        {from:'luci', text:'[图片] 早上扫街拍的。霓城早上七点和晚上七点，是两个城市。',
+          flavors:{
+            luck:'[图片] 早上扫街正好撞见一束光，整个路口都是亮的。运气好，拍到了。',
+            memory:'[图片] 路过咱们以前常走的那条街，多按了两张。路没变，光变了。',
+            affection:'[图片] 街角那家店换了招牌，但玻璃上还映着你上次站的位置。顺手拍下来了。'
+          }},
         {from:'luci', text:'哪张好？我投第二张——构图里有你上周站过的那个路口。'}
       ]
     },
@@ -1061,8 +1084,15 @@ Object.assign(STORY, {
       // v0.2.1: soloOnly——通用日常仅未进男主线时触发
       trigger:{ day:8, hour:22, soloOnly:true },
       messages:[
-        {from:'jiangyu', text:'[语音 12"]'},
-        {from:'jiangyu', text:'新歌demo，副歌还缺两个字。睡不着的代价就是半夜写歌。'}
+        // v0.2.2: 塔罗 hint 文案变体——梦境/心动/回忆日，副歌文案随运势变化
+        {from:'jiangyu', text:'[语音 12"]',
+          flavors:{ dream:'[语音 15"]' }},
+        {from:'jiangyu', text:'新歌demo，副歌还缺两个字。睡不着的代价就是半夜写歌。',
+          flavors:{
+            dream:'昨晚梦见一段旋律，醒了一半，只抓住这个副歌。梦比白天会写歌。',
+            affection:'demo 写完了。副歌最后两个字，是那天晚上你随口哼的调子。',
+            memory:'改的是十年前那首没写完的歌。今天总算知道后面该接什么了。'
+          }}
       ]
     },
     'day9_susu_gossip': {
@@ -1070,7 +1100,14 @@ Object.assign(STORY, {
       // v0.2.1: soloOnly——通用日常仅未进男主线时触发
       trigger:{ day:9, hour:15, soloOnly:true },
       messages:[
-        {from:'susu', text:'重大情报！！本周你被三个人同时约的概率是100%！！'},
+        // v0.2.2: 塔罗 hint 文案变体——幸运/心动/清醒/回忆日，苏苏八卦语气不同
+        {from:'susu', text:'重大情报！！本周你被三个人同时约的概率是100%！！',
+          flavors:{
+            luck:'重大情报！！今天你幸运值拉满，走到哪都有桃花雷达自动锁定你！！',
+            affection:'重大情报！！你今天整个人的气场甜到发齁，恋爱信号爆表，快出门收割！！',
+            rational:'重大情报！！我做了个统计：本周你被同时约的概率是 100%，结论：你需要一个日程管理 App！！',
+            memory:'重大情报！！我刚翻到去年的聊天记录，你那天说的话居然全应验了，玄学！！'
+          }},
         {from:'susu', text:'（统计样本：我。误差范围：我说是就是。）'}
       ]
     },
