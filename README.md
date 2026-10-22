@@ -14,6 +14,7 @@
 
 **在线游玩**（自有服务器，主入口）：https://oh.sbbz.tech:9443/
 备份线（GitHub Pages，push main 自动部署）：https://pixian5.github.io/game1/
+镜像仓库：gitee（https://gitee.com/ibjxk/leame.git）· github（https://github.com/pixian5/game1.git）· GitCode（https://gitcode.com/laotongtian/game1.git）
 
 本地游玩：直接双击 `index.html`（无构建、无依赖），或：
 
@@ -103,7 +104,7 @@ v0.2.4 完成：**hint 变体再扩展**——群聊投票（通知+结果）随
 ## 开发约定
 
 - 这是开发测试版：重构无需考虑旧存档兼容与旧数据，但必须先备份/可回溯
-- 提交信息使用中文；每轮修改完成后提交并推送（gitee 与 github 双远端）
+- 提交信息使用中文；每轮修改完成后提交并推送（gitee、github 与 gitcode 三远端）
 - 每次修改后必须跑通 `npm run test:all` 才能停下
 - 新增剧情数据 → 写进 `story/` 对应板块文件（不要在 `18_patches.js` 叠补丁），先跑 `npm run validate:story`
 - 新增源码文件 → `story/`、`engine_*.js` 会被测试清单自动包含；`ui/`、`audio.js`、`pwa.js` 需手动加入 `index.html` 与 `sw.js` 的 PRECACHE
