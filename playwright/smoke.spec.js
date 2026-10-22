@@ -76,3 +76,32 @@ test('PWA 离线重载可玩（Service Worker 缓存生效）', async ({page, co
   await expect(page.locator('#home-screen')).toHaveClass(/active/);
   await context.setOffline(false);
 });
+
+// v0.2.5: 相册由程序化照片替代 SVG 占位
+test('相册照片全部加载并可查看大图（v0.2.5）', async ({page}) => {
+  await page.goto('/');
+  await page.locator('#lock-screen').click();
+  await page.evaluate(() => {
+    const e = window.__neonTest.engine;
+    e.state.photos = Object.keys(e.story.photos).map(id => ({id, ...e.story.photos[id], unlocked:true}));
+    renderAlbum();
+  });
+  await page.locator('#home-screen .home-dock [data-app="album"]').click();
+  await expect(page.locator('#album-app')).toHaveClass(/active/);
+
+  const imgs = page.locator('#album-grid img');
+  await expect(imgs).toHaveCount(5);
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('#album-grid img')].every(i => i.complete && i.naturalWidth === 900)
+  );
+  await page.evaluate(() => { document.getElementById('notif-stack').innerHTML = ''; });
+
+  await imgs.first().click();
+  await expect(page.locator('#photo-view')).toHaveClass(/active/);
+  const detail = page.locator('#photo-art img');
+  await expect(detail).toHaveAttribute('src', 'assets/photos/city.jpg');
+  expect(await detail.evaluate(i => i.naturalWidth)).toBe(900);
+
+  await page.locator('.photo-close').click();
+  await expect(page.locator('#album-app')).toHaveClass(/active/);
+});

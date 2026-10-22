@@ -284,13 +284,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--ink
 /* 相册 */
 .album-grid{
   flex:1;overflow-y:auto;padding:4px;
-  display:grid;grid-template-columns:repeat(3,1fr);gap:3px;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:3px;align-content:start;
 }
 .album-item{
   aspect-ratio:1;background:var(--bg2);border-radius:2px;overflow:hidden;cursor:pointer;position:relative;
   display:flex;align-items:center;justify-content:center;font-size:32px;
   transition:transform .15s;
 }
+.album-item img{width:100%;height:100%;object-fit:cover;display:block;}
 .album-item:active{transform:scale(0.95);}
 .album-item.locked{background:rgba(255,255,255,0.03);color:var(--ink-mute);font-size:24px;}
 .album-item.locked::after{content:"🔒";position:absolute;top:4px;right:4px;font-size:10px;}
@@ -302,9 +303,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--ink
   width:280px;height:280px;margin:0 auto 20px;border-radius:12px;overflow:hidden;
   box-shadow:0 20px 60px rgba(0,0,0,0.8);
 }
-.photo-art svg{width:100%;height:100%;}
+.photo-art img{width:100%;height:100%;object-fit:cover;display:block;}
 .photo-caption{font-family:var(--serif);font-size:15px;line-height:1.8;color:var(--ink-dim);max-width:320px;margin:0 auto 24px;}
-.photo-close{position:absolute;top:24px;right:24px;font-size:24px;color:#fff;background:none;border:none;cursor:pointer;}
+.photo-close{position:absolute;top:40px;right:14px;font-size:17px;color:var(--ink-dim);background:none;border:none;cursor:pointer;letter-spacing:0.1em;z-index:3;}
 
 /* 日历 */
 .cal-current{

@@ -6,9 +6,9 @@
 
 纯前端实现（HTML / CSS / 原生 JS），**运行时零依赖、无构建步骤**。
 
-- 当前版本：**v0.2.4**（版本唯一来源：[VERSION](VERSION)）
+- 当前版本：**v0.2.5**（版本唯一来源：[VERSION](VERSION)）
 - 主角：林夏（策展人）｜路线：沈砚之 / 陆辞 / 江屿 / 独行线（真结局）
-- 内容体量：196 个剧情事件 · 17 个结局（含 4 个隐藏）· 14 件收集品 · 15 个成就 · 3 个谜题 · 16 张塔罗 · 7 套主题（含真实壁纸）· 6 个地点
+- 内容体量：196 个剧情事件 · 17 个结局（含 4 个隐藏）· 14 件收集品 · 15 个成就 · 3 个谜题 · 16 张塔罗 · 7 套主题（含真实壁纸）· 5 张相册照片 · 6 个地点
 
 ## 快速开始
 
@@ -34,7 +34,7 @@ npm run validate:story     # 剧情数据一致性（事件引用 / 收集品路
 npm run lint               # ESLint 静态检查（v0.2.1 接入）
 npm run test:regressions   # 引擎回归测试（32 项）
 npm run test:story         # 剧情链路测试（294 项断言）
-npm run test:browser       # 浏览器端到端（Playwright，5 项）
+npm run test:browser       # 浏览器端到端（Playwright，6 项）
 npm run test:all           # 一键跑全部
 ```
 
@@ -43,23 +43,23 @@ CI（[.github/workflows/test.yml](.github/workflows/test.yml)）在每次 push /
 
 ## 当前开发进度
 
-v0.2.4 完成：**hint 变体再扩展**——群聊投票（通知+结果）随运势变体，**抽牌即时反馈**
-（8 类牌面苏苏即时评论，与晨间播报形成双闭环）；**音频三层分层**（主题琶音 + 雨声/夜晚
-底噪 + 心绪心跳，全本地合成零素材）；**壁纸霓虹光带**（6 套重新生成验收通过）。
-事件 188→196，回归测试 32 项全过。
+v0.2.5 完成：**相册照片真实化（M1.1）**——用本地 PIL 程序化生成 5 张 900×900
+「霓虹城市」照片感素材（城市夜景/天台/相册/画室/旧学校），替换全部 SVG 占位；
+相册网格与详情页改用 `<img>` 渲染并纳入离线缓存，单张 129-143KiB 全部低于 150KiB 预算。
+新增第 6 条 E2E 覆盖照片加载与大图查看。
 
-上一轮（v0.2.3）：hint 变体横向扩展（聚餐现场直播开场变体）+ 独行线 day11-14 新日常。
-上上轮（v0.2.2）：塔罗 hint 文案变体机制（引擎 _flavoredText，5 事件 10 消息变体）。
+上一轮（v0.2.4）：hint 变体再扩展（群聊投票 + 抽牌即时反馈）+ 音频三层分层 + 壁纸霓虹光带。
+上上轮（v0.2.3）：hint 变体横向扩展（聚餐现场直播开场变体）+ 独行线 day11-14 新日常。
 
-👉 详细进度：[docs/20261022-2314-当前开发进度-Doubao.md](docs/20261022-2314-当前开发进度-Doubao.md)
-👉 技术细节：[docs/20261022-2314-v0.2.4-变体再扩展与音频壁纸-Doubao.md](docs/20261022-2314-v0.2.4-变体再扩展与音频壁纸-Doubao.md)
+👉 详细进度：[docs/20261023-0051-当前开发进度-Qoder.md](docs/20261023-0051-当前开发进度-Qoder.md)
+👉 技术细节：[docs/20261023-0051-v0.2.5-相册照片真实化-Qoder.md](docs/20261023-0051-v0.2.5-相册照片真实化-Qoder.md)
 
 ## 下一步待实现
 
-优先：确认自有服务器 `/collect-error` 部署侧配置；音频听感回访调参；照片/头像美术接入
-（本地 PIL 生成或图像 API）；壁纸氛围变体。
+优先：头像/角色形象真实化（M1.2，4 张方形头像）；壁纸氛围变体（M1.3）；确认自有服务器
+`/collect-error` 部署侧配置（服务器当前仍为 v0.1.14，需确认后再部署）。
 
-👉 详细清单：[docs/20261022-2314-下一步待实现-Doubao.md](docs/20261022-2314-下一步待实现-Doubao.md)
+👉 详细清单：[docs/20261023-0051-下一步待实现-Qoder.md](docs/20261023-0051-下一步待实现-Qoder.md)
 
 ## 目录结构
 
@@ -75,8 +75,8 @@ v0.2.4 完成：**hint 变体再扩展**——群聊投票（通知+结果）随
 | `interaction_queue.js` | 交互队列（并发来电/偶遇/选择的排队与读档恢复） |
 | `save_migrations.js` | 存档版本迁移 |
 | `manifest.json` / `sw.js` / `pwa.js` | PWA：应用清单 / 离线缓存 / 注册 |
-| `assets/` | 壁纸（`tools/generate_wallpapers.py` 生成）与图标（`tools/generate_icons.py` 生成） |
-| `tools/` | 资产生成脚本（`generate_wallpapers.py` / `generate_icons.py`，Python + PIL）与一键发版脚本（`bump_version.py`） |
+| `assets/` | 壁纸（`tools/generate_wallpapers.py` 生成）、相册照片（`tools/generate_photos.py` 生成）与图标（`tools/generate_icons.py` 生成） |
+| `tools/` | 资产生成脚本（`generate_wallpapers.py` / `generate_photos.py` / `generate_icons.py`，Python + PIL）与一键发版脚本（`bump_version.py`） |
 | `eslint.config.mjs` | ESLint 分环境配置（浏览器/Node/ui 分域，v0.2.1 接入） |
 | `deploy.sh` | 一键部署到自有服务器（oh.sbbz.tech:9443，先跑通 test:all 再执行） |
 | `validate_story.js` | 剧情数据一致性校验器（CI 使用） |
