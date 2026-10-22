@@ -18,6 +18,7 @@ jobs:
       - run: npm run check:version
       - run: npm run validate:story
       - run: npm run check:ui
+      - run: npm run lint
       - run: npm run test:regressions
       - run: npm run test:story
       - run: npx playwright install --with-deps chromium

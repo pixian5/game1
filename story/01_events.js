@@ -963,6 +963,131 @@ Object.assign(STORY, {
         {from:'susu', text:'投票有效！周六晚上七点，不许请假，不许迟到！'},
         {from:'susu', text:'（本群唯一的宗旨：盯紧我们夏夏的幸福进度。）'}
       ]
+    },
+
+    // ===== v0.2.0: 群聊聚餐现场——按 day6 投票 flag 分歧（checkGroupDinner 于 day7 晚派发） =====
+    'group_dinner_scene_hotpot': {
+      type:'group_message_batch', delay:0, groupId:'group_neon',
+      effects:{ affection:{jiangyu:1}, personality:{emotional:1} },
+      messages:[
+        {from:'susu', text:'🔥首聚现场直击：红锅已开，毛肚已下，人齐了！'},
+        {from:'luci', text:'[图片] 九宫格。谁点的脑花，站出来。'},
+        {from:'jiangyu', text:'我。涮好了给你们留两筷子。'},
+        {from:'shenyan', text:'……辣度超预期。水。'},
+        {from:'susu', text:'沈老板居然真的来了！夏夏你坐他旁边对不对！拍照了！'}
+      ]
+    },
+    'group_dinner_scene_izakaya': {
+      type:'group_message_batch', delay:0, groupId:'group_neon',
+      effects:{ affection:{jiangyu:1}, personality:{rational:1} },
+      messages:[
+        {from:'susu', text:'🏮首聚现场：居酒屋小间已包，烤串无限追加！'},
+        {from:'jiangyu', text:'老板，梅子茶泡饭一份——她的。别的随意。'},
+        {from:'luci', text:'[图片] 招牌灯下的合影申请，举手的都入镜。'},
+        {from:'shenyan', text:'角落位置已占。观灯，比看人舒服。'},
+        {from:'susu', text:'沈老板你入了！我看到你举手了！照片为证！'}
+      ]
+    },
+    'group_dinner_scene_gallery': {
+      type:'group_message_batch', delay:0, groupId:'group_neon',
+      effects:{ affection:{shenyan:1}, personality:{passive:1} },
+      messages:[
+        {from:'susu', text:'🎨首聚现场：美术馆包间，据说菜单都是沈老板亲选。'},
+        {from:'shenyan', text:'闭馆后的展厅，顺路可以看一眼。只一眼。'},
+        {from:'luci', text:'[图片] 月光展厅走廊。这张必须发朋友圈。'},
+        {from:'jiangyu', text:'这里连酒杯声音都是安静的。有点意思。'},
+        {from:'susu', text:'闭馆后的美术馆！四个人包场！这待遇可以吹一年！'}
+      ]
+    },
+
+    // ===== v0.2.0: 雨天限定——首个雨天晚 20 点后触发（checkRainEvents 派发） =====
+    'rain_ambush_msg': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'下雨了！！你带伞没？我看气象雷达，那片一时半会停不了！'},
+        {from:'susu', text:'（窗外，霓城泡在雨里。灯牌的光晕被雨拉成一条条彩线。）', choice:{
+          prompt:'雨越下越大。你决定：',
+          options:[
+            {text:'冲进雨里跑回家', effects:{personality:{active:1, independent:1}, flags:{rain_choice_run:1}, thenEvent:'rain_ambush_after'}, hint:'淋一场，清醒一场'},
+            {text:'在檐下等雨小', effects:{personality:{passive:1, rational:1}, flags:{rain_choice_wait:1}, thenEvent:'rain_ambush_after'}, hint:'听雨十分钟'},
+            {text:'叫苏苏来接', effects:{personality:{dependent:1, emotional:1}, flags:{rain_choice_susu:1}, thenEvent:'rain_ambush_after'}, hint:'闺蜜是雨天的正义'}
+          ]
+        }}
+      ]
+    },
+    'rain_ambush_after': {
+      type:'message_batch', delay:2,
+      messages:[
+        {from:'susu', text:'到家记得喝热的！别感冒！霓城的雨，说大就大。'}
+      ]
+    },
+
+    // ===== v0.2.0: 中后期日常（day7-10）——选项回复按性格分化 =====
+    'week1_review': {
+      type:'message_batch', delay:0,
+      // v0.2.1: soloOnly——通用日常仅未进男主线时触发，防止侵入男主线结局段
+      trigger:{ day:7, hour:9, soloOnly:true },
+      messages:[
+        {from:'narrator', text:'（来霓城的第七天。闹钟响之前你就醒了——身体先接受了这座城市的节奏。）', choice:{
+          prompt:'躺在床上，你想：',
+          options:[
+            {text:'这一周认识了三个人，不错', effects:{personality:{active:1, rational:1}, thenEvent:'day7_shenyan_evening'}, reply:'（你把三个名字在心里过了一遍，像清点战利品。）'},
+            {text:'好像还是没适应', effects:{personality:{passive:1, emotional:1}, thenEvent:'day7_shenyan_evening'}, reply:'（陌生感没有消失，只是学会了和它同睡一张床。）'},
+            {text:'先起来，想这些没用', effects:{personality:{independent:1, rational:1}, thenEvent:'day7_shenyan_evening'}, reply:'（你掀开被子。霓城不相信赖床的人。）'}
+          ]
+        }}
+      ]
+    },
+    'day7_shenyan_evening': {
+      type:'message_batch', delay:0,
+      // v0.2.1: soloOnly——通用日常仅未进男主线时触发
+      trigger:{ day:7, hour:19, soloOnly:true },
+      messages:[
+        {from:'shenyan', text:'布展方案通过了。今晚不留下来加班？——这是陈述，不是命令。'},
+        {from:'shenyan', text:'（你注意到，他开始区分"命令"和"请求"了。）'}
+      ]
+    },
+    'day8_luci_photos': {
+      type:'message_batch', delay:0,
+      // v0.2.1: soloOnly——通用日常仅未进男主线时触发
+      trigger:{ day:8, hour:13, soloOnly:true },
+      messages:[
+        {from:'luci', text:'[图片] 早上扫街拍的。霓城早上七点和晚上七点，是两个城市。'},
+        {from:'luci', text:'哪张好？我投第二张——构图里有你上周站过的那个路口。'}
+      ]
+    },
+    'day8_jiangyu_clip': {
+      type:'message_batch', delay:0,
+      // v0.2.1: soloOnly——通用日常仅未进男主线时触发
+      trigger:{ day:8, hour:22, soloOnly:true },
+      messages:[
+        {from:'jiangyu', text:'[语音 12"]'},
+        {from:'jiangyu', text:'新歌demo，副歌还缺两个字。睡不着的代价就是半夜写歌。'}
+      ]
+    },
+    'day9_susu_gossip': {
+      type:'message_batch', delay:0,
+      // v0.2.1: soloOnly——通用日常仅未进男主线时触发
+      trigger:{ day:9, hour:15, soloOnly:true },
+      messages:[
+        {from:'susu', text:'重大情报！！本周你被三个人同时约的概率是100%！！'},
+        {from:'susu', text:'（统计样本：我。误差范围：我说是就是。）'}
+      ]
+    },
+    'day10_morning_reflect': {
+      type:'message_batch', delay:0,
+      // v0.2.1: soloOnly——通用日常仅未进男主线时触发
+      trigger:{ day:10, hour:8, soloOnly:true },
+      messages:[
+        {from:'narrator', text:'（第十天。窗外的霓虹灯还没醒，城市露出少见的灰色轮廓。）', choice:{
+          prompt:'难得安静的清晨。你决定：',
+          options:[
+            {text:'出门走走，看看睡着的霓城', effects:{personality:{active:1, independent:1}}, reply:'（你拍下了一张没有霓虹的霓城。相册里第一张"素颜"照片。）', hint:'独立探索'},
+            {text:'给最近聊得最多的人发早安', effects:{personality:{dependent:1, emotional:1}}, reply:'（发出去三秒就收到回复。原来也有人醒着。）', hint:'主动联结'},
+            {text:'再睡半小时，难得不用赶', effects:{personality:{passive:1}}, reply:'（你把闹钟按掉。十分钟后自然醒，窗外已经亮了。）', hint:'休息'}
+          ]
+        }}
+      ]
     }
   },
 });

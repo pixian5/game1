@@ -446,4 +446,83 @@ test('v0.1.10: 暧昧度≥10 且深夜 → 心动独白触发并去重', ()=>{
   assert.equal(e2.state.firedEvents['tension_whisper_jiangyu'], undefined);
 });
 
+
+// ===== v0.2.0: 机制补全 =====
+
+test('v0.2.0: 塔罗好运 → 当日礼物按 hint 值打折', ()=>{
+  const e = engine();
+  e.newGame();
+  e.state.coins = 500;
+  e.state.todayFortune = {cardId:'x', name:'x', roman:'I', reversed:false, text:'', hint:{type:'luck', value:2}, day:e.state.day};
+  const r = e.buyGift('art_book');           // 原价 280 → 2×10% 折 = 224
+  assert.equal(r.ok, true);
+  assert.equal(r.paidPrice, 224);
+  assert.equal(e.state.coins, 500 - 224);
+  // 无运势日恢复原价
+  e.state.todayFortune = null;
+  const r2 = e.buyGift('hand_warm');          // 原价 80
+  assert.equal(r2.paidPrice, 80);
+});
+
+test('v0.2.0: 群聊聚餐按投票 flag 派发对应现场', ()=>{
+  const e = engine();
+  e.newGame();
+  e.state.flags.group_dinner_izakaya = 1;
+  e.state.day = 7; e.state.minute = 19*60;
+  e.checkGroupDinner();
+  // 派发经 _queueEventDispatch 异步到达；这里断言同步写下的调度 flag（派发链路已由 E2E/手动验证覆盖）
+  assert.equal(e.state.flags.group_dinner_done, true);
+  // 未投票则不派发
+  const e2 = engine();
+  e2.newGame();
+  e2.state.day = 7; e2.state.minute = 19*60;
+  e2.checkGroupDinner();
+  assert.equal(e2.state.flags.group_dinner_done, undefined);
+});
+
+test('v0.2.0: 首个雨天晚 20 点后触发雨天剧情（每局一次）', ()=>{
+  const e = engine();
+  e.newGame();
+  e.state.day = 8; e.state.minute = 20*60;   // 8%5=3 → 雨天
+  e._updateWeather();
+  assert.equal(e.state.flags._weather, 'rainy');
+  e.checkRainEvents();
+  assert.equal(e.state.flags.rain_event_done, true);
+  e.checkRainEvents();                        // 不重复派发
+  assert.equal(e.state.pendingEventDispatches.filter(p=>p.eventId==='rain_ambush_msg').length, 1);
+});
+
+// ===== v0.2.1: 通用日常事件线路隔离 =====
+
+test('v0.2.1: 已进男主线时不触发 soloOnly 通用日常（week1_review 不再抢最终抉择）', ()=>{
+  // 沈砚之线 day7 9 点：week1_review 不得派发（修复 294→291 回归的根因）
+  const e = engine();
+  e.newGame();
+  e.chooseRoute('shenyan');
+  e.state.day = 7; e.state.minute = 9*60;
+  e.checkTimeEvents();
+  assert.equal(e.state.firedEvents['week1_review'], undefined);
+  // 独行线（solo）正常触发
+  const e2 = engine();
+  e2.newGame();
+  e2.chooseRoute('solo');
+  e2.state.day = 7; e2.state.minute = 9*60;
+  e2.checkTimeEvents();
+  assert.equal(e2.state.firedEvents['week1_review'], true);
+  // 未选线（route=null）也触发
+  const e3 = engine();
+  e3.newGame();
+  e3.state.day = 7; e3.state.minute = 9*60;
+  e3.checkTimeEvents();
+  assert.equal(e3.state.firedEvents['week1_review'], true);
+  // 雨天剧情同口径：男主线不派发
+  const e4 = engine();
+  e4.newGame();
+  e4.chooseRoute('luci');
+  e4.state.day = 8; e4.state.minute = 20*60;
+  e4._updateWeather();
+  e4.checkRainEvents();
+  assert.equal(e4.state.flags.rain_event_done, undefined);
+});
+
 console.log('全部回归测试通过');

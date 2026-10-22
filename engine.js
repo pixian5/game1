@@ -385,13 +385,48 @@ class PhoneEngine {
     this.checkEasterEggs();
     this.checkDailyTasks();
     this.checkTensionWhispers();  // v0.1.10: 暧昧度深夜独白
+    this.checkGroupDinner();      // v0.2.0: 群聊聚餐后续（按投票 flag 分歧）
+    this.checkRainEvents();       // v0.2.0: 雨天限定剧情
+  }
+  // v0.2.0: 读取「今日抽中的塔罗牌 hint 值」（hint.type 匹配且是今天抽的）；
+  // 返回 0 表示无该运势。塔罗数值从"只写 flag"变为真实影响玩法。
+  _fortuneValue(type){
+    const f = this.state.todayFortune;
+    return f && f.day === this.state.day && f.hint?.type === type ? (f.hint.value || 1) : 0;
+  }
+  // v0.2.0: 群聊聚餐后续——day7 晚按投票 flag 派发对应现场（每局一次）
+  checkGroupDinner(){
+    if(this.state.ended || this.state.flags.group_dinner_done) return;
+    const hour = Math.floor(this.state.minute / 60);
+    if(this.state.day < 7 || hour < 19) return;
+    const sceneId = this.state.flags.group_dinner_hotpot ? 'group_dinner_scene_hotpot'
+      : this.state.flags.group_dinner_izakaya ? 'group_dinner_scene_izakaya'
+      : this.state.flags.group_dinner_gallery ? 'group_dinner_scene_gallery' : null;
+    if(!sceneId || !this.story.events?.[sceneId]) return;
+    this.state.flags.group_dinner_done = true;
+    this._queueEventDispatch(sceneId, 1500);
+  }
+  // v0.2.0: 雨天限定剧情——首个雨天晚 20 点后派发（每局一次），呼应每日天气系统
+  checkRainEvents(){
+    if(this.state.ended || this.state.flags.rain_event_done) return;
+    // v0.2.1: 雨天闺蜜日常同样只服务未进男主线玩家，避免结局段插入 choice 阻塞主线
+    if(this.state.route && this.state.route !== 'solo') return;
+    if(this.state.flags._weather !== 'rainy') return;
+    const hour = Math.floor(this.state.minute / 60);
+    if(hour < 20 && hour >= 6) return;
+    if(!this.story.events?.['rain_ambush_msg']) return;
+    this.state.flags.rain_event_done = true;
+    this._queueEventDispatch('rain_ambush_msg', 1200);
   }
   _checkTimeEventsForRange(fromDay, fromHour, toDay, toHour){
     // 枚举 (day, hour) 范围内可能被跳过的时间触发事件
     const events = this.story.events;
+    // v0.2.1: 与 checkTimeEvents 同口径——已进男主线时跳过 soloOnly 通用日常
+    const inRoute = !!this.state.route && this.state.route !== 'solo';
     for(const [id, evt] of Object.entries(events)){
       if(this.state.firedEvents[id]) continue;
       if(!evt.trigger) continue;
+      if(evt.trigger.soloOnly && inRoute) continue;
       // 简化：仅检查从起点到终点之间的所有 hour
       let d = fromDay, h = fromHour;
       while(d < toDay || (d === toDay && h <= toHour)){
@@ -491,9 +526,14 @@ class PhoneEngine {
     // 检查基于时间触发的事件
     const t = this.getTime();
     const d = this.state.day;
+    // v0.2.1: 已进男主线（shenyan/luci/jiangyu）的玩家跳过通用日常事件
+    const inRoute = !!this.state.route && this.state.route !== 'solo';
     for(const [id, evt] of Object.entries(this.story.events)){
       if(this.state.firedEvents[id]) continue;
       if(evt.trigger && evt.trigger.day === d && evt.trigger.hour === t.hour){
+        // trigger.soloOnly 的通用日常事件（day7-10 中后期日常、雨天等）只在未确定男主线时派发，
+        // 否则会侵入男主线结局段（曾导致 week1_review 的 choice 抢走最终抉择，测试 294→291 失败）
+        if(evt.trigger.soloOnly && inRoute) continue;
         this.scheduleEvent(id);
       }
     }

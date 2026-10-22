@@ -6,9 +6,9 @@
 
 纯前端实现（HTML / CSS / 原生 JS），**运行时零依赖、无构建步骤**。
 
-- 当前版本：**v0.1.14**（版本唯一来源：[VERSION](VERSION)）
+- 当前版本：**v0.2.1**（版本唯一来源：[VERSION](VERSION)）
 - 主角：林夏（策展人）｜路线：沈砚之 / 陆辞 / 江屿 / 独行线（真结局）
-- 内容体量：173 个剧情事件 · 17 个结局（含 4 个隐藏）· 14 件收集品 · 15 个成就 · 3 个谜题 · 16 张塔罗 · 7 套主题（含真实壁纸）· 6 个地点
+- 内容体量：184 个剧情事件 · 17 个结局（含 4 个隐藏）· 14 件收集品 · 15 个成就 · 3 个谜题 · 16 张塔罗 · 7 套主题（含真实壁纸）· 6 个地点
 
 ## 快速开始
 
@@ -26,13 +26,14 @@ node test_server.js     # 打开 http://127.0.0.1:4187
 运行全部校验与测试：
 
 ```bash
-npm install                # 首次：安装测试依赖（@playwright/test）
+npm install                # 首次：安装测试依赖（@playwright/test / eslint）
 npm run check:version      # 版本号一致性（VERSION / package.json / index.html / sw.js）
 npm run check:ui           # 前端语法合并编译 + 引用完整性（index.html/sw.js 交叉核对）
 npm run validate:story     # 剧情数据一致性（事件引用 / 收集品路径 / flag 读写 / 结局图鉴）
-npm run test:regressions   # 引擎回归测试（19 项）
+npm run lint               # ESLint 静态检查（v0.2.1 接入）
+npm run test:regressions   # 引擎回归测试（26 项）
 npm run test:story         # 剧情链路测试（294 项断言）
-npm run test:browser       # 浏览器端到端（Playwright，4 项）
+npm run test:browser       # 浏览器端到端（Playwright，5 项）
 npm run test:all           # 一键跑全部
 ```
 
@@ -41,21 +42,23 @@ CI（[.github/workflows/test.yml](.github/workflows/test.yml)）在每次 push /
 
 ## 当前开发进度
 
-v0.1.7 完成：**三大文件模块化拆分**（story.js→story/ 19 个文件、engine.js→核心+4 混入、
-app.js→ui/ 22 个文件，拆分经快照深度比对验证）；**4 条死 flag 清零**（凌晨来电/幽灵消息/
-每日天气/隐藏结局备用条件，校验器 0 错误 0 警告）；收集品重复发放去重；存档内存缓存优化；
-新增 WebAudio 音效系统与主题环境音；6 套程序化主题壁纸；PWA（manifest + Service Worker
-离线可玩）；GitHub Pages 上线；测试端口改 4187 避开本机冲突。全部测试通过。
+v0.2.1 完成：**ESLint 接入**（分环境配置，lint 接入 test:all 与 CI）；**一键发版脚本**
+`tools/bump_version.py`（版本五处同步 + 自动 check:version）；**塔罗 hint 落地为玩法**
+（「遇见」补偶遇、「好运」购物立减，buyGift 返回实付价）；**群聊聚餐现场**（day7 按投票
+flag 三分歧）；**雨天限定剧情**（苏苏带伞 choice 三分支）；**中后期日常**（day7-10 六事件）；
+**前端错误上报**（sendBeacon → /collect-error，30s 节流）；**无障碍起步**（aria-live）；
+**通用日常线路隔离修复**（trigger.soloOnly：通用日常仅未进男主线触发，修复 294→291 回归，
+test:story 294/294 全过）；回归测试 26 项全过。
 
-👉 详细进度：[docs/20261011-0222-当前开发进度-GLM.md](docs/20261011-0222-当前开发进度-GLM.md)
-👉 技术细节：[docs/20261011-0222-v0.1.7-全面修复与模块化拆分-GLM.md](docs/20261011-0222-v0.1.7-全面修复与模块化拆分-GLM.md)
+👉 详细进度：[docs/20261022-2144-当前开发进度-Doubao.md](docs/20261022-2144-当前开发进度-Doubao.md)
+👉 技术细节：[docs/20261022-2144-v0.2.1-通用日常隔离与版本收尾-Doubao.md](docs/20261022-2144-v0.2.1-通用日常隔离与版本收尾-Doubao.md)
 
 ## 下一步待实现
 
-优先：数值闭环推进（好感/塔罗对结局判定）、照片 AI 生图接入（待图像 API）、
-`story/18_patches.js` 收编、音频丰富度。另有需拍板项（文档命名、素材去留、是否要桌面版）。
+优先：确认自有服务器 `/collect-error` 部署侧配置（前端错误上报依赖）；独行线中后期
+内容观察；壁纸视觉验收与音频丰富度；塔罗 hint 文案变体。
 
-👉 详细清单：[docs/20261011-0222-下一步待实现-GLM.md](docs/20261011-0222-下一步待实现-GLM.md)
+👉 详细清单：[docs/20261022-2144-下一步待实现-Doubao.md](docs/20261022-2144-下一步待实现-Doubao.md)
 
 ## 目录结构
 
@@ -72,7 +75,8 @@ app.js→ui/ 22 个文件，拆分经快照深度比对验证）；**4 条死 fl
 | `save_migrations.js` | 存档版本迁移 |
 | `manifest.json` / `sw.js` / `pwa.js` | PWA：应用清单 / 离线缓存 / 注册 |
 | `assets/` | 壁纸（`tools/generate_wallpapers.py` 生成）与图标（`tools/generate_icons.py` 生成） |
-| `tools/` | 资产生成脚本（Python + PIL，可重跑再生成） |
+| `tools/` | 资产生成脚本（`generate_wallpapers.py` / `generate_icons.py`，Python + PIL）与一键发版脚本（`bump_version.py`） |
+| `eslint.config.mjs` | ESLint 分环境配置（浏览器/Node/ui 分域，v0.2.1 接入） |
 | `deploy.sh` | 一键部署到自有服务器（oh.sbbz.tech:9443，先跑通 test:all 再执行） |
 | `validate_story.js` | 剧情数据一致性校验器（CI 使用） |
 | `check_version.js` | 版本号一致性校验（CI 使用，含 sw.js 缓存版本） |
@@ -91,7 +95,9 @@ app.js→ui/ 22 个文件，拆分经快照深度比对验证）；**4 条死 fl
 ## 版本管理
 
 - `VERSION` 是唯一版本源；每次修改 **+0.0.1**（每一位满十进一）
-- 修改后必须同步 `package.json` / `package-lock.json` / `index.html`（标题、meta、所有 `?v=` 缓存参数）/**`sw.js` 的 `CACHE_VERSION`**，并运行 `npm run check:version`（CI 会拦截不一致）
+- 发版：`python3 tools/bump_version.py` 一键同步 `VERSION / package.json /
+  package-lock.json / index.html（标题、meta、所有 `?v=` 缓存参数）/ sw.js 的
+  `CACHE_VERSION`，随后 `npm run check:version` 验证（CI 会拦截不一致）
 - 每个版本的问题/经验记录写入 `docs/`（命名：`年月日时分-标题-模型名.md`）
 
 ## 开发约定

@@ -256,6 +256,23 @@ Object.assign(PhoneEngine.prototype, {
       catch(_) { return false; }
     });
     if(available.length === 0){
+      // v0.2.0: 塔罗「遇见」hint 落地——此地无事但今日运势高时，50% 概率「转角撞见」：
+      // 从全城已满足条件且未触发过的偶遇里随机补一场（每局一次）
+      const enc2 = this._fortuneValue('encounter') && !this.state.flags.encounter_fortune_used
+        ? Object.values(this.story.locations).flatMap(loc => (loc.encounters||[]).filter(e => {
+            if(e.once && this.state.visitedEncounters[e.id]) return false;
+            try { return !e.condition || e.condition(this.state); } catch(_) { return false; }
+          }))
+        : [];
+      if(enc2.length > 0 && Math.random() < 0.5){
+        this.state.flags.encounter_fortune_used = true;
+        const pick = enc2[Math.floor(Math.random() * enc2.length)];
+        this.state.visitedEncounters[pick.id] = true;
+        this._addInteraction({id:`encounter:fortune:${pick.id}`, type:'encounter', locId:null, encounterId:pick.id});
+        this.emit('encounterTriggered', {locId:null, enc:pick, isFortune:true});
+        this.emit('stateChange', this.state);
+        return true;
+      }
       this.emit('encounterEmpty', {locId});
       return false;
     }
@@ -540,12 +557,15 @@ Object.assign(PhoneEngine.prototype, {
   buyGift(itemId){
     const item = this.story.shop.items[itemId];
     if(!item) return {ok:false, reason:'物品不存在'};
-    if(this.state.coins < item.price) return {ok:false, reason:'金币不足'};
-    this.state.coins -= item.price;
+    // v0.2.0: 塔罗「好运」hint 落地——今日每件立减 hint 值×10%（下限 10% 折）
+    const luck = this._fortuneValue('luck');
+    const price = luck ? Math.max(1, Math.round(item.price * Math.max(0.1, 1 - luck * 0.1))) : item.price;
+    if(this.state.coins < price) return {ok:false, reason:'金币不足'};
+    this.state.coins -= price;
     this.state.inventory.push({id:itemId, ts:Date.now()});
     this.emit('stateChange', this.state);
     this.checkAchievements();
-    return {ok:true, item};
+    return {ok:true, item, paidPrice: price};
   },
 
   giveGift(toCharId, itemId){
