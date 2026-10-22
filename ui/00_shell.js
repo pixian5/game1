@@ -82,6 +82,14 @@
     toastTimer = setUiTimeout(()=>{ t.hidden = true; }, 1500);
   }
 
+  // ===== 角色头像 =====
+  function avatarImg(char){
+    if(char && char.avatarImg){
+      return `<img class="avatar-img" src="${char.avatarImg}" alt="" loading="lazy">`;
+    }
+    return escapeHtml(char && char.avatar ? char.avatar : '?');
+  }
+
   // ===== 通知 =====
   function showNotif(from, text, onClick){
     const char = STORY.characters[from];
@@ -91,7 +99,7 @@
     const n = document.createElement('div');
     n.className = 'notif';
     n.innerHTML = `
-      <div class="n-icon" style="background:${char.bg}">${char.avatar}</div>
+      <div class="n-icon" style="background:${char.bg}">${avatarImg(char)}</div>
       <div class="n-content">
         <div class="n-title">${char.name}</div>
         <div class="n-text">${escapeHtml(text)}</div>

@@ -91,7 +91,7 @@
       }
       return `<div class="persp-card ${lockedCls}">
         <div class="persp-card-header">
-          <div class="persp-card-avatar" style="background:${char.bg||'#333'}">${char.avatar||'?'}</div>
+          <div class="persp-card-avatar" style="background:${char.bg||'#333'}">${avatarImg(char)}</div>
           <div>
             <div class="persp-card-title">${escapeHtml(p.title)}</div>
             <div class="persp-card-status">${statusText}</div>

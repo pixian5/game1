@@ -15,7 +15,7 @@
       const item = document.createElement('div');
       item.className = 'voicemail-item' + (vm.heard ? '' : ' unheard');
       item.innerHTML = `
-        <div class="vm-icon">${char.avatar}</div>
+        <div class="vm-icon">${avatarImg(char)}</div>
         <div class="vm-info">
           <div class="vm-name">${char.name}</div>
           <div class="vm-text">${escapeHtml(vm.text)}</div>

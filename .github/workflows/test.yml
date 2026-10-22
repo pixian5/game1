@@ -7,7 +7,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,5 +21,12 @@ jobs:
       - run: npm run lint
       - run: npm run test:regressions
       - run: npm run test:story
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('node_modules/@playwright/test/package.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser

@@ -44,7 +44,7 @@
       const hasRelStage = !!(STORY.relationshipStages && STORY.relationshipStages[cid]);
       const stageNum = hasRelStage ? engine.getRelationshipStageNum(cid) : '—';
       html += `<div class="player-nick-row">
-        <div class="player-nick-char" style="background:${char.bg}">${char.avatar}</div>
+        <div class="player-nick-char" style="background:${char.bg}">${avatarImg(char)}</div>
         <div class="player-nick-info">
           <div class="player-nick-call">${escapeHtml(nick.call)}</div>
           ${nick.inner ? `<div class="player-nick-inner">"${escapeHtml(nick.inner)}"</div>` : ''}

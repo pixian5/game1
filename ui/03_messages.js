@@ -23,7 +23,7 @@
       item.dataset.conv = id;
       const preview = last ? (last.from==='me'?'你: ':'') + last.text : '暂无消息';
       item.innerHTML = `
-        <div class="conv-avatar" style="background:${char.bg}">${char.avatar}</div>
+        <div class="conv-avatar" style="background:${char.bg}">${avatarImg(char)}</div>
         <div class="conv-info">
           <div class="conv-top">
             <span class="conv-name">${char.name}</span>
@@ -109,7 +109,7 @@
     const char = STORY.characters[convId];
     const conv = engine.state.conversations[convId];
     if(!char || !conv) return;
-    $('chat-avatar').textContent = char.avatar;
+    $('chat-avatar').innerHTML = avatarImg(char);
     $('chat-avatar').style.background = char.bg;
     $('chat-name').textContent = char.name;
     $('chat-status').textContent = conv.typing ? '正在输入…' : '在线';

@@ -16,7 +16,7 @@
       const aff = engine.state.affection[item.charId] || 0;
       html += `<div class="aff-dim-card">
         <div class="aff-dim-header">
-          <div class="aff-dim-avatar" style="background:${char.bg}">${escapeHtml(char.avatar)}</div>
+          <div class="aff-dim-avatar" style="background:${char.bg}">${avatarImg(char)}</div>
           <div class="aff-dim-info">
             <div class="aff-dim-name">${escapeHtml(char.name)}</div>
             <div class="aff-dim-total">综合好感 <strong>${aff}</strong> · 三轴合计 ${total}</div>
@@ -190,7 +190,7 @@
       const statusClass = s.canDate && s.availableScenes.length > 0 ? 'available' : 'cooldown';
       html += `<div class="date-char-card">
         <div class="date-char-header">
-          <div class="date-char-avatar" style="background:${char.bg}">${escapeHtml(char.avatar)}</div>
+          <div class="date-char-avatar" style="background:${char.bg}">${avatarImg(char)}</div>
           <div class="date-char-info">
             <div class="date-char-name">${escapeHtml(char.name)}</div>
             <div class="date-char-status ${statusClass}">${statusText}</div>
@@ -236,7 +236,7 @@
     const char = STORY.characters[charId];
     const content = $('date-scene-content');
     let html = `<div class="date-scene-title">${escapeHtml(scene.name)}</div>
-      <div class="date-scene-bg-char" style="background:${char.bg}">${escapeHtml(char.avatar)}</div>
+      <div class="date-scene-bg-char" style="background:${char.bg}">${avatarImg(char)}</div>
       <div class="date-dialogue-list">`;
     (scene.dialogue||[]).forEach(d => {
       const who = d.who === 'me' ? 'me' : 'him';

@@ -64,7 +64,7 @@
       const charCommentsBlock = charCommentsHtml ? `<div class="moment-char-comments">${charCommentsHtml}</div>` : '';
       item.innerHTML = `
         <div class="moment-top">
-          <div class="moment-avatar" style="background:${escapeHtml(m.bg)}">${escapeHtml(m.avatar)}</div>
+          <div class="moment-avatar" style="background:${escapeHtml(m.bg)}">${avatarImg(m)}</div>
           <div class="moment-body">
             <div class="moment-name">${escapeHtml(m.name)}</div>
             <div class="moment-text">${nl2brEscaped(m.text)}</div>

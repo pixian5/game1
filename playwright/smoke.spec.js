@@ -105,3 +105,34 @@ test('相册照片全部加载并可查看大图（v0.2.5）', async ({page}) =>
   await page.locator('.photo-close').click();
   await expect(page.locator('#album-app')).toHaveClass(/active/);
 });
+
+// v0.2.6: 4 张角色插画头像接入聊天与通讯录
+test('角色头像在聊天/通讯录加载（v0.2.6）', async ({page}) => {
+  await page.goto('/');
+  await page.locator('#lock-screen').click();
+  await page.evaluate(() => openConversation('susu'));
+  await expect(page.locator('#chat-screen')).toHaveClass(/active/);
+  const chatAvatar = page.locator('#chat-avatar img');
+  await expect(chatAvatar).toHaveAttribute('src', 'assets/avatars/susu.jpg');
+  expect(await chatAvatar.evaluate(i => i.naturalWidth)).toBe(512);
+
+  await page.evaluate(() => { renderContacts(); showScreen('contacts'); });
+  await expect(page.locator('.contact-avatar img')).toHaveCount(4);
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('.contact-avatar img')].every(i => i.complete && i.naturalWidth === 512)
+  );
+  await page.locator('[data-contact="shenyan"]').click();
+  await expect(page.locator('#char-profile-screen')).toHaveClass(/active/);
+  const profileAvatar = page.locator('.char-profile-avatar img');
+  await expect(profileAvatar).toHaveAttribute('src', 'assets/avatars/shenyan.jpg');
+  expect(await profileAvatar.evaluate(i => i.naturalWidth)).toBe(512);
+
+  await page.evaluate(() => {
+    engine.postMoment('moment_shenyan_opening');
+    renderMoments();
+    showScreen('moments');
+  });
+  const momentAvatar = page.locator('.moment-avatar img').first();
+  await expect(momentAvatar).toHaveAttribute('src', 'assets/avatars/shenyan.jpg');
+  expect(await momentAvatar.evaluate(i => i.naturalWidth)).toBe(512);
+});

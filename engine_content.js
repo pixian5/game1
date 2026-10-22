@@ -50,6 +50,7 @@ Object.assign(PhoneEngine.prototype, {
       author: tmpl.author,
       name: char?.name || tmpl.author,
       avatar: char?.avatar || '?',
+      avatarImg: char?.avatarImg || '',
       bg: char?.bg || '#2a2f5a',
       text: tmpl.text,
       art: tmpl.art || null,

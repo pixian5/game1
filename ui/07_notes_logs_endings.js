@@ -48,7 +48,7 @@
       div.className = 'call-item';
       const typeText = c.type==='incoming'?'已接来电':c.type==='missed'?'未接来电':'已拨出';
       div.innerHTML = `
-        <div class="call-avatar" style="background:${char?.bg||'#2a2f5a'}">${char?.avatar||'?'}</div>
+        <div class="call-avatar" style="background:${char?.bg||'#2a2f5a'}">${avatarImg(char)}</div>
         <div class="call-info">
           <div class="call-name">${escapeHtml(c.name)}</div>
           <div class="call-meta">${escapeHtml(typeText)} · ${escapeHtml(c.duration)}</div>

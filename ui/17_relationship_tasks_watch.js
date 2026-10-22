@@ -17,7 +17,7 @@
       const pct = Math.min(100, (aff / maxAff) * 100);
       html += `<div class="rel-card">
         <div class="rel-card-header">
-          <div class="rel-card-avatar" style="background:${char.bg}">${char.avatar}</div>
+          <div class="rel-card-avatar" style="background:${char.bg}">${avatarImg(char)}</div>
           <div class="rel-card-info">
             <div class="rel-card-name">${escapeHtml(char.name)}</div>
             <div class="rel-card-stage">阶段 ${curStageNum} · ${escapeHtml(r.stage.name)} · ${escapeHtml(r.stage.title)}</div>

@@ -13,7 +13,7 @@
       item.className = 'contact-item';
       item.dataset.contact = id;
       item.innerHTML = `
-        <div class="contact-avatar" style="background:${char.bg}">${char.avatar}</div>
+        <div class="contact-avatar" style="background:${char.bg}">${avatarImg(char)}</div>
         <div class="contact-info">
           <div class="contact-name">${char.name}</div>
           <div class="contact-desc">${profile?.bio || char.desc || ''}</div>
@@ -29,7 +29,7 @@
     const body = $('char-profile-body');
     let html = `
       <div class="char-profile-header">
-        <div class="char-profile-avatar" style="background:${char.bg}">${char.avatar}</div>
+        <div class="char-profile-avatar" style="background:${char.bg}">${avatarImg(char)}</div>
         <div class="char-profile-name">${char.name}</div>
         <div class="char-profile-bio">${profile.bio}</div>
         <div class="char-profile-tags">

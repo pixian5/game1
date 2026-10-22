@@ -87,7 +87,7 @@
       <div class="gift-send-char">
         ${['shenyan','luci','jiangyu'].map(cid=>{
           const c = STORY.characters[cid];
-          return `<button class="gift-send-char-btn" data-gift-char="${cid}" style="background:${c.bg}" title="${c.name}">${c.avatar}</button>`;
+          return `<button class="gift-send-char-btn" data-gift-char="${cid}" style="background:${c.bg}" title="${c.name}">${avatarImg(c)}</button>`;
         }).join('')}
       </div>
       <div class="gift-pref-hint" id="gift-pref-hint">点击头像查看他对此礼物的喜好</div>
