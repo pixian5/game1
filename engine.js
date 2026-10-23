@@ -432,6 +432,7 @@ class PhoneEngine {
       if(this.state.firedEvents[id]) continue;
       if(!evt.trigger) continue;
       if(evt.trigger.soloOnly && inRoute) continue;
+      if(evt.trigger.inRoute && !inRoute) continue;   // v0.3.1: 男主线专属中后期日常（仅已进男主线时触发）
       // 简化：仅检查从起点到终点之间的所有 hour
       let d = fromDay, h = fromHour;
       while(d < toDay || (d === toDay && h <= toHour)){
@@ -539,6 +540,7 @@ class PhoneEngine {
         // trigger.soloOnly 的通用日常事件（day7-10 中后期日常、雨天等）只在未确定男主线时派发，
         // 否则会侵入男主线结局段（曾导致 week1_review 的 choice 抢走最终抉择，测试 294→291 失败）
         if(evt.trigger.soloOnly && inRoute) continue;
+        if(evt.trigger.inRoute && !inRoute) continue;   // v0.3.1: 男主线专属中后期日常
         this.scheduleEvent(id);
       }
     }

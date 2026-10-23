@@ -1263,6 +1263,48 @@ Object.assign(STORY, {
       ]
     },
 
+    // ===== v0.3.1 (M3.3): 男主线中后期日常（day15-17）——纯消息、inRoute（仅已进男主线）=====
+    // 与独行线日常对称：三条男主线共用中性文案（不特指某男主），带塔罗 hint 变体
+    // day15：工作日常（开幕筹备期，忙碌中的彼此留白）
+    'day15_route_work': {
+      type:'message_batch', delay:0,
+      trigger:{ day:15, hour:10, inRoute:true },
+      messages:[
+        {from:'narrator', text:'（开幕在即，你在展厅忙到很晚。手机在口袋里安静了一整晚——没有人催你回。）',
+          flavors:{
+            rational:'（开幕在即，你在展厅忙到很晚。布展清单一条条划掉，效率意外地高。）',
+            affection:'（开幕在即，你在展厅忙到很晚。中间他发来一句"记得吃饭"，你盯着看了几秒才继续干活。）',
+            memory:'（开幕在即，你在展厅忙到很晚。挂画的姿势，让你想起第一次布展那天手忙脚乱的样子。）'
+          }}
+      ]
+    },
+    // day16：城市夜色（关系推进中的回味）
+    'day16_route_city': {
+      type:'message_batch', delay:0,
+      trigger:{ day:16, hour:20, inRoute:true },
+      messages:[
+        {from:'narrator', text:'（霓城的夜。你走在回家的路上，忽然想起他最近说过的一句话。）',
+          flavors:{
+            memory:'（霓城的夜。你走在回家的路上，那句话像旧唱片一样，在心里转了一整天。）',
+            affection:'（霓城的夜。你走在回家的路上，那句话让你的脚步不自觉地轻了一点。）',
+            dream:'（霓城的夜。你走在回家的路上，路灯一盏盏亮起，像有人提前替你铺好了路。）'
+          }}
+      ]
+    },
+    // day17：三周小结（男主线版，关系比预想更近）
+    'day17_route_three': {
+      type:'message_batch', delay:0,
+      trigger:{ day:17, hour:9, inRoute:true },
+      messages:[
+        {from:'narrator', text:'（来霓城三周。有些关系，比你以为的更近了一点。）',
+          flavors:{
+            affection:'（来霓城三周。你发现自己开始习惯，消息里那个人的名字总是在最上面。）',
+            rational:'（来霓城三周。你把最近的相处在脑子里捋了捋——边界感还在，但心甘情愿让出了一格。）',
+            luck:'（来霓城三周。回头看，遇见、重逢、并肩，好像都赶上了对的时辰。）'
+          }}
+      ]
+    },
+
     // ===== v0.2.9 (M3.1): 独行线后期日常（day15-18）——纯消息、soloOnly，带塔罗 hint 变体 =====
     // day15：半月小结（回望这段独自生活的节奏）
     'day15_half_month': {

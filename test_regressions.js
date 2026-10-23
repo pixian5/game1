@@ -659,6 +659,37 @@ test('v0.2.10: day19 情报日常按 hint 变体切换（默认保留）', ()=>{
   assert.ok(sent.includes('手快有'));
 });
 
+// ===== v0.3.1 (M3.3): 男主线中后期日常 day15-17（inRoute） =====
+
+test('v0.3.1: 男主线中后期日常按 inRoute 触发（独行线不触发）', ()=>{
+  // 男主线 day15 10 点 → day15_route_work 派发
+  const e = engine();
+  e.newGame();
+  e.chooseRoute('luci');
+  e.state.day = 15; e.state.minute = 10*60;
+  e.checkTimeEvents();
+  assert.equal(e.state.firedEvents['day15_route_work'], true);
+  // 独行线 day15 10 点 → 不派发
+  const e2 = engine();
+  e2.newGame();
+  e2.chooseRoute('solo');
+  e2.state.day = 15; e2.state.minute = 10*60;
+  e2.checkTimeEvents();
+  assert.equal(e2.state.firedEvents['day15_route_work'], undefined);
+  for(const id of ['day15_route_work','day16_route_city','day17_route_three']){
+    assert.ok(e.story.events[id], id + ' 存在');
+  }
+});
+
+test('v0.3.1: 独行线日常在男主线仍不触发（soloOnly 回归对照）', ()=>{
+  const e = engine();
+  e.newGame();
+  e.chooseRoute('shenyan');
+  e.state.day = 15; e.state.minute = 9*60;
+  e.checkTimeEvents();
+  assert.equal(e.state.firedEvents['day15_half_month'], undefined);
+});
+
 // ===== v0.2.4: hint 变体再扩展（群聊投票 + 抽牌即时反馈） =====
 
 test('v0.2.4: 群聊投票消息数据层自带 luck 变体（默认文本保留）', ()=>{
