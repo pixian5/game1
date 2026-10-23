@@ -156,6 +156,8 @@
     if(phoneFrame){
       phoneFrame.style.setProperty('--ambience-overlay', overlay);
     }
+    // v0.2.7 (M1.3): 同步把氛围纹理合成进壁纸层
+    if(typeof composeWallpaper === 'function') composeWallpaper();
   }
 
   function handleMomentReply(replyData){

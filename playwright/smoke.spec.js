@@ -136,3 +136,48 @@ test('角色头像在聊天/通讯录加载（v0.2.6）', async ({page}) => {
   await expect(momentAvatar).toHaveAttribute('src', 'assets/avatars/shenyan.jpg');
   expect(await momentAvatar.evaluate(i => i.naturalWidth)).toBe(512);
 });
+
+// v0.2.7: 氛围纹理（雨天/夜晚/不安）随 ambience 合成进壁纸层（M1.3）
+test('氛围壁纸随 ambience 切换（v0.2.7）', async ({page}) => {
+  await page.goto('/');
+  await page.waitForFunction(() => window.__neonTest && window.__neonTest.engine);
+
+  const probe = await page.evaluate(() => {
+    const e = window.__neonTest.engine;
+    e.state.flags = e.state.flags || {};
+    const apply = () => {
+      e.emit('ambienceChange', e.getCurrentAmbience());
+      return {
+        id: e.getCurrentAmbience()?.id || null,
+        wp: document.body.style.getPropertyValue('--wallpaper-1'),
+        blend: document.body.style.getPropertyValue('--wallpaper-blend'),
+      };
+    };
+    // 先排除优先级更高的条件干扰
+    e.state.flags._weather = 'sunny';
+    e.state.mood = 'normal';
+    e.state.todayFortune = null;
+
+    e.state.minute = 21 * 60;            // 夜晚
+    const night = apply();
+    e.state.flags._weather = 'rainy';    // 雨天（优先于夜晚）
+    const rainy = apply();
+    e.state.flags._weather = 'sunny';
+    e.state.mood = 'anxious';            // 不安（最高优先级）
+    const anxious = apply();
+    return {night, rainy, anxious};
+  });
+
+  expect(probe.night.id).toBe('night');
+  expect(probe.night.wp).toContain('assets/ambiences/night.jpg');
+  expect(probe.night.blend).toContain('soft-light');
+
+  expect(probe.rainy.id).toBe('rainy');
+  expect(probe.rainy.wp).toContain('assets/ambiences/rainy.jpg');
+
+  expect(probe.anxious.id).toBe('anxious');
+  expect(probe.anxious.wp).toContain('assets/ambiences/anxious.jpg');
+
+  // 背景层真正带上了氛围图
+  await expect(page.locator('.lock-bg')).toHaveCSS('background-image', /ambiences\/anxious\.jpg/);
+});

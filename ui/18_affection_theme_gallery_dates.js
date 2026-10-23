@@ -115,19 +115,34 @@
       renderThemes();
     }
   }
+  // 合成壁纸：氛围纹理(可选) + 主题图 + 主题渐变，写入 --wallpaper-1 与 --wallpaper-blend
+  // v0.2.7 (M1.3): 氛围随 ambience 切换（雨天雾感/夜晚灯海/不安暗流），叠加在主题壁纸之上
+  function composeWallpaper(){
+    const t = engine.getCurrentTheme ? engine.getCurrentTheme() : null;
+    const amb = engine.getCurrentAmbience ? engine.getCurrentAmbience() : null;
+    const layers = [], blends = [];
+    if(amb && amb.layerImage){
+      layers.push(`url('${amb.layerImage}') center/cover no-repeat`);
+      blends.push(amb.layerBlend || 'soft-light');
+    }
+    if(t && t.wallpaperImage){
+      layers.push(`url('${t.wallpaperImage}') center/cover no-repeat`);
+      blends.push('normal');
+    }
+    if(t && t.wallpaperVar){
+      layers.push(t.wallpaperVar);
+      blends.push('normal');
+    }
+    document.body.style.setProperty('--wallpaper-1', layers.length ? layers.join(', ') : 'none');
+    document.body.style.setProperty('--wallpaper-blend', blends.length ? blends.join(', ') : 'normal');
+  }
   // 把当前主题颜色变量写入 body，实现真实壁纸切换
   function applyThemeToBody(){
     const t = engine.getCurrentTheme ? engine.getCurrentTheme() : null;
     if(!t) return;
     if(t.bg) document.body.style.setProperty('--bg', t.bg);
     if(t.accent) document.body.style.setProperty('--accent', t.accent);
-    // 关键：写入 --wallpaper-1，让锁屏/主屏/背景层真正切换壁纸
-    // v0.1.7: 有 wallpaperImage 时把图片叠在渐变上层（图片 404 时该层透明，回退纯渐变）
-    if(t.wallpaperImage){
-      document.body.style.setProperty('--wallpaper-1', `url('${t.wallpaperImage}') center/cover no-repeat, ${t.wallpaperVar || 'none'}`);
-    } else if(t.wallpaperVar){
-      document.body.style.setProperty('--wallpaper-1', t.wallpaperVar);
-    }
+    composeWallpaper();  // v0.1.7: 图叠在渐变上层；v0.2.7: 再叠氛围纹理
     AudioSys.applyTheme(t.id);  // v0.1.7: 同步切换主题环境音
   }
 
