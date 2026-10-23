@@ -627,6 +627,38 @@ test('v0.2.9: day16 梅雨季日常按 hint 变体切换（默认保留）', ()=
   assert.ok(sent.includes('很多年前那场雨'));
 });
 
+// ===== v0.2.10 (M3.2): 独行线后期日常 day19-21 =====
+
+test('v0.2.10: 独行线 day19-21 日常按 soloOnly 触发（男主线不触发）', ()=>{
+  const e = engine();
+  e.newGame();
+  e.chooseRoute('solo');
+  e.state.day = 21; e.state.minute = 9*60;
+  e.checkTimeEvents();
+  assert.equal(e.state.firedEvents['day21_three_weeks'], true);
+  // 男主线 day21 → 不派发
+  const e2 = engine();
+  e2.newGame();
+  e2.chooseRoute('jiangyu');
+  e2.state.day = 21; e2.state.minute = 9*60;
+  e2.checkTimeEvents();
+  assert.equal(e2.state.firedEvents['day21_three_weeks'], undefined);
+  for(const id of ['day19_susu_tip','day20_city_habit','day21_three_weeks']){
+    assert.ok(e.story.events[id], id + ' 存在');
+  }
+});
+
+test('v0.2.10: day19 情报日常按 hint 变体切换（默认保留）', ()=>{
+  const e = engine();
+  e.newGame();
+  const msg = e.story.events['day19_susu_tip'].messages[0];
+  assert.ok(msg.text.includes('光明正大看展'), '默认文本保留');
+  e.state.todayFortune = {cardId:'sun', name:'太阳', roman:'XIX', reversed:false, text:'', hint:{type:'luck', value:1}, day:e.state.day};
+  const sent = e._flavoredText(msg);
+  assert.equal(sent, msg.flavors.luck);
+  assert.ok(sent.includes('手快有'));
+});
+
 // ===== v0.2.4: hint 变体再扩展（群聊投票 + 抽牌即时反馈） =====
 
 test('v0.2.4: 群聊投票消息数据层自带 luck 变体（默认文本保留）', ()=>{

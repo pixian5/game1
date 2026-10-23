@@ -1318,6 +1318,48 @@ Object.assign(STORY, {
           }},
         {from:'narrator', text:'（灯河节。你可以去，也可以不去。霓城会一直亮着。）'}
       ]
+    },
+
+    // ===== v0.2.10 (M3.2): 独行线后期日常 day19-21——纯消息、soloOnly，带塔罗 hint 变体 =====
+    // day19：工作/机会情报（夜场讲解，一人也能光明正大看展）
+    'day19_susu_tip': {
+      type:'message_batch', delay:0,
+      trigger:{ day:19, hour:13, soloOnly:true },
+      messages:[
+        {from:'susu', text:'情报：城南那家美术馆在招夜场讲解，你要不要报个名？不赚钱，但能光明正大看展。',
+          flavors:{
+            rational:'情报：城南那家美术馆在招夜场讲解。时薪一般，但能光明正大看展，性价比你自己算。',
+            affection:'情报：城南那家美术馆在招夜场讲解——据说沈老板偶尔去巡场，你懂的。',
+            luck:'情报：城南那家美术馆在招夜场讲解，名额就剩一个，我先帮你问了，手快有！'
+          }}
+      ]
+    },
+    // day20：城市习惯（独处也自在的日常）
+    'day20_city_habit': {
+      type:'message_batch', delay:0,
+      trigger:{ day:20, hour:21, soloOnly:true },
+      messages:[
+        {from:'narrator', text:'（你在霓城养成了新的习惯：下班绕远路，只为经过那家亮着暖灯的书店。）',
+          flavors:{
+            memory:'（你在霓城养成了新的习惯：下班绕远路，经过那家书店——像小时候会特意绕去的那条巷子。）',
+            dream:'（你在霓城养成了新的习惯：下班绕远路。有时你会在那家书店的橱窗前，做一会儿白日梦。）',
+            luck:'（你在霓城养成了新的习惯：下班绕远路——好几次刚好赶上老板关门前熄灭的最后一盏灯。）'
+          }}
+      ]
+    },
+    // day21：三周小结（一个人也把日子过得很像样）
+    'day21_three_weeks': {
+      type:'message_batch', delay:0,
+      trigger:{ day:21, hour:9, soloOnly:true },
+      messages:[
+        {from:'narrator', text:'（来霓城三周。你不再需要导航就能穿过老城区，也不再需要借口才敢一个人吃饭。）',
+          flavors:{
+            memory:'（来霓城三周。有些事你以前觉得做不到，现在做起来，像早就习惯了。）',
+            rational:'（来霓城三周。你把住的地方收拾利落，日程排得明白——一个人也把日子过得像样。）',
+            luck:'（来霓城三周。回头看，当初那个"要不要留下来"的犹豫，好像是别人替你做的决定。）'
+          }},
+        {from:'susu', text:'三周！本情报王正式宣布：你已经是个合格的霓城人了。今晚奖励自己一顿好的！'}
+      ]
     }
   },
 });
