@@ -595,6 +595,38 @@ test('v0.2.3: 独行线 day11+ 日常按 soloOnly 触发（男主线不触发）
   }
 });
 
+// ===== v0.2.9 (M3.1): 独行线后期日常 day15+ =====
+
+test('v0.2.9: 独行线 day15+ 后期日常按 soloOnly 触发（男主线不触发）', ()=>{
+  const e = engine();
+  e.newGame();
+  e.chooseRoute('solo');
+  e.state.day = 15; e.state.minute = 9*60;
+  e.checkTimeEvents();
+  assert.equal(e.state.firedEvents['day15_half_month'], true);
+  // 男主线 day15 → 不派发
+  const e2 = engine();
+  e2.newGame();
+  e2.chooseRoute('luci');
+  e2.state.day = 15; e2.state.minute = 9*60;
+  e2.checkTimeEvents();
+  assert.equal(e2.state.firedEvents['day15_half_month'], undefined);
+  for(const id of ['day15_half_month','day16_rainy_city','day17_solo_night','day18_neon_festival']){
+    assert.ok(e.story.events[id], id + ' 存在');
+  }
+});
+
+test('v0.2.9: day16 梅雨季日常按 hint 变体切换（默认保留）', ()=>{
+  const e = engine();
+  e.newGame();
+  const msg = e.story.events['day16_rainy_city'].messages[0];
+  assert.ok(msg.text.includes('满地碎钻'), '默认文本保留');
+  e.state.todayFortune = {cardId:'moon', name:'月亮', roman:'XVIII', reversed:false, text:'', hint:{type:'memory', value:1}, day:e.state.day};
+  const sent = e._flavoredText(msg);
+  assert.equal(sent, msg.flavors.memory);
+  assert.ok(sent.includes('很多年前那场雨'));
+});
+
 // ===== v0.2.4: hint 变体再扩展（群聊投票 + 抽牌即时反馈） =====
 
 test('v0.2.4: 群聊投票消息数据层自带 luck 变体（默认文本保留）', ()=>{

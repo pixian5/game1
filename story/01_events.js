@@ -1261,6 +1261,63 @@ Object.assign(STORY, {
           }},
         {from:'susu', text:'两周啦！本情报王宣布：你在霓城正式"混开了"！'}
       ]
+    },
+
+    // ===== v0.2.9 (M3.1): 独行线后期日常（day15-18）——纯消息、soloOnly，带塔罗 hint 变体 =====
+    // day15：半月小结（回望这段独自生活的节奏）
+    'day15_half_month': {
+      type:'message_batch', delay:0,
+      trigger:{ day:15, hour:9, soloOnly:true },
+      messages:[
+        {from:'narrator', text:'（来霓城半个月。你开始习惯这座城的呼吸：地铁的风、天桥的灯、楼下便利店的关东煮。）',
+          flavors:{
+            memory:'（来霓城半个月。你已经分得清，哪句"有空吃饭"是真的，哪句只是客套——像很多年前就懂了一样。）',
+            rational:'（来霓城半个月。你把这半个月在脑子里过了一遍：做了几件事，推掉几件事，账很清楚。）',
+            luck:'（来霓城半个月。回头看，好几件事都赶在刚好那一刻——晚一步或早一步都不成。）'
+          }},
+        {from:'susu', text:'半月心得交一下！就一句：你现在走在霓城，像本地人了。'}
+      ]
+    },
+    // day16：天气联动（梅雨季文案，随当日运势变体）
+    'day16_rainy_city': {
+      type:'message_batch', delay:0,
+      trigger:{ day:16, hour:16, soloOnly:true },
+      messages:[
+        {from:'susu', text:'霓城进梅雨季了，出门记得带伞！顺便说，雨天的霓虹最好看，反光像满地碎钻。',
+          flavors:{
+            memory:'霓城进梅雨季了，记得带伞。雨天的霓虹你见过没有？反光在地上，像很多年前那场雨。',
+            affection:'霓城进梅雨季了，记得带伞！听说下雨天最适合两个人挤一把伞……（暗示）',
+            rational:'霓城进梅雨季了，记得带伞。雨天路滑，地铁比打车稳，别学我上次迟到。'
+          }}
+      ]
+    },
+    // day17：独行线心境（一个人也很好，夜景独处）
+    'day17_solo_night': {
+      type:'message_batch', delay:0,
+      trigger:{ day:17, hour:22, soloOnly:true },
+      messages:[
+        {from:'narrator', text:'（夜里一个人在阳台站了会儿。楼下的霓虹灭了一半，城市终于安静下来。）',
+          flavors:{
+            memory:'（夜里一个人在阳台站了会儿。风里有点旧城区的味道，你忽然不太想挪动。）',
+            dream:'（夜里一个人在阳台站了会儿。夜色深得像能一头扎进去，做一场好梦。）',
+            luck:'（夜里一个人在阳台站了会儿。抬头看见一颗很亮的星——在霓城的灯里，居然还看得见。）'
+          }},
+        {from:'narrator', text:'（一个人也很好。你想。）'}
+      ]
+    },
+    // day18：节令联动（灯河节，城市活动，一人可去可不去的从容）
+    'day18_neon_festival': {
+      type:'message_batch', delay:0,
+      trigger:{ day:18, hour:19, soloOnly:true },
+      messages:[
+        {from:'susu', text:'情报：这周末霓城办「灯河节」，整条江边挂满灯串！一个人去也超好看，我作证！',
+          flavors:{
+            luck:'情报：这周末霓城办「灯河节」，据说今年风向刚好，灯串会一路亮到江心！我去踩过点了，超灵！',
+            affection:'情报：这周末霓城办「灯河节」，整条江边挂满灯串——情侣扎堆，单身的去也不亏！',
+            rational:'情报：这周末霓城办「灯河节」。人流量大，建议错峰，八点后去江对岸看更清楚。'
+          }},
+        {from:'narrator', text:'（灯河节。你可以去，也可以不去。霓城会一直亮着。）'}
+      ]
     }
   },
 });
