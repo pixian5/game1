@@ -690,6 +690,27 @@ test('v0.3.1: 独行线日常在男主线仍不触发（soloOnly 回归对照）
   assert.equal(e.state.firedEvents['day15_half_month'], undefined);
 });
 
+// ===== v0.3.2 (M3.4): 男主线后期日常 day18-20（inRoute） =====
+
+test('v0.3.2: 男主线 day18-20 后期日常按 inRoute 触发（独行线不触发）', ()=>{
+  const e = engine();
+  e.newGame();
+  e.chooseRoute('jiangyu');
+  e.state.day = 20; e.state.minute = 20*60;
+  e.checkTimeEvents();
+  assert.equal(e.state.firedEvents['day20_route_city'], true);
+  // 独行线 day20 20 点 → 不派发
+  const e2 = engine();
+  e2.newGame();
+  e2.chooseRoute('solo');
+  e2.state.day = 20; e2.state.minute = 20*60;
+  e2.checkTimeEvents();
+  assert.equal(e2.state.firedEvents['day20_route_city'], undefined);
+  for(const id of ['day18_route_open','day19_route_msg','day20_route_city']){
+    assert.ok(e.story.events[id], id + ' 存在');
+  }
+});
+
 // ===== v0.2.4: hint 变体再扩展（群聊投票 + 抽牌即时反馈） =====
 
 test('v0.2.4: 群聊投票消息数据层自带 luck 变体（默认文本保留）', ()=>{

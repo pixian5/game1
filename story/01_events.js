@@ -1305,6 +1305,47 @@ Object.assign(STORY, {
       ]
     },
 
+    // ===== v0.3.2 (M3.4): 男主线后期日常（day18-20）——纯消息、inRoute，与独行线 day18-21 对称 =====
+    // day18：开幕当晚（工作线高潮，忙碌却充实）
+    'day18_route_open': {
+      type:'message_batch', delay:0,
+      trigger:{ day:18, hour:21, inRoute:true },
+      messages:[
+        {from:'narrator', text:'（开幕当晚。展厅的灯一盏盏熄灭，你才发觉自己站了一整天，却一点都不累。）',
+          flavors:{
+            rational:'（开幕当晚。参观数据比预估的高，你把复盘记了下来，明天继续。）',
+            affection:'（开幕当晚。他离场前回头看了你一眼——那一秒，比整晚的掌声都清楚。）',
+            memory:'（开幕当晚。布展的每一步你都记得清，像把一整段日子折进了这个展厅。）'
+          }}
+      ]
+    },
+    // day19：深夜消息（关系推进中的回味）
+    'day19_route_msg': {
+      type:'message_batch', delay:0,
+      trigger:{ day:19, hour:23, inRoute:true },
+      messages:[
+        {from:'narrator', text:'（深夜。手机里那几条没舍得删的对话，你又翻了一遍。）',
+          flavors:{
+            memory:'（深夜。那几条对话你翻了一遍，时间戳停在一个平常的下午，你却记得很清楚。）',
+            affection:'（深夜。那几条对话你又翻了一遍，差点忍不住想再回一句。）',
+            dream:'（深夜。那几条对话像会发光，你看着看着，做了一个很轻的梦。）'
+          }}
+      ]
+    },
+    // day20：城市夜色（距离渐近）
+    'day20_route_city': {
+      type:'message_batch', delay:0,
+      trigger:{ day:20, hour:20, inRoute:true },
+      messages:[
+        {from:'narrator', text:'（霓城的夜。你和他的距离，好像又近了一杯咖啡的宽度。）',
+          flavors:{
+            affection:'（霓城的夜。你和他的距离，像又近了一杯咖啡的宽度——这一次你没有后退。）',
+            rational:'（霓城的夜。你复盘最近的相处：边界还在，但你好像默许了一些模糊。）',
+            luck:'（霓城的夜。今晚的霓虹，刚好是你们第一次遇见时的那两个颜色。）'
+          }}
+      ]
+    },
+
     // ===== v0.2.9 (M3.1): 独行线后期日常（day15-18）——纯消息、soloOnly，带塔罗 hint 变体 =====
     // day15：半月小结（回望这段独自生活的节奏）
     'day15_half_month': {
