@@ -3,7 +3,7 @@
  * 缓存版本号必须与根目录 VERSION 一致——check_version.js 会校验（CACHE_VERSION 行）。
  * 每次发版：VERSION +0.0.1 后同步修改这里的 CACHE_VERSION。
  */
-const CACHE_VERSION = 'neon-heart-v0.2.7';
+const CACHE_VERSION = 'neon-heart-v0.2.8';
 
 // 预缓存核心资源（与 index.html 的脚本清单保持一致）
 const PRECACHE = [
@@ -89,6 +89,8 @@ const PRECACHE = [
   './assets/ambiences/rainy.jpg',
   './assets/ambiences/night.jpg',
   './assets/ambiences/anxious.jpg',
+  // OG 分享图（M1.4 由 tools/generate_og.py 生成）
+  './assets/og-cover.jpg',
 ];
 
 self.addEventListener('install', event => {

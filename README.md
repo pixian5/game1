@@ -6,9 +6,9 @@
 
 纯前端实现（HTML / CSS / 原生 JS），**运行时零依赖、无构建步骤**。
 
-- 当前版本：**v0.2.7**（版本唯一来源：[VERSION](VERSION)）
+- 当前版本：**v0.2.8**（版本唯一来源：[VERSION](VERSION)）
 - 主角：林夏（策展人）｜路线：沈砚之 / 陆辞 / 江屿 / 独行线（真结局）
-- 内容体量：196 个剧情事件 · 17 个结局（含 4 个隐藏）· 14 件收集品 · 15 个成就 · 3 个谜题 · 16 张塔罗 · 7 套主题（含真实壁纸）· 5 张相册照片 · 4 张角色插画头像 · 3 张氛围壁纸 · 6 个地点
+- 内容体量：196 个剧情事件 · 17 个结局（含 4 个隐藏）· 14 件收集品 · 15 个成就 · 3 个谜题 · 16 张塔罗 · 7 套主题（含真实壁纸）· 5 张相册照片 · 4 张角色插画头像 · 3 张氛围壁纸 · 1 张 OG 分享图 · 6 个地点
 
 ## 快速开始
 
@@ -43,23 +43,22 @@ CI（[.github/workflows/test.yml](.github/workflows/test.yml)）在每次 push /
 
 ## 当前开发进度
 
-v0.2.7 完成：**壁纸氛围变体（M1.3）**——本地 PIL 生成雨天雾感 / 夜晚灯海 / 不安暗流
-3 张氛围纹理（585×1266，合计 168KB），随 ambience 自动合成进主题壁纸的多层背景
-（`ui/18 composeWallpaper` + `background-blend-mode`），主题不变而氛围随场景切换；
-修正 night 混合模式使夜晚正确变暗；新增第 8 条 E2E。
+v0.2.8 完成：**分享与图标（M1.4）**——本地 PIL 生成 OG 社交分享图
+`assets/og-cover.jpg`（1200×630，57KB）；`index.html` 补全 description / OG / Twitter Card
+元信息（分享链接有预览卡片）；favicon 补 sizes、manifest 加 categories，PRECACHE 75→76。
 
-上一轮（v0.2.6）：角色插画头像（M1.2，4 张 PIL 头像全界面接入）。
-上上轮（v0.2.5）：相册照片真实化（M1.1，5 张程序化照片 + 布局修复）。
+上一轮（v0.2.7）：壁纸氛围变体（M1.3，3 张氛围纹理随 ambience 合成壁纸）。
+上上轮（v0.2.6）：角色插画头像（M1.2，4 张 PIL 头像全界面接入）。
 
-👉 详细进度：[docs/20261023-2216-当前开发进度-CodeArts.md](docs/20261023-2216-当前开发进度-CodeArts.md)
-👉 技术细节：[docs/20261023-2216-v0.2.7-壁纸氛围变体-CodeArts.md](docs/20261023-2216-v0.2.7-壁纸氛围变体-CodeArts.md)
+👉 详细进度：[docs/20261024-0406-当前开发进度-CodeArts.md](docs/20261024-0406-当前开发进度-CodeArts.md)
+👉 技术细节：[docs/20261024-0406-v0.2.8-分享与图标-CodeArts.md](docs/20261024-0406-v0.2.8-分享与图标-CodeArts.md)
 
 ## 下一步待实现
 
-优先：分享与图标（M1.4，OG 图 / favicon / manifest 精修）；氛围实机观感回访与深色主题
-叠加走查；确认后部署自有服务器（当前仍为 v0.1.14）并验证 `/collect-error`。
+优先：OG 分享实测（部署后验证社交平台预览卡片）；氛围实机观感回访；确认后部署自有
+服务器（当前仍为 v0.1.14）并验证 `/collect-error`。
 
-👉 详细清单：[docs/20261023-2216-下一步待实现-CodeArts.md](docs/20261023-2216-下一步待实现-CodeArts.md)
+👉 详细清单：[docs/20261024-0406-下一步待实现-CodeArts.md](docs/20261024-0406-下一步待实现-CodeArts.md)
 
 ## 目录结构
 
@@ -75,8 +74,8 @@ v0.2.7 完成：**壁纸氛围变体（M1.3）**——本地 PIL 生成雨天雾
 | `interaction_queue.js` | 交互队列（并发来电/偶遇/选择的排队与读档恢复） |
 | `save_migrations.js` | 存档版本迁移 |
 | `manifest.json` / `sw.js` / `pwa.js` | PWA：应用清单 / 离线缓存 / 注册 |
-| `assets/` | 壁纸（`tools/generate_wallpapers.py` 生成）、相册照片（`tools/generate_photos.py` 生成）、角色头像（`tools/generate_avatars.py` 生成）、氛围壁纸（`tools/generate_ambiences.py` 生成）与图标（`tools/generate_icons.py` 生成） |
-| `tools/` | 资产生成脚本（`generate_wallpapers.py` / `generate_photos.py` / `generate_avatars.py` / `generate_ambiences.py` / `generate_icons.py`，Python + PIL）与一键发版脚本（`bump_version.py`） |
+| `assets/` | 壁纸（`tools/generate_wallpapers.py` 生成）、相册照片（`tools/generate_photos.py` 生成）、角色头像（`tools/generate_avatars.py` 生成）、氛围壁纸（`tools/generate_ambiences.py` 生成）、OG 分享图（`tools/generate_og.py` 生成）与图标（`tools/generate_icons.py` 生成） |
+| `tools/` | 资产生成脚本（`generate_wallpapers.py` / `generate_photos.py` / `generate_avatars.py` / `generate_ambiences.py` / `generate_og.py` / `generate_icons.py`，Python + PIL）与一键发版脚本（`bump_version.py`） |
 | `eslint.config.mjs` | ESLint 分环境配置（浏览器/Node/ui 分域，v0.2.1 接入） |
 | `deploy.sh` | 一键部署到自有服务器（oh.sbbz.tech:9443，先跑通 test:all 再执行） |
 | `validate_story.js` | 剧情数据一致性校验器（CI 使用） |

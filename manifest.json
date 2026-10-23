@@ -3,6 +3,7 @@
   "short_name": "霓虹心事",
   "description": "「模拟一部手机」的沉浸式多线互动叙事游戏：三位男主同时找你，何时回复、回谁、已读不回都有后果。",
   "lang": "zh-CN",
+  "categories": ["games", "entertainment"],
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
