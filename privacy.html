@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self'">
+<title>隐私与数据说明 · 霓虹心事</title>
+<style>
+  :root{ --bg:#0a0612; --ink:#e8e0f0; --mute:#a99bc4; --pink:#ff5fa8; --purple:#7a5cff; }
+  html,body{ margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; line-height:1.75; }
+  .wrap{ max-width:640px; margin:0 auto; padding:32px 20px 64px; }
+  h1{ font-size:20px; background:linear-gradient(90deg,var(--pink),var(--purple));
+    -webkit-background-clip:text; background-clip:text; color:transparent; }
+  h2{ font-size:15px; color:var(--pink); margin-top:26px; }
+  p,li{ font-size:14px; }
+  ul{ padding-left:20px; }
+  .mute{ color:var(--mute); font-size:12px; }
+  a{ color:var(--pink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>隐私与数据说明</h1>
+  <p class="mute">《霓虹心事 · 林夏的手机》· 最后更新 2026-10-24</p>
+
+  <h2>一、你的游戏数据</h2>
+  <p>所有存档（进度、好感、收集、设置等）都保存在你<b>本机的浏览器存储（localStorage）</b>中，
+  不会上传到任何服务器。你可以在游戏内导出为 JSON 文件自行备份，或随时清除浏览器数据来删除它们。</p>
+
+  <h2>二、错误上报</h2>
+  <p>当页面出现脚本错误时，游戏会向<b>自有服务器</b>发送一条简短摘要（错误信息 + 出错位置 + 当前版本号），
+  仅用于定位问题。该上报：</p>
+  <ul>
+    <li>只包含上述摘要，<b>不包含</b>任何游戏存档、聊天内容、个人信息或设备标识；</li>
+    <li>发送到本项目的自有服务器，不经过任何第三方；</li>
+    <li>带 30 秒节流，且静默失败，不影响游玩。</li>
+  </ul>
+
+  <h2>三、我们不做什么</h2>
+  <ul>
+    <li>没有账号系统，不收集你的身份信息；</li>
+    <li>没有第三方追踪脚本、广告或统计 SDK；</li>
+    <li>不会把你的数据出售或分享给任何第三方。</li>
+  </ul>
+
+  <h2>四、离线与缓存</h2>
+  <p>本游戏是 PWA，使用 Service Worker 缓存自身资源以实现离线游玩；缓存内容仅为游戏文件，
+  不含你的个人数据。</p>
+
+  <p style="margin-top:32px;"><a href="./index.html">← 返回游戏</a></p>
+</div>
+</body>
+</html>

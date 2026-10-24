@@ -181,3 +181,14 @@ test('氛围壁纸随 ambience 切换（v0.2.7）', async ({page}) => {
   // 背景层真正带上了氛围图
   await expect(page.locator('.lock-bg')).toHaveCSS('background-image', /ambiences\/anxious\.jpg/);
 });
+
+// v0.3.7: 隐私与数据说明页（PWA / 合规）
+test('隐私说明页可访问且声明关键信息（v0.3.7）', async ({page}) => {
+  await page.goto('/privacy.html');
+  await expect(page).toHaveTitle(/隐私/);
+  const body = page.locator('body');
+  await expect(body).toContainText('localStorage');
+  await expect(body).toContainText('不包含');
+  await expect(body).toContainText('不经过任何第三方');
+  await expect(page.locator('a[href="./index.html"]')).toBeVisible();
+});
