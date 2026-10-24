@@ -813,4 +813,25 @@ test('v0.2.4: 抽牌后按牌面 hint 类型派发苏苏即时反馈（当日新
   }
 });
 
+// ===== v0.3.6 (B1-a): i18n 框架（文案集中层） =====
+
+test('v0.3.6: i18n 框架——查表/回退/切换/插值', ()=>{
+  const fs = require('fs'); const pathm = require('path'); const vm = require('vm');
+  const sandbox = { window: {} };
+  vm.createContext(sandbox);
+  for(const f of ['i18n/zh-CN.js','i18n/index.js']){
+    vm.runInContext(fs.readFileSync(pathm.join(__dirname, f), 'utf8'), sandbox, { filename: f });
+  }
+  const I18N = sandbox.window.I18N;
+  assert.ok(I18N, 'I18N 已挂载到 window');
+  assert.equal(I18N.getLang(), 'zh-CN', '默认中文');
+  assert.equal(I18N.translate('壁纸已切换'), '壁纸已切换', '命中语言包');
+  assert.equal(I18N.translate('未收录的文案'), '未收录的文案', '未命中回退原文');
+  assert.equal(I18N.translate('已购买：{name}', {name:'钢笔'}), '已购买：钢笔', '插值');
+  I18N.setLang('en-US');
+  assert.equal(I18N.translate('壁纸已切换'), '壁纸已切换', '无 en 包时回退原文');
+  I18N.setLang('zh-CN');
+  assert.equal(I18N.availableLangs().includes('zh-CN'), true, '语言包注册');
+});
+
 console.log('全部回归测试通过');

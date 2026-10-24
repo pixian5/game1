@@ -76,7 +76,8 @@
   let toastTimer = null;
   function toast(msg){
     const t = $('toast');
-    t.textContent = msg;
+    // v0.3.6: i18n 文案集中层——按当前语言包翻译，未命中回退原文（中文为源）
+    t.textContent = (typeof I18N !== 'undefined' && I18N.translate) ? I18N.translate(msg) : msg;
     t.hidden = false;
     clearTimeout(toastTimer);
     toastTimer = setUiTimeout(()=>{ t.hidden = true; }, 1500);

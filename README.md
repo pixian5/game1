@@ -6,7 +6,7 @@
 
 纯前端实现（HTML / CSS / 原生 JS），**运行时零依赖、无构建步骤**。
 
-- 当前版本：**v0.3.5**（版本唯一来源：[VERSION](VERSION)）
+- 当前版本：**v0.3.6**（版本唯一来源：[VERSION](VERSION)）
 - 主角：林夏（策展人）｜路线：沈砚之 / 陆辞 / 江屿 / 独行线（真结局）
 - 内容体量：210 个剧情事件 · 17 个结局（含 4 个隐藏）· 14 件收集品 · 15 个成就 · 3 个谜题 · 16 张塔罗 · 7 套主题（含真实壁纸）· 5 张相册照片 · 4 张角色插画头像 · 3 张氛围壁纸 · 1 张 OG 分享图 · 6 个地点
 
@@ -32,7 +32,7 @@ npm run check:version      # 版本号一致性（VERSION / package.json / index
 npm run check:ui           # 前端语法合并编译 + 引用完整性（index.html/sw.js 交叉核对）
 npm run validate:story     # 剧情数据一致性（事件引用 / 收集品路径 / flag 读写 / 结局图鉴）
 npm run lint               # ESLint 静态检查（v0.2.1 接入）
-npm run test:regressions   # 引擎回归测试（44 项）
+npm run test:regressions   # 引擎回归测试（45 项）
 npm run test:story         # 剧情链路测试（294 项断言）
 npm run test:browser       # 浏览器端到端（Playwright，8 项）
 npm run test:all           # 一键跑全部
@@ -43,23 +43,22 @@ CI（[.github/workflows/test.yml](.github/workflows/test.yml)）在每次 push /
 
 ## 当前开发进度
 
-v0.3.5 完成：**类型化收尾（M3.7 / 计划 A3）**——`types.js` 的 `GameState` 与
-`engine.js defaultState()` 逐字段对齐（60+ 字段）；扩展 `GameEvent`（Trigger 含
-soloOnly/inRoute、MessageItem 含 flavors）；新增 `Ambience`(layerImage/layerBlend)、
-`Puzzle`(hints) 等 7 个 typedef；types.js 95→247 行。
+v0.3.6 完成：**i18n 结构抽取（计划 B1-a）**——新增 `i18n/` 框架（translate/setLang/getLang +
+回退 + `{var}` 插值）与中文语言包（44 条 UI 固定文案）；`toast()` 内统一翻译（零改调用处）；
+index.html/sw.js 注册（PRECACHE 76→78）；回归 44→45。
 
-上一轮（v0.3.4）：谜题提示链 + 结局可达性走查（M3.6 / 计划 A1）。
-上上轮（v0.3.3）：男主线 day21 对齐 + 结局衔接对照（M3.5）。
+上一轮（v0.3.5）：类型化收尾（M3.7 / 计划 A3）。
+上上轮（v0.3.4）：谜题提示链 + 结局可达性走查（M3.6 / 计划 A1）。
 
-👉 详细进度：[docs/20261024-1007-当前开发进度-CodeArts.md](docs/20261024-1007-当前开发进度-CodeArts.md)
-👉 技术细节：[docs/20261024-1007-v0.3.5-类型化收尾-CodeArts.md](docs/20261024-1007-v0.3.5-类型化收尾-CodeArts.md)
+👉 详细进度：[docs/20261024-1016-当前开发进度-CodeArts.md](docs/20261024-1016-当前开发进度-CodeArts.md)
+👉 技术细节：[docs/20261024-1016-v0.3.6-i18n结构抽取-CodeArts.md](docs/20261024-1016-v0.3.6-i18n结构抽取-CodeArts.md)
 
 ## 下一步待实现
 
-阶段 A 仅剩 A2（音频，待实机反馈）；进入**阶段 B 海外发表**：B1 i18n 结构抽取（v0.3.6 起，
-分步）、B2 SEO·隐私、B3 部署（需 SSH 凭据）。总体路线见计划文档。
+阶段 A 完成（仅 A2 音频待反馈）；阶段 B 续：B1-b i18n 深化（动态文案 + en 骨架）、
+B2 SEO·隐私、B3 部署（需 SSH 凭据）。总体路线见计划文档。
 
-👉 详细清单：[docs/20261024-1007-下一步待实现-CodeArts.md](docs/20261024-1007-下一步待实现-CodeArts.md)
+👉 详细清单：[docs/20261024-1016-下一步待实现-CodeArts.md](docs/20261024-1016-下一步待实现-CodeArts.md)
 
 ## 目录结构
 
