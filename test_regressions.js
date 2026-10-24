@@ -742,6 +742,48 @@ test('v0.3.3: 新增日常不改变路线与结局判定（衔接对照）', ()=
   assert.equal(e.story.computeEnding(e.state, 'solo'), 'solo_good', '结局判定仍按 flag 计算');
 });
 
+// ===== v0.3.4 (M3.6): 谜题提示链 + 结局可达性走查 =====
+
+test('v0.3.4: 三个谜题均有 >=2 级提示且可判题', ()=>{
+  const e = engine();
+  for(const id of ['puzzle_shenyan_office','puzzle_luci_locker','puzzle_jiangyu_song']){
+    const p = e.story.puzzles[id];
+    assert.ok(p, id + ' 存在');
+    assert.ok(Array.isArray(p.hints) && p.hints.length >= 2, id + ' 提示 >= 2 级');
+    assert.ok(p.answer && p.answer.length === 4, id + ' 答案 4 位');
+  }
+});
+
+test('v0.3.4: solo 结局判定矩阵——四态可区分', ()=>{
+  const e = engine();
+  e.newGame();
+  e.chooseRoute('solo');
+  const f = e.state.flags;
+  e.state.achievements = {}; e.state.collected = []; e.state.personality = {};
+  delete f.solo_independent; delete f.solo_accept;
+  assert.equal(e.story.computeEnding(e.state, 'solo'), 'solo_bad', '无 flag → bad');
+  f.solo_accept = 1;
+  assert.equal(e.story.computeEnding(e.state, 'solo'), 'solo_normal', 'solo_accept → normal');
+  delete f.solo_accept; f.solo_independent = 1;
+  assert.equal(e.story.computeEnding(e.state, 'solo'), 'solo_good', 'solo_independent → good');
+  delete f.solo_independent; e.state.collected = new Array(10).fill('x');
+  assert.equal(e.story.computeEnding(e.state, 'solo'), 'solo_hidden', '收集品 ≥10 → hidden');
+});
+
+test('v0.3.4: 男主线结局判定——good/bad/normal 可区分', ()=>{
+  const e = engine();
+  e.newGame();
+  const f = e.state.flags;
+  e.state.collected = []; e.state.affection = e.state.affection || {}; e.state.affection.luci = 0;
+  const clear = ()=>{ for(const k of ['luci_hidden','luci_choice','luci_confess','luci_stop','luci_chase','luci_avoid','luci_letgo','luci_giveup']) delete f[k]; };
+  clear(); f.luci_choice = 'accept'; f.luci_confess = 1;
+  assert.equal(e.story.computeEnding(e.state, 'luci'), 'luci_good');
+  clear(); f.luci_choice = 'miss'; f.luci_avoid = 1;
+  assert.equal(e.story.computeEnding(e.state, 'luci'), 'luci_bad');
+  clear();
+  assert.equal(e.story.computeEnding(e.state, 'luci'), 'luci_normal');
+});
+
 // ===== v0.2.4: hint 变体再扩展（群聊投票 + 抽牌即时反馈） =====
 
 test('v0.2.4: 群聊投票消息数据层自带 luck 变体（默认文本保留）', ()=>{

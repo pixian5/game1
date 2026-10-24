@@ -6,7 +6,7 @@
 
 纯前端实现（HTML / CSS / 原生 JS），**运行时零依赖、无构建步骤**。
 
-- 当前版本：**v0.3.3**（版本唯一来源：[VERSION](VERSION)）
+- 当前版本：**v0.3.4**（版本唯一来源：[VERSION](VERSION)）
 - 主角：林夏（策展人）｜路线：沈砚之 / 陆辞 / 江屿 / 独行线（真结局）
 - 内容体量：210 个剧情事件 · 17 个结局（含 4 个隐藏）· 14 件收集品 · 15 个成就 · 3 个谜题 · 16 张塔罗 · 7 套主题（含真实壁纸）· 5 张相册照片 · 4 张角色插画头像 · 3 张氛围壁纸 · 1 张 OG 分享图 · 6 个地点
 
@@ -32,7 +32,7 @@ npm run check:version      # 版本号一致性（VERSION / package.json / index
 npm run check:ui           # 前端语法合并编译 + 引用完整性（index.html/sw.js 交叉核对）
 npm run validate:story     # 剧情数据一致性（事件引用 / 收集品路径 / flag 读写 / 结局图鉴）
 npm run lint               # ESLint 静态检查（v0.2.1 接入）
-npm run test:regressions   # 引擎回归测试（41 项）
+npm run test:regressions   # 引擎回归测试（44 项）
 npm run test:story         # 剧情链路测试（294 项断言）
 npm run test:browser       # 浏览器端到端（Playwright，8 项）
 npm run test:all           # 一键跑全部
@@ -43,22 +43,22 @@ CI（[.github/workflows/test.yml](.github/workflows/test.yml)）在每次 push /
 
 ## 当前开发进度
 
-v0.3.3 完成：**男主线 day21 对齐 + 结局衔接对照（M3.5）**——补 `day21_route_month`，
-独行线/男主线日常覆盖完全对齐（day15-21）；新增回归确认日常不改变 `route`、不影响
-结局判定；事件 209→210，回归 39→41。
+v0.3.4 完成：**谜题提示链 + 结局可达性走查（M3.6 / 计划 A1）**——三个谜题新增 2 级提示、
+UI 按失败次数逐级揭示；新增回归矩阵钉住 solo 四态与男主线 good/bad/normal 判定；
+回归 41→44。
 
-上一轮（v0.3.2）：男主线后期日常 day18-20（M3.4）。
-上上轮（v0.3.1）：男主线中后期日常 day15-17（M3.3，trigger 新增 inRoute）。
+上一轮（v0.3.3）：男主线 day21 对齐 + 结局衔接对照（M3.5）。
+上上轮（v0.3.2）：男主线后期日常 day18-20（M3.4）。
 
-👉 详细进度：[docs/20261024-0935-当前开发进度-CodeArts.md](docs/20261024-0935-当前开发进度-CodeArts.md)
-👉 技术细节：[docs/20261024-0935-v0.3.3-男主线day21与结局衔接-CodeArts.md](docs/20261024-0935-v0.3.3-男主线day21与结局衔接-CodeArts.md)
+👉 详细进度：[docs/20261024-0959-当前开发进度-CodeArts.md](docs/20261024-0959-当前开发进度-CodeArts.md)
+👉 技术细节：[docs/20261024-0959-v0.3.4-谜题提示链与结局走查-CodeArts.md](docs/20261024-0959-v0.3.4-谜题提示链与结局走查-CodeArts.md)
 
 ## 下一步待实现
 
-优先：结局衔接观感实机走查；日常内容已阶段饱和，可转 i18n / 部署 / 谜题与结局打磨；
-确认后部署自有服务器（当前仍为 v0.1.14）并验证 `/collect-error` 与 OG 分享。
+按《下一步开发计划》推进：阶段 A 续做 **A3 类型化**（v0.3.5）；A2 音频待实机反馈；
+阶段 B（i18n / SEO·隐私 / 部署）随后。总体路线见计划文档。
 
-👉 详细清单：[docs/20261024-0935-下一步待实现-CodeArts.md](docs/20261024-0935-下一步待实现-CodeArts.md)
+👉 详细清单：[docs/20261024-0959-下一步待实现-CodeArts.md](docs/20261024-0959-下一步待实现-CodeArts.md)
 
 ## 目录结构
 

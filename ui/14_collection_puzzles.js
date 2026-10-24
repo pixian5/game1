@@ -111,7 +111,12 @@
         <input type="text" class="pd-input" id="puzzle-answer-input" maxlength="4" placeholder="____" inputmode="numeric">
         <button class="pd-submit" data-action="submit-puzzle">提交</button>
       </div>`;
-      html += `<div class="pd-hint">${escapeHtml(puzzle.hint)}</div>`;
+      // v0.3.4: 多级提示链——首次显示 1 条，每次失败多揭示 1 条（无 hints 时回退单条 hint）
+      const hintList = puzzle.hints || (puzzle.hint ? [puzzle.hint] : []);
+      if(hintList.length){
+        const showN = Math.min(hintList.length, Math.max(1, (progress.attemptCount || 0) + 1));
+        html += `<div class="pd-hint">${hintList.slice(0, showN).map(h=>escapeHtml(h)).join('<br>')}</div>`;
+      }
       if(progress.attemptCount > 0){
         html += `<div class="pd-result fail">✗ ${escapeHtml(puzzle.onFail)}（已尝试 ${progress.attemptCount} 次）</div>`;
       }

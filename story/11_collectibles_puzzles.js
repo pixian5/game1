@@ -39,6 +39,7 @@ STORY.puzzles = {
     ],
     answer:'1402',  // 拼出 1-4-0-2 = 林夏的生日？其实指向"一四零二"=1402
     hint:'四个数字按线索顺序拼接',
+    hints:['别急着填，先把四条线索都翻开。','四个数字的先后，就是线索列出的顺序。'],
     reward:{ collectible:'memento_pen', flag:'shenyan_office_unlocked', affection:{shenyan:3} },
     onSuccess:'沈砚之看了你一眼："你比我以为的，更懂我。"',
     onFail:'密码不对。沈砚之的字条还在你口袋里。'
@@ -55,6 +56,7 @@ STORY.puzzles = {
     ],
     answer:'9182',
     hint:'四位数字，按"年月日事"的顺序',
+    hints:['他说的那句"九年又一百八十二天"，是第一个数字的来处。','顺序：年 → 日 → 月 → 事，四位依次拼。'],
     reward:{ collectible:'evidence_letter', flag:'luci_locker_unlocked', affection:{luci:3} },
     onSuccess:'陆辞看着你："……原来你还记得。"',
     onFail:'陆辞摇头："不是这个数字。再想想。"'
@@ -71,6 +73,7 @@ STORY.puzzles = {
     ],
     answer:'1243',
     hint:'四句歌词的正确顺序',
+    hints:['碎片上的数字就是歌词顺序，别按字面念。','把每句里的数字按句序 1→2→3→4 排好，就是答案。'],
     reward:{ collectible:'evidence_lyrics', flag:'jiangyu_song_unlocked', affection:{jiangyu:3} },
     onSuccess:'江屿笑了："你听懂了。"',
     onFail:'江屿摇头："顺序不对。再听一次？"'
