@@ -711,6 +711,37 @@ test('v0.3.2: 男主线 day18-20 后期日常按 inRoute 触发（独行线不�
   }
 });
 
+// ===== v0.3.3 (M3.5): 男主线 day21 对齐 + 结局衔接对照 =====
+
+test('v0.3.3: 男主线 day21 日常按 inRoute 触发（独行线不触发）', ()=>{
+  const e = engine();
+  e.newGame();
+  e.chooseRoute('shenyan');
+  e.state.day = 21; e.state.minute = 9*60;
+  e.checkTimeEvents();
+  assert.equal(e.state.firedEvents['day21_route_month'], true);
+  assert.ok(e.story.events['day21_route_month'], 'day21_route_month 存在');
+  // 独行线 day21 9 点 → 只触发独行线自身事件，不触发男主线事件
+  const e2 = engine();
+  e2.newGame();
+  e2.chooseRoute('solo');
+  e2.state.day = 21; e2.state.minute = 9*60;
+  e2.checkTimeEvents();
+  assert.equal(e2.state.firedEvents['day21_route_month'], undefined);
+  assert.equal(e2.state.firedEvents['day21_three_weeks'], true);
+});
+
+test('v0.3.3: 新增日常不改变路线与结局判定（衔接对照）', ()=>{
+  const e = engine();
+  e.newGame();
+  e.chooseRoute('solo');
+  e.state.day = 21; e.state.minute = 9*60;
+  e.checkTimeEvents();
+  assert.equal(e.state.route, 'solo', '路线不被日常改变');
+  e.state.flags.solo_independent = 1;
+  assert.equal(e.story.computeEnding(e.state, 'solo'), 'solo_good', '结局判定仍按 flag 计算');
+});
+
 // ===== v0.2.4: hint 变体再扩展（群聊投票 + 抽牌即时反馈） =====
 
 test('v0.2.4: 群聊投票消息数据层自带 luck 变体（默认文本保留）', ()=>{

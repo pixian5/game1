@@ -1345,6 +1345,19 @@ Object.assign(STORY, {
           }}
       ]
     },
+    // day21：开幕之后的复盘（男主线版小结，三线共用中性文案）
+    'day21_route_month': {
+      type:'message_batch', delay:0,
+      trigger:{ day:21, hour:9, inRoute:true },
+      messages:[
+        {from:'narrator', text:'（开幕过去了。你终于有空坐下来，把这几周的人和事，从头想了一遍。）',
+          flavors:{
+            affection:'（开幕过去了。你想的其实只有一件事：他上次说的那句话，到底算不算数。）',
+            rational:'（开幕过去了。你把状态、关系、进度都复盘了一遍，唯独"他"那一栏空着。）',
+            memory:'（开幕过去了。你想起这几周里，有好几个瞬间，你都差点脱口而出。）'
+          }}
+      ]
+    },
 
     // ===== v0.2.9 (M3.1): 独行线后期日常（day15-18）——纯消息、soloOnly，带塔罗 hint 变体 =====
     // day15：半月小结（回望这段独自生活的节奏）
