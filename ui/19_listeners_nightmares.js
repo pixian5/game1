@@ -63,7 +63,9 @@
   function openNightmareScreen(nm){
     currentNightmare = nm;
     const content = $('nightmare-content');
-    let html = `<div class="nightmare-title">🌙 ${escapeHtml(nm.name)}</div>`;
+    // v0.5.2（E5）：空舞台梦魇配专属 CG
+    const nmCg = nm.id === 'nightmare_stage' ? '<img class="nightmare-cg" src="assets/cg/cg_nightmare_stage.jpg" alt="" loading="lazy">' : '';
+    let html = `<div class="nightmare-title">🌙 ${escapeHtml(nm.name)}</div>${nmCg}`;
     html += '<div class="nightmare-dialogue">';
     (nm.dialogue||[]).forEach(d => {
       const who = d.who === 'me' ? 'me' : (d.who === 'narrator' ? 'narrator' : 'him');

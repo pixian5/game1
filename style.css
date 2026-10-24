@@ -1311,3 +1311,7 @@ body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after{
   animation-duration:0.001ms !important;animation-iteration-count:1 !important;
   transition-duration:0.001ms !important;scroll-behavior:auto !important;
 }
+
+/* v0.5.2（E5）：关键场景 CG */
+.ending-cg{width:100%;max-width:340px;border-radius:12px;border:1px solid rgba(255,255,255,0.14);margin:10px auto;display:block;}
+.nightmare-cg{width:100%;max-width:320px;border-radius:12px;margin:8px auto;display:block;border:1px solid rgba(255,255,255,0.1);}

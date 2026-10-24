@@ -3,7 +3,7 @@
  * 缓存版本号必须与根目录 VERSION 一致——check_version.js 会校验（CACHE_VERSION 行）。
  * 每次发版：VERSION +0.0.1 后同步修改这里的 CACHE_VERSION。
  */
-const CACHE_VERSION = 'neon-heart-v0.5.1';
+const CACHE_VERSION = 'neon-heart-v0.5.2';
 
 // 预缓存核心资源（与 index.html 的脚本清单保持一致）
 const PRECACHE = [
@@ -76,6 +76,12 @@ const PRECACHE = [
   './assets/icons/icon-180.png',
   // v0.4.3 (D5 缓存策略): 仅预缓存首屏必需图片；其余图片（其余壁纸/相册/氛围/OG/截图）
   // 改为运行时按需缓存——见下方 fetch 的 cache-first + 写回逻辑，避免首装一次性拉 2.6MB。
+  "./assets/cg/cg_nightmare_stage.jpg",
+  "./assets/cg/cg_rooftop_night.jpg",
+  "./assets/cg/cg_shenyan_confess.jpg",
+  "./assets/cg/cg_luci_confess.jpg",
+  "./assets/cg/cg_jiangyu_confess.jpg",
+  "./assets/cg/cg_true_ending.jpg",
   './assets/wallpapers/default.jpg',
   './assets/avatars/thumbs/shenyan.jpg',
   './assets/avatars/thumbs/luci.jpg',

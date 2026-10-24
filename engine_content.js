@@ -560,7 +560,7 @@ Object.assign(PhoneEngine.prototype, {
     this.emit('stateChange', this.state);
     // 结局是最不能丢失的状态，绕过节流立即落盘。
     this.autoSave(true);
-    this.emit('ending', ending);
+    this.emit('ending', {...ending, id: endingId});  // v0.5.2: 补 id 供 UI 挂 CG 映射
     return true;
   },
 
