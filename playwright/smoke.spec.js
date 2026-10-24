@@ -205,3 +205,17 @@ test('键盘可解锁并返回（v0.4.0）', async ({page}) => {
   await page.keyboard.press('Escape');
   await expect(page.locator('#home-screen')).toHaveClass(/active/);
 });
+
+// v0.4.1: 语义与 ARIA（D1.2 无障碍）
+test('主要控件具备可访问名与语义（v0.4.1）', async ({page}) => {
+  await page.goto('/');
+  await page.locator('#lock-screen').click();
+  await page.locator('#app-grid [data-app="messages"]').click();
+  // 返回键有可访问名
+  await expect(page.getByRole('button', {name:'返回'}).first()).toBeVisible();
+  // 消息记录容器为 log（可被读屏播报）
+  await expect(page.locator('#chat-body')).toHaveAttribute('role', 'log');
+  await expect(page.locator('#chat-body')).toHaveAttribute('aria-live', 'polite');
+  // 会话列表为 list 语义
+  await expect(page.locator('#conv-list')).toHaveAttribute('role', 'list');
+});

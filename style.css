@@ -1283,3 +1283,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--ink
 .lock-actions{margin-top:18px;display:flex;flex-direction:column;gap:8px;align-items:center;}
 .lock-action-btn{border:none;border-radius:999px;padding:8px 16px;font-size:12px;cursor:pointer;background:rgba(255,255,255,0.12);color:#fff;backdrop-filter:blur(10px);}
 .lock-action-btn.primary{background:linear-gradient(135deg,rgba(255,95,168,0.85),rgba(122,92,255,0.85));}
+
+/* v0.4.1 (D1.2 无障碍): 键盘焦点可见环 */
+:focus-visible{ outline:2px solid var(--accent, #ff5fa8); outline-offset:2px; }
