@@ -6,7 +6,7 @@
 
 纯前端实现（HTML / CSS / 原生 JS），**运行时零依赖、无构建步骤**。
 
-- 当前版本：**v0.4.5**（版本唯一来源：[VERSION](VERSION)）
+- 当前版本：**v0.4.7**（版本唯一来源：[VERSION](VERSION)）
 - 主角：林夏（策展人）｜路线：沈砚之 / 陆辞 / 江屿 / 独行线（真结局）
 - 内容体量：210 个剧情事件 · 17 个结局（含 4 个隐藏）· 14 件收集品 · 15 个成就 · 3 个谜题 · 16 张塔罗 · 7 套主题（含真实壁纸）· 5 张相册照片 · 4 张角色插画头像 · 3 张氛围壁纸 · 1 张 OG 分享图 · 6 个地点
 
@@ -43,6 +43,11 @@ CI（[.github/workflows/test.yml](.github/workflows/test.yml)）在每次 push /
 
 ## 当前开发进度
 
+v0.4.7（GLM）：**发布构建上线**（52 脚本合并单 bundle，线上首载 18.4s→3.5s）+ i18n en-US
+全量 + 新谜题/收集品 + SEO 三件 + 专用密钥 CI 自动部署 + 安全响应头 + 资源预算门禁。
+
+v0.4.5 及之前：
+
 v0.4.5 完成：**自有服务器上线**——`deploy.sh` 部署清单补齐 `i18n/` 与 `privacy.html`
 （v0.3.6/v0.3.7 新增，旧清单遗漏会导致线上脚本 404），
 主入口 `https://oh.sbbz.tech:9443/` 由 v0.1.14 一次性更新到 v0.4.5。
@@ -78,7 +83,8 @@ v0.4.5 完成：**自有服务器上线**——`deploy.sh` 部署清单补齐 `i
 | `assets/` | 壁纸（`tools/generate_wallpapers.py` 生成）、相册照片（`tools/generate_photos.py` 生成）、角色头像（`tools/generate_avatars.py` 生成）、氛围壁纸（`tools/generate_ambiences.py` 生成）、OG 分享图（`tools/generate_og.py` 生成）与图标（`tools/generate_icons.py` 生成） |
 | `tools/` | 资产生成脚本（`generate_wallpapers.py` / `generate_photos.py` / `generate_avatars.py` / `generate_ambiences.py` / `generate_og.py` / `generate_icons.py`，Python + PIL）与一键发版脚本（`bump_version.py`） |
 | `eslint.config.mjs` | ESLint 分环境配置（浏览器/Node/ui 分域，v0.2.1 接入） |
-| `deploy.sh` | 一键部署到自有服务器（oh.sbbz.tech:9443，先跑通 test:all 再执行） |
+| `deploy.sh` | 一键部署（自动构建 bundle 后 rsync dist/） |
+| `tools/build_bundle.mjs` | 发布构建：52 脚本合并单 bundle（开发零构建不变） |
 | `validate_story.js` | 剧情数据一致性校验器（CI 使用） |
 | `check_version.js` | 版本号一致性校验（CI 使用，含 sw.js 缓存版本） |
 | `check_ui.js` | 前端语法与引用完整性校验（CI 使用，v0.1.8 新增） |
