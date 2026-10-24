@@ -29,9 +29,7 @@ node tools/build_bundle.mjs
 rsync -az --delete \
   --rsync-path="mkdir -p /var/www/neon-heart && rsync" \
   -e "ssh ${SSH_OPTS[*]}" \
-  index.html bundle.js sw.js style.css manifest.json privacy.html robots.txt sitemap.xml \
-  i18n assets \
-  "$TARGET:/var/www/neon-heart/"
+  dist/ "$TARGET:/var/www/neon-heart/"
 
 echo "==> 验证"
 ssh "${SSH_OPTS[@]}" "$TARGET" "curl -sk https://127.0.0.1:9443/ | grep -o '<title>[^<]*</title>'"
