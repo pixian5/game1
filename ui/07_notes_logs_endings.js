@@ -68,9 +68,10 @@
     true_ending:'cg_true_ending', solo_hidden:'cg_true_ending', solo_good:'cg_rooftop_night',
   };
   engine.on('ending', (ending)=>{
+    const _t = window.t;  // v0.5.3（E4）
     $('ending-tag').textContent = ending.tag || 'END';
-    $('ending-title').textContent = ending.title || '';
-    $('ending-text').textContent = ending.text || '';
+    $('ending-title').textContent = _t(ending.title) || '';
+    $('ending-text').textContent = _t(ending.text) || '';
     const cg = ENDING_CG[ending.id || ''];
     $('ending-cg').src = cg ? `assets/cg/${cg}.jpg` : '';
     $('ending-cg').hidden = !cg;

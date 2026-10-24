@@ -8,7 +8,7 @@ const browser = {
   console: 'readonly', requestAnimationFrame: 'readonly', URL: 'readonly', crypto: 'readonly',
 };
 const runtimeShared = { STORY: 'readonly', PhoneEngine: 'readonly', InteractionQueue: 'readonly', SaveMigrations: 'readonly', AudioSys: 'readonly' };
-const node = { require: 'readonly', module: 'readonly', exports: 'readonly', __dirname: 'readonly', process: 'readonly', Buffer: 'readonly', console: 'readonly' };
+const node = { require: 'readonly', module: 'readonly', exports: 'readonly', __dirname: 'readonly', process: 'readonly', Buffer: 'readonly', console: 'readonly', setTimeout: 'readonly', clearTimeout: 'readonly', setInterval: 'readonly', clearInterval: 'readonly' };
 const rules = {
   'no-undef': 'error', 'no-dupe-keys': 'error', 'no-dupe-args': 'error', 'no-unreachable': 'error',
   'no-constant-condition': 'error', 'no-cond-assign': 'error', 'no-fallthrough': 'error', 'no-self-assign': 'error',

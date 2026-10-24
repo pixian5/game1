@@ -23,7 +23,13 @@
     }
     return out;
   }
-  function setLang(lang){ currentLang = lang || DEFAULT_LANG; }
+  function setLang(lang){
+    currentLang = lang || DEFAULT_LANG;
+    try {
+      localStorage.setItem('neon_lang', currentLang);
+      document.documentElement.lang = currentLang;   // v0.5.3（E4）：css 排版随语言
+    } catch(_) {}
+  }
   function getLang(){ return currentLang; }
   function availableLangs(){ return Object.keys(packs()); }
 

@@ -41,7 +41,7 @@
   }
   engine.on('itemCollected', ({item, itemId})=>{
     AudioSys.play('achieve');  // v0.1.7: 收集提示音
-    showNotif('susu', `✦ 新收集：${item.name}`);
+    showNotif('susu', `✦ ${window.t('新收集')}：${window.t(item.name)}`);
     if(screens.collection && screens.collection.classList.contains('active')){
       renderCollection(collectionCurrentCat);
     }

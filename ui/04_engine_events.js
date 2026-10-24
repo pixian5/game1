@@ -1,3 +1,4 @@
+  const _t = (typeof window.t === 'function') ? window.t : (x => x);  // v0.5.3（E4）
 /* ===== 霓虹心事 · UI：引擎事件订阅（消息送达、状态刷新、限时回复等） =====
  * 本文件由 app.js 拆分而来（v0.1.7），代码逐字搬移；原 IIFE 顶层作用域改为全局脚本共享。
  */
@@ -61,13 +62,13 @@
     modal.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);z-index:160;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:32px;animation:screenIn .4s ease;';
     modal.innerHTML = `
       <div style="font-family:var(--serif);font-size:15px;color:var(--ink-dim);margin-bottom:20px;text-align:center;line-height:1.9;letter-spacing:0.05em;max-width:300px;">
-        ${escapeHtml(choice.prompt)}
+        ${escapeHtml(_t(choice.prompt))}
       </div>
       <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:280px;">
         ${choice.options.map((opt, i)=>`
           <button class="chat-opt" data-narrator-choice="${i}" style="padding:14px;">
-            ${escapeHtml(opt.text)}
-            ${opt.hint?`<span style="color:var(--ink-mute);font-size:11px;display:block;margin-top:4px;">${escapeHtml(opt.hint)}</span>`:''}
+            ${escapeHtml(_t(opt.text))}
+            ${opt.hint?`<span style="color:var(--ink-mute);font-size:11px;display:block;margin-top:4px;">${escapeHtml(_t(opt.hint))}</span>`:''}
           </button>
         `).join('')}
       </div>
@@ -86,7 +87,7 @@
 
   function showChatChoice(convId, choice){
     const bar = $('chat-input-bar');
-    $('chat-prompt').textContent = choice.prompt;
+    $('chat-prompt').textContent = _t(choice.prompt);
     const opts = $('chat-options');
     const timeoutBar = $('chat-timeout-bar');
     const freeInput = $('chat-free-input');
@@ -121,7 +122,7 @@
       btn.className = 'chat-opt';
       // v0.0.16: 当 showOptionHints 开启时，追加智能提示
       const smartHint = engine.getOptionHint(opt);
-      const hintHtml = opt.hint ? ` <span style="color:var(--ink-mute);font-size:11px">(${escapeHtml(opt.hint)})</span>` : '';
+      const hintHtml = opt.hint ? ` <span style="color:var(--ink-mute);font-size:11px">(${escapeHtml(_t(opt.hint))})</span>` : '';
       const smartHintHtml = smartHint ? ` <span class="chat-opt-smart-hint">💡 ${escapeHtml(smartHint)}</span>` : '';
       btn.innerHTML = escapeHtml(opt.text) + hintHtml + smartHintHtml;
       btn.onclick = (e)=>{

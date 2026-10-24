@@ -41,15 +41,16 @@
   let currentEncounter = null;
   function showEncounter(enc){
     currentEncounter = enc;
-    $('encounter-title').textContent = enc.title;
-    $('encounter-desc').textContent = enc.desc;
+    const _t = window.t;  // v0.5.3（E4）
+    $('encounter-title').textContent = _t(enc.title);
+    $('encounter-desc').textContent = _t(enc.desc);
     const opts = $('encounter-options');
     opts.innerHTML = '';
     if(enc.choice){
       enc.choice.options.forEach((opt, i)=>{
         const btn = document.createElement('button');
         btn.className = 'dream-opt';
-        btn.innerHTML = escapeHtml(opt.text) + (opt.hint?` <span style="color:var(--ink-mute);font-size:11px">(${escapeHtml(opt.hint)})</span>`:'');
+        btn.innerHTML = escapeHtml(window.t(opt.text)) + (opt.hint?` <span style="color:var(--ink-mute);font-size:11px">(${escapeHtml(window.t(opt.hint))})</span>`:'');
         btn.dataset.encOpt = i;
         opts.appendChild(btn);
       });

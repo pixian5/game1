@@ -146,15 +146,16 @@
   function appendMessage(m){
     const body = $('chat-body');
     const div = document.createElement('div');
+    const _t = window.t;  // v0.5.3（E4）：剧情文本英译出口
     if(m.from === 'me'){
       div.className = 'msg send';
-      div.textContent = m.text;
+      div.textContent = _t(m.text);
     } else if(m.from === 'narrator'){
       div.className = 'msg sys';
-      div.textContent = m.text;
+      div.textContent = _t(m.text);
     } else {
       div.className = 'msg recv' + (m.isFollowup ? ' is-followup' : '');
-      div.textContent = m.text;
+      div.textContent = _t(m.text);
     }
     const time = document.createElement('span');
     time.className = 'time';
