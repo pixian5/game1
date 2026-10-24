@@ -12,7 +12,7 @@ const node = { require: 'readonly', module: 'readonly', exports: 'readonly', __d
 const rules = {
   'no-undef': 'error', 'no-dupe-keys': 'error', 'no-dupe-args': 'error', 'no-unreachable': 'error',
   'no-constant-condition': 'error', 'no-cond-assign': 'error', 'no-fallthrough': 'error', 'no-self-assign': 'error',
-  'no-use-before-define': 'off', 'no-unused-vars': 'off', 'no-redeclare': 'off',
+  'no-use-before-define': 'off', 'no-redeclare': 'off',
 };
 
 export default [

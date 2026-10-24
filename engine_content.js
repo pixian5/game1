@@ -51,6 +51,7 @@ Object.assign(PhoneEngine.prototype, {
       name: char?.name || tmpl.author,
       avatar: char?.avatar || '?',
       avatarImg: char?.avatarImg || '',
+      avatarThumb: char?.avatarThumb || '',
       bg: char?.bg || '#2a2f5a',
       text: tmpl.text,
       art: tmpl.art || null,

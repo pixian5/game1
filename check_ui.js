@@ -46,6 +46,42 @@ const notCached = htmlScripts.filter(f => !precache.includes(f));
 if(notCached.length) failures.push('✗ index.html 的脚本未加入 sw.js 离线缓存: ' + notCached.join(', '));
 else ok(`index.html 全部 ${htmlScripts.length} 个脚本已纳入离线缓存`);
 
+
+// ---------- 5) 资源体积预算（v0.4.6 P1.2：CI 门禁，防资产与脚本无限膨胀） ----------
+// 基线 v0.4.5 实测：assets 图片共约 2.5MB；阈值 = 基线 ×1.3 留余量
+const BUDGET = { singleImage: 420*1024, singleJs: 160*1024, assetsTotal: 3.3*1024*1024 };
+const imgExts = /\.(png|jpg|jpeg)$/i;
+let assetsTotal = 0;
+const walkBudget = dir => {
+  for(const name of fs.readdirSync(dir)){
+    const p = path.join(dir, name);
+    const st = fs.statSync(p);
+    if(st.isDirectory()) walkBudget(p);
+    else if(imgExts.test(name)) assetsTotal += st.size;
+  }
+};
+walkBudget(path.join(root, 'assets'));
+const imgFiles = [];
+const walkImgs = dir => {
+  for(const name of fs.readdirSync(dir)){
+    const p = path.join(dir, name);
+    if(fs.statSync(p).isDirectory()) walkImgs(p);
+    else if(imgExts.test(name)) imgFiles.push(p);
+  }
+};
+walkImgs(path.join(root, 'assets'));
+for(const p of imgFiles){
+  const sz = fs.statSync(p).size;
+  if(sz > BUDGET.singleImage) failures.push('✗ 图片超预算: ' + path.relative(root, p) + ' = ' + (sz/1024).toFixed(0) + 'KB > ' + (BUDGET.singleImage/1024).toFixed(0) + 'KB');
+}
+for(const f of fs.readdirSync(root)){
+  if(!f.endsWith('.js') && !f.endsWith('.css')) continue;
+  const sz = fs.statSync(path.join(root, f)).size;
+  if(sz > BUDGET.singleJs) failures.push('✗ 脚本超预算: ' + f + ' = ' + (sz/1024).toFixed(0) + 'KB > ' + (BUDGET.singleJs/1024).toFixed(0) + 'KB');
+}
+if(assetsTotal > BUDGET.assetsTotal) failures.push('✗ 图片资产总量超预算: ' + (assetsTotal/1024/1024).toFixed(2) + 'MB > 3.3MB');
+else notes.push('✓ 资源预算通过（图片共 ' + (assetsTotal/1024/1024).toFixed(2) + 'MB / 3.3MB，单图≤420KB，单脚本≤160KB）');
+
 for(const line of notes) console.log(line);
 if(failures.length){
   console.error('\n' + failures.join('\n'));

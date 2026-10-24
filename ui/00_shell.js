@@ -97,7 +97,7 @@
   // ===== 角色头像 =====
   function avatarImg(char){
     if(char && char.avatarImg){
-      return `<img class="avatar-img" src="${char.avatarImg}" alt="" loading="lazy" decoding="async" width="512" height="512">`;
+      return `<img class="avatar-img" src="${char.avatarThumb || char.avatarImg}" alt="" loading="lazy" decoding="async" width="128" height="128">`;
     }
     return escapeHtml(char && char.avatar ? char.avatar : '?');
   }

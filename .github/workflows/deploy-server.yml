@@ -1,0 +1,29 @@
+name: 部署自有服务器
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-server
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: 轻量校验（版本一致性 + 剧情数据，重测试由测试工作流并行执行）
+        run: |
+          npm ci
+          npm run check:version
+          npm run validate:story
+      - name: 配置部署密钥
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.NEON_DEPLOY_KEY }}" > ~/.ssh/game1_deploy
+          chmod 600 ~/.ssh/game1_deploy
+      - name: rsync 部署（复用 deploy.sh；runner 无 DNS 劫持，直连域名）
+        run: bash deploy.sh
