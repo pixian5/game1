@@ -38,7 +38,7 @@
         if(!engine.state.watchMode) return;
         if(conv){ conv.pendingChoice = null; }
         engine.sendMessage(convId, autoOpt.text, engine.normalizeOptionEffects(autoOpt));
-        toast(`🎬 观赏自动选：${autoOpt.text}`);
+        toast('🎬 ' + t('观赏自动选：{opt}', {opt: autoOpt.text}));
       }, delay);
       return;
     }

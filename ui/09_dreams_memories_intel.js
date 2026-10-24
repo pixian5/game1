@@ -24,7 +24,7 @@
   });
   engine.on('dreamResolved', ({choice})=>{
     setUiTimeout(()=>{
-      if(choice.shard) toast('✦ 获得记忆碎片：' + choice.shard);
+      if(choice.shard) toast('✦ ' + t('获得记忆碎片：{shard}', {shard: choice.shard}));
     }, 500);
     // 碎片提示后回到主屏（若 timeAdvance 随后触发会自动覆盖）
     setUiTimeout(()=>{
@@ -54,7 +54,7 @@
   });
   engine.on('memoryResolved', ({opt})=>{
     setUiTimeout(()=>{
-      if(opt.shard) toast('✦ 获得回忆碎片：' + opt.shard);
+      if(opt.shard) toast('✦ ' + t('获得回忆碎片：{shard}', {shard: opt.shard}));
     }, 300);
     setUiTimeout(()=>{
       if(screens.encounter.classList.contains('active')) showScreen('album');

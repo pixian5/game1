@@ -34,7 +34,7 @@
     }
     const hadEncounter = engine.goToLocation(locId);
     renderMap();
-    if(!hadEncounter) toast('到了' + (STORY.locations[locId]?.name || '') + '，没什么特别的');
+    if(!hadEncounter) toast(t('到了{loc}，没什么特别的', {loc: STORY.locations[locId]?.name || ''}));
   }
 
   // ===== 偶遇/回忆剧情屏 =====

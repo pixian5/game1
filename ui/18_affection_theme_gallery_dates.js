@@ -288,7 +288,7 @@
     }
     const scene = currentDateScene && currentDateScene.scene;
     currentDateScene = null;
-    toast(scene ? `完成「${scene.name}」` : '约会完成');
+    toast(scene ? t('完成「{scene}」', {scene: scene.name}) : '约会完成');
     renderDates();
     showScreen('dates');
   }

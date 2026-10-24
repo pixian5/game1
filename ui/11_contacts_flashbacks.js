@@ -104,7 +104,7 @@
       const opt = lastScene.choice?.options?.[optIdx];
       currentFlashback.choices.push({sceneIdx: currentFlashback.fb.scenes.length-1, optIdx});
       engine.resolveFlashback(currentFlashback.fbId, currentFlashback.choices);
-      toast(opt?.shard ? '收集碎片：' + opt.shard : '回忆结束');
+      toast(opt?.shard ? t('收集碎片：{shard}', {shard: opt.shard}) : '回忆结束');
       currentFlashback = null;
       setUiTimeout(()=> showScreen('home'), 1800);
       return;

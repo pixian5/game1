@@ -107,5 +107,5 @@
     const opt = STORY.routeChoice.options.find(o=>o.route===route);
     if(!opt) return;
     engine.chooseRoute(route);
-    toast(`进入${STORY.characters[route]?.name || '真结局'}线`);
+    toast(t('进入{char}线', {char: STORY.characters[route]?.name || '真结局'}));
   }

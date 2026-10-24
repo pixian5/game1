@@ -69,7 +69,7 @@
   function handleBuyGift(itemId){
     const r = engine.buyGift(itemId);
     if(!r.ok){ toast(r.reason); return; }
-    toast('已购买：' + r.item.name);
+    toast(t('已购买：{name}', {name: r.item.name}));
     renderShop(shopCurrentTab);
   }
   let giftSendItemId = null;
@@ -128,7 +128,7 @@
     closeGiftSendModal();
     if(!r.ok){ toast(r.reason); return; }
     const charName = STORY.characters[giftSendCharId]?.name || '';
-    toast(`已送出 · ${charName} 好感 +${r.gain}`);
+    toast(t('已送出 · {char} 好感 +{gain}', {char: charName, gain: r.gain}));
     renderShop(shopCurrentTab);
   }
   function closeGiftSendModal(){
@@ -190,5 +190,5 @@
     renderMood();
   }
   engine.on('moodChanged', ({mood, moodInfo})=>{
-    toast('心情：' + moodInfo.label);
+    toast(t('心情：{mood}', {mood: moodInfo.label}));
   });

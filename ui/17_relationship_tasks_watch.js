@@ -135,7 +135,7 @@
     }
   });
   engine.on('streakRewardClaimed', (r)=>{
-    toast(`连胜奖励：${r.name} +${r.reward?.coins||0}💰`);
+    toast(t('连胜奖励：{name} +{coins}💰', {name: r.name, coins: r.reward?.coins||0}));
     if(screens.tasks && screens.tasks.classList.contains('active')){
       renderTasks();
     }

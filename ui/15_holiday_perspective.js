@@ -136,7 +136,7 @@
     if(!opt) return;
     // 标记场景已看
     engine.markPerspectiveSceneSeen(currentPerspectiveCharId, currentPsceneId);
-    toast('心声：' + opt.inner);
+    toast(t('心声：{inner}', {inner: opt.inner}));
     // 返回视角列表
     setUiTimeout(()=>{
       renderPerspective();
