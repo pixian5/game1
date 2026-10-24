@@ -8,7 +8,7 @@ const browser = {
   console: 'readonly', requestAnimationFrame: 'readonly', URL: 'readonly', crypto: 'readonly',
 };
 const runtimeShared = { STORY: 'readonly', PhoneEngine: 'readonly', InteractionQueue: 'readonly', SaveMigrations: 'readonly', AudioSys: 'readonly' };
-const node = { require: 'readonly', module: 'readonly', exports: 'readonly', __dirname: 'readonly', process: 'readonly', Buffer: 'readonly' };
+const node = { require: 'readonly', module: 'readonly', exports: 'readonly', __dirname: 'readonly', process: 'readonly', Buffer: 'readonly', console: 'readonly' };
 const rules = {
   'no-undef': 'error', 'no-dupe-keys': 'error', 'no-dupe-args': 'error', 'no-unreachable': 'error',
   'no-constant-condition': 'error', 'no-cond-assign': 'error', 'no-fallthrough': 'error', 'no-self-assign': 'error',
@@ -16,7 +16,7 @@ const rules = {
 };
 
 export default [
-  { ignores: ['node_modules/**', 'test-results/**', 'playwright/**', 'coverage/**', 'assets/**'] },
+  { ignores: ['node_modules/**', 'test-results/**', 'playwright/**', 'coverage/**', 'assets/**', 'tools/*.py'] },
   // 运行时（浏览器）：story / engine* / ui / audio / pwa / sw / types
   { files: ['story/**/*.js', 'engine.js', 'engine_*.js', 'interaction_queue.js', 'save_migrations.js', 'audio.js', 'pwa.js', 'sw.js', 'types.js'],
     languageOptions: { ecmaVersion: 2024, sourceType: 'script', globals: { ...browser, ...runtimeShared } }, rules },
@@ -27,6 +27,8 @@ export default [
   // Node 侧：测试与校验脚本
   { files: ['test_*.js', 'validate_story.js', 'check_*.js', 'test_helper.js', 'test_server.js'],
     languageOptions: { ecmaVersion: 2024, sourceType: 'script', globals: { ...node, ...browser, ...runtimeShared } }, rules },
-  { files: ['tools/**'], languageOptions: { ecmaVersion: 2024, sourceType: 'script', globals: { ...node } }, rules: { ...rules, 'no-redeclare': 'error' } },
+  
+  { files: ['tools/**/*.mjs'], languageOptions: { ecmaVersion: 2024, sourceType: 'module', globals: { ...node } }, rules: { ...rules, 'no-redeclare': 'error' } },
+  { files: ['tools/*.js'], languageOptions: { ecmaVersion: 2024, sourceType: 'script', globals: { ...node } }, rules: { ...rules, 'no-redeclare': 'error' } },
   { files: ['eslint.config.mjs'], languageOptions: { ecmaVersion: 2024, sourceType: 'module', globals: { ...node } }, rules: { ...rules, 'no-redeclare': 'error' } },
 ];
