@@ -11,7 +11,7 @@
   --bubble-send:#5a3a8a;
   --ink:#f4e8ff;
   --ink-dim:#b8a6d4;
-  --ink-mute:#6e5e8a;
+  --ink-mute:#7d6d9b;
   --accent:#ff5fa8;
   --accent2:#7a5cff;
   --accent3:#39d6ff;
@@ -1286,3 +1286,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--ink
 
 /* v0.4.1 (D1.2 无障碍): 键盘焦点可见环 */
 :focus-visible{ outline:2px solid var(--accent, #ff5fa8); outline-offset:2px; }
+
+/* v0.4.2 (D1.3 无障碍): 用户偏好减弱动效时降级动画 */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}
