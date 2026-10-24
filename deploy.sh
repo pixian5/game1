@@ -23,11 +23,13 @@ VERSION=$(cat VERSION)
 echo "==> 版本 v$VERSION"
 
 # 部署清单：游戏全部运行时文件（与 sw.js 预缓存一致 + 入口页 + PWA 文件）
+# v0.4.5: 补上 i18n/ 与 privacy.html——v0.3.6 之后 index.html 依赖语言包，
+#         遗漏会导致线上脚本 404、文案回退甚至白屏
 rsync -az --delete \
   --rsync-path="mkdir -p /var/www/neon-heart && rsync" \
   -e "ssh ${SSH_OPTS[*]}" \
-  index.html manifest.json sw.js pwa.js types.js style.css audio.js \
-  story interaction_queue.js save_migrations.js engine.js engine_social.js \
+  index.html privacy.html manifest.json sw.js pwa.js types.js style.css audio.js \
+  story i18n interaction_queue.js save_migrations.js engine.js engine_social.js \
   engine_content.js engine_progress.js engine_save.js \
   ui assets \
   "$TARGET:/var/www/neon-heart/"
