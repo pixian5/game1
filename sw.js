@@ -3,7 +3,7 @@
  * 缓存版本号必须与根目录 VERSION 一致——check_version.js 会校验（CACHE_VERSION 行）。
  * 每次发版：VERSION +0.0.1 后同步修改这里的 CACHE_VERSION。
  */
-const CACHE_VERSION = 'neon-heart-v0.4.2';
+const CACHE_VERSION = 'neon-heart-v0.4.3';
 
 // 预缓存核心资源（与 index.html 的脚本清单保持一致）
 const PRECACHE = [
@@ -69,33 +69,17 @@ const PRECACHE = [
   './ui/19_listeners_nightmares.js',
   './ui/20_saves.js',
   './ui/21_init.js',
-  // 图标与壁纸
+  // 图标（安装与桌面图标必需）
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
   './assets/icons/icon-180.png',
+  // v0.4.3 (D5 缓存策略): 仅预缓存首屏必需图片；其余图片（其余壁纸/相册/氛围/OG/截图）
+  // 改为运行时按需缓存——见下方 fetch 的 cache-first + 写回逻辑，避免首装一次性拉 2.6MB。
   './assets/wallpapers/default.jpg',
-  './assets/wallpapers/starry.jpg',
-  './assets/wallpapers/sea.jpg',
-  './assets/wallpapers/sunset.jpg',
-  './assets/wallpapers/ink.jpg',
-  './assets/wallpapers/rose.jpg',
-  // 相册照片（M1.1 由 tools/generate_photos.py 生成）
-  './assets/photos/city.jpg',
-  './assets/photos/rooftop.jpg',
-  './assets/photos/album.jpg',
-  './assets/photos/studio.jpg',
-  './assets/photos/school.jpg',
-  // 角色头像（M1.2 由 tools/generate_avatars.py 生成）
   './assets/avatars/shenyan.jpg',
   './assets/avatars/luci.jpg',
   './assets/avatars/jiangyu.jpg',
   './assets/avatars/susu.jpg',
-  // 氛围壁纸（M1.3 由 tools/generate_ambiences.py 生成）
-  './assets/ambiences/rainy.jpg',
-  './assets/ambiences/night.jpg',
-  './assets/ambiences/anxious.jpg',
-  // OG 分享图（M1.4 由 tools/generate_og.py 生成）
-  './assets/og-cover.jpg',
 ];
 
 self.addEventListener('install', event => {
