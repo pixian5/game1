@@ -22,16 +22,15 @@ echo "==> 部署目标: $TARGET (端口 $PORT)"
 VERSION=$(cat VERSION)
 echo "==> 版本 v$VERSION"
 
-# 部署清单：游戏全部运行时文件（与 sw.js 预缓存一致 + 入口页 + PWA 文件）
-# v0.4.5: 补上 i18n/ 与 privacy.html——v0.3.6 之后 index.html 依赖语言包，
-#         遗漏会导致线上脚本 404、文案回退甚至白屏
+# v0.4.7: 发布构建——52 脚本合并为单 bundle（线上首载 18s→目标 <3s），从 dist/ 部署
+node tools/build_bundle.mjs
+
+# 部署清单（v0.4.7 起从 dist/ 部署：bundle 合并产物 + 静态资产，与 dist/sw.js 预缓存一致）
 rsync -az --delete \
   --rsync-path="mkdir -p /var/www/neon-heart && rsync" \
   -e "ssh ${SSH_OPTS[*]}" \
-  index.html privacy.html manifest.json sw.js pwa.js types.js style.css audio.js \
-  story i18n interaction_queue.js save_migrations.js engine.js engine_social.js \
-  engine_content.js engine_progress.js engine_save.js \
-  ui assets \
+  index.html bundle.js sw.js style.css manifest.json privacy.html robots.txt sitemap.xml \
+  i18n assets \
   "$TARGET:/var/www/neon-heart/"
 
 echo "==> 验证"

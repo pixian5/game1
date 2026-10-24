@@ -20,7 +20,10 @@ STORY.collectibles = {
   ticket_bar:       { id:'ticket_bar',       cat:'ticket',    name:'雾港首杯券',      icon:'🍸', desc:'江屿给你的第一杯酒，背面写着"算我请的"。', how:'江屿线 · 雾港酒吧' },
   ticket_gallery:   { id:'ticket_gallery',   cat:'ticket',    name:'开幕式工作证',    icon:'🎫', desc:'砚美术馆开幕式的工作证，你的名字被印成金色。', how:'开幕式当天获取' },
   memento_pen:      { id:'memento_pen',      cat:'memento',   name:'速写钢笔',        icon:'✒️', desc:'沈砚之用过多年的钢笔，笔尖磨出了他的角度。', how:'沈砚之线 · 私人画室邀约' },
-  memento_camera:   { id:'memento_camera',   cat:'memento',   name:'陆辞的胶卷',      icon:'📷', desc:'陆辞给你的过期胶卷，拍出来的人会更温柔一点。', how:'陆辞线 · 重逢邀约' }
+  memento_camera:   { id:'memento_camera',   cat:'memento',   name:'陆辞的胶卷',      icon:'📷', desc:'陆辞给你的过期胶卷，拍出来的人会更温柔一点。', how:'陆辞线 · 重逢邀约' },
+  // v0.4.7: 新收集品×2——雨天限定 + 闺蜜谜题奖励（与既有发放路径零重叠）
+  postcard_rain:    { id:'postcard_rain',    cat:'postcard',  name:'雨天限定明信片',  icon:'🌧️', desc:'雨天的霓城被拉成一条条彩线。苏苏说：雨天也要互相报平安。', how:'雨天剧情 · 选择叫苏苏来接' },
+  stamp_bff:        { id:'stamp_bff',        cat:'stamp',     name:'闺蜜暗号邮戳',    icon:'🔐', desc:'苏苏的闺蜜暗号刻成的邮戳：1350，友谊不过期。', how:'解开「苏苏的闺蜜暗号」谜题' }
 };
 
 
@@ -77,5 +80,24 @@ STORY.puzzles = {
     reward:{ collectible:'evidence_lyrics', flag:'jiangyu_song_unlocked', affection:{jiangyu:3} },
     onSuccess:'江屿笑了："你听懂了。"',
     onFail:'江屿摇头："顺序不对。再听一次？"'
+  },
+
+  // v0.4.7: 新谜题——苏苏的闺蜜暗号（4 位，奖励新收集品 postcard_rain）
+  puzzle_susu_bff_code: {
+    id:'puzzle_susu_bff_code',
+    title:'苏苏的闺蜜暗号',
+    desc:'苏苏的旧手机挂饰上刻着四位数字，她卖关子：「这是我们闺蜜间的暗号！猜对就告诉你一个秘密。」她留下的三条提示都和你们有关。',
+    clues:[
+      { id:'clue_s1', text:'你们大学宿舍的门牌：520 室的隔壁，宿舍编号个位数是 1。', digit:1 },
+      { id:'clue_s2', text:'苏苏手机里你的备注后面跟着的爱心数：一直没变过的 3 颗。', digit:3 },
+      { id:'clue_s3', text:'大一期末一起熬夜的天数：整整 5 天，咖啡罐还留着。', digit:5 },
+      { id:'clue_s4', text:'她说「友谊的保质期」时比的手势：0——不过期的意思。', digit:0 }
+    ],
+    answer:'1350',
+    hint:'三条提示加一个手势',
+    hints:['四条线索按顺序各取一位数字。','手势那次是最后一个数字——"0"代表不过期。'],
+    reward:{ collectible:'stamp_bff', flag:'susu_bff_code_unlocked' },
+    onSuccess:'苏苏蹦了起来："答对了！暗号的秘密是——不管隔多远，雨天也要互相报平安！"',
+    onFail:'苏苏摇头晃脑："不对不对～提示都写在你我回忆里啦。"'
   }
 };

@@ -47,6 +47,21 @@ if(notCached.length) failures.push('✗ index.html 的脚本未加入 sw.js 离�
 else ok(`index.html 全部 ${htmlScripts.length} 个脚本已纳入离线缓存`);
 
 
+// ---------- 4.5) i18n 语言包完整性（en-US 须覆盖 zh-CN 全部 key，v0.4.7 P2） ----------
+try {
+  const sb2 = { window: {} };
+  vm.createContext(sb2);
+  for(const f of ['i18n/index.js','i18n/zh-CN.js','i18n/en-US.js']){
+    vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), sb2, { filename: f });
+  }
+  const packs = sb2.window.I18N_PACKS || {};
+  const zhKeys = Object.keys(packs['zh-CN'] || {});
+  const enPack = packs['en-US'] || {};
+  const missing = zhKeys.filter(k => !(k in enPack));
+  if(missing.length) failures.push('✗ en-US 缺少 ' + missing.length + ' 条译文: ' + missing.slice(0,5).join(' / '));
+  else notes.push('✓ i18n 完整：en-US 覆盖 zh-CN 全部 ' + zhKeys.length + ' 条 key');
+} catch(e){ failures.push('✗ i18n 语言包加载失败: ' + e.message); }
+
 // ---------- 5) 资源体积预算（v0.4.6 P1.2：CI 门禁，防资产与脚本无限膨胀） ----------
 // 基线 v0.4.5 实测：assets 图片共约 2.5MB；阈值 = 基线 ×1.3 留余量
 const BUDGET = { singleImage: 420*1024, singleJs: 160*1024, assetsTotal: 3.3*1024*1024 };

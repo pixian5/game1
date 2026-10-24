@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /collect-error
+
+Sitemap: https://oh.sbbz.tech:9443/sitemap.xml

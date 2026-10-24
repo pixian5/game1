@@ -1099,9 +1099,17 @@ Object.assign(STORY, {
           options:[
             {text:'冲进雨里跑回家', effects:{personality:{active:1, independent:1}, flags:{rain_choice_run:1}, thenEvent:'rain_ambush_after'}, hint:'淋一场，清醒一场'},
             {text:'在檐下等雨小', effects:{personality:{passive:1, rational:1}, flags:{rain_choice_wait:1}, thenEvent:'rain_ambush_after'}, hint:'听雨十分钟'},
-            {text:'叫苏苏来接', effects:{personality:{dependent:1, emotional:1}, flags:{rain_choice_susu:1}, thenEvent:'rain_ambush_after'}, hint:'闺蜜是雨天的正义'}
+            {text:'叫苏苏来接', effects:{personality:{dependent:1, emotional:1}, flags:{rain_choice_susu:1}, thenEvent:'rain_susu_gift'}, hint:'闺蜜是雨天的正义'}
           ]
         }}
+      ]
+    },
+    'rain_susu_gift': {
+      type:'message_batch', delay:1,
+      collectible:'postcard_rain',  // v0.4.7: 雨天限定明信片——雨天剧情选「叫苏苏」专属
+      messages:[
+        {from:'susu', text:'（她湿着半边肩膀跑来，伞全打在你头上。）'},
+        {from:'susu', text:'给，雨天限定的明信片！霓城一下雨就这样，帅吧？', then:'rain_ambush_after'}
       ]
     },
     'rain_ambush_after': {
