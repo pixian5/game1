@@ -77,6 +77,11 @@ const AudioSys = (() => {
     ring()   { for(let i=0;i<2;i++){ tone({freq:988, dur:0.16, when:i*0.28, gain:0.055}); tone({freq:784, dur:0.16, when:i*0.28+0.13, gain:0.05}); } },
     achieve(){ [523,659,784,1047].forEach((f,i)=>tone({freq:f, dur:0.16, when:i*0.09, type:'triangle', gain:0.042})); },
     dream()  { [392,330,262].forEach((f,i)=>tone({freq:f, dur:0.5, when:i*0.28, gain:0.032})); },
+    // v0.4.10（E2）：场景 sting——结局/梦魇/邀约/解谜各配 2-4 秒短乐句
+    stingEnding(){ [392,494,587,784].forEach((f,i)=>toneTo(musicBus,{freq:f, dur:0.8, when:i*0.22, type:'triangle', gain:0.05})); },
+    stingNightmare(){ [415,392,370,349].forEach((f,i)=>tone({freq:f, dur:0.55, when:i*0.3, type:'sawtooth', gain:0.028})); },
+    stingInvite(){ tone({freq:784, dur:0.14, gain:0.04}); tone({freq:1047, dur:0.22, when:0.14, gain:0.038}); },
+    stingPuzzle(){ [523,659,880,1047,1319].forEach((f,i)=>tone({freq:f, dur:0.18, when:i*0.08, type:'triangle', gain:0.045})); },
   };
 
   // ===== v0.2.4: 底噪层（本地合成，无外部素材） =====
@@ -138,43 +143,130 @@ const AudioSys = (() => {
     ambience = null;
   }
 
-  // 主题环境音：每主题一组琶音（极简、音量很低）
-  const BGM_THEMES = {
-    default: [220.00, 277.18, 329.63, 415.30, 329.63, 277.18],
-    starry:  [261.63, 392.00, 329.63, 493.88, 329.63, 392.00],
-    sea:     [196.00, 246.94, 293.66, 392.00, 293.66, 246.94],
-    sunset:  [233.08, 293.66, 349.23, 440.00, 349.23, 293.66],
-    ink:     [174.61, 220.00, 261.63, 329.63, 261.63, 220.00],
-    rose:    [246.94, 311.13, 369.99, 466.16, 369.99, 311.13],
-    dark:    [146.83, 185.00, 220.00, 277.18, 220.00, 185.00],
+  // ===== v0.4.10（E2 音频二阶）：曲式引擎 =====
+  // 每主题 = 4 和弦进行（triangle 垫音）+ 低音（根/五度交替）+ 琶音（半拍）+ 打击（hat/kick）
+  // + 2 小节周期主旋律（五声音阶片段）。氛围分层：night 放慢、anxious 只留低音+心跳。
+  const NOTE_RE = /^([A-G])(#|b)?(-?\d)$/;
+  const SEMI = {C:0, D:2, E:4, F:5, G:7, A:9, B:11};
+  function note(n){                       // 'A4' -> 440
+    const m = NOTE_RE.exec(n); if(!m) return 440;
+    let s = SEMI[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0);
+    const oct = Number(m[3]);
+    return 440 * Math.pow(2, (s - 9) / 12 + (oct - 4));
+  }
+  const THEME_PROG = {
+    default: { chords:[['A3','C4','E4'],['F3','A3','C4'],['G3','B3','D4'],['A3','C4','E4']], bass:['A2','F2','G2','A2'], melody:['E5','C5','A4','B4','C5','B4','A4','E4'], hat:true },
+    starry:  { chords:[['C4','E4','G4'],['A3','C4','E4'],['F3','A3','C4'],['G3','B3','D4']], bass:['C3','A2','F2','G2'], melody:['G4','E5','D5','C5','E5','G5','D5','C5'], hat:true },
+    sea:     { chords:[['D4','F4','A4'],['B3','D4','F4'],['G3','B3','D4'],['A3','C4','E4']], bass:['D3','B2','G2','A2'], melody:['A4','D5','F5','E5','D5','A4','B4','D5'], hat:false },
+    sunset:  { chords:[['C4','E4','G4'],['E4','G4','B4'],['F4','A4','C5'],['G4','B4','D5']], bass:['C3','E3','F3','G3'], melody:['E5','D5','C5','G4','A4','C5','D5','E5'], hat:false },
+    ink:     { chords:[['A3','C4','E4'],['G3','B3','D4'],['F3','A3','C4'],['E3','G3','B3']], bass:['A2','G2','F2','E2'], melody:['A4','G4','E4','D4','C4','D4','E4','G4'], hat:false },
+    rose:    { chords:[['D4','F4','A4'],['A3','C4','E4'],['B3','D4','F4'],['G3','B3','D4']], bass:['D3','A2','B2','G2'], melody:['F5','E5','D5','A4','B4','D5','F5','E5'], hat:true },
+    dark:    { chords:[['E4','G4','B4'],['C4','E4','G4'],['A3','C4','E4'],['B3','D4','F4']], bass:['E3','C3','A2','B2'], melody:['B4','G4','E4','G4','B4','C5','B4','G4'], hat:true },
   };
+  // 剧情曲（v0.4.10 E2：音乐 App 曲目真实可播）——《夏》写给妹妹的温柔曲，《渡鸦》解散前的暗色曲
+  const TRACKS = {
+    xia:  { bpm:0.44, chords:[['G3','B3','D4'],['E4','G4','B4'],['C4','E4','G4'],['D4','G4','B4']], bass:['G2','E3','C3','D3'],
+            melody:['B4','D5','G5','D5','B4','G4','A4','B4','D5','G5','A5','G5','D5','B4','A4','G4'], lead:'sine', hat:false, shimmer:true },
+    duya: { bpm:0.5, chords:[['A3','C4','E4'],['F3','A3','C4'],['D4','F4','A4'],['E4','G4','B4']], bass:['A2','F2','D3','E3'],
+            melody:['A4','C5','E5','D5','C5','A4','E4','A4','F5','E5','D5','C5','B4','C5','D5','E5'], lead:'square', hat:true, kickEvery:2 },
+  };
+  let currentTrack = null;    // 正在播的剧情曲 id（null = 主题 BGM）
+  let bar = 0;                // 小节计数
+
+  // 调度一小节（4 拍）
+  function scheduleBar(){
+    const c = ctx; if(!c) return;
+    const anxious = currentAmbId === 'anxious';
+    const night = currentAmbId === 'night';
+    let spec, melody, lead, hat, kickEvery = 0, baseGain = 0.016;
+    if(currentTrack && TRACKS[currentTrack]){
+      spec = TRACKS[currentTrack]; melody = spec.melody; lead = spec.lead; hat = spec.hat; kickEvery = spec.kickEvery || 0;
+      baseGain = 0.03;   // 点播曲目音量略高
+    } else {
+      spec = THEME_PROG[currentTheme] || THEME_PROG.default;
+      melody = spec.melody; hat = spec.hat;
+    }
+    let beat = (spec.bpm || 0.42);
+    if(night) beat *= 1.25;
+    if(anxious) beat *= 1.5;
+    const chord = spec.chords[bar % spec.chords.length];
+    const barAt = c.currentTime + 0.05;
+    // 1) 和弦垫音：triangle 长音铺底
+    chord.forEach((n, i) => toneTo(musicBus, {freq:note(n), dur:beat*4*0.95, type:'triangle', gain:baseGain*0.55, at:barAt}));
+    // 2) 低音：根音/五度交替，每两拍
+    for(let b = 0; b < 4; b += 2){
+      const bn = spec.bass[bar % spec.bass.length];
+      const f = note(bn) * (b === 2 ? 1.5 : 1);
+      toneTo(musicBus, {freq:f, dur:beat*1.8, type:'sine', gain:baseGain*0.9, at:barAt + b*beat});
+    }
+    // 3) 琶音：每半拍和弦内音上行
+    if(!anxious){
+      for(let h = 0; h < 8; h++){
+        const n = chord[h % chord.length];
+        toneTo(musicBus, {freq:note(n)*2, dur:beat*0.5, type:'sine', gain:baseGain*0.3, at:barAt + h*beat/2});
+      }
+    }
+    // 4) 打击：hat（短噪声脉冲）每拍；kick（低频正弦）指定拍
+    for(let b = 0; b < 4; b++){
+      if(hat) hatHit(barAt + b*beat, baseGain*0.35);
+      if(kickEvery && (bar*4 + b) % kickEvery === 0) kick(barAt + b*beat, baseGain*1.6);
+    }
+    // 5) 主旋律：2 小节周期，anxious 时省略（只留低音+心跳）
+    if(!anxious && melody.length){
+      const ml = melody.length;
+      for(let s2 = 0; s2 < 4; s2++){
+        const idx = (bar*4 + s2) % ml;
+        if(melody[idx]) toneTo(musicBus, {freq:note(melody[idx]), dur:beat*1.4, type:lead || 'sine', gain:baseGain*0.8, at:barAt + s2*beat});
+      }
+    }
+    // 6) anxious 心跳（55Hz 低频脉冲，v0.2.4 保留）
+    if(anxious) tone({freq:55, dur:0.5, gain:0.02});
+    bar++;
+    musicTimer = setTimeout(() => {
+      if(!bgmOn && !currentTrack) { stopMusic(); return; }
+      scheduleBar();
+    }, beat*4*1000);
+  }
+  function hatHit(at, g){
+    const c = ctx; if(!c) return;
+    const src = c.createBufferSource(); src.buffer = noiseBuffer(c);
+    const f = c.createBiquadFilter(); f.type='highpass'; f.frequency.value = 6000;
+    const gn = c.createGain();
+    gn.gain.setValueAtTime(g*0.6, at); gn.gain.exponentialRampToValueAtTime(0.0001, at + 0.05);
+    src.connect(f).connect(gn).connect(musicBus);
+    src.start(at); src.stop(at + 0.06);
+  }
+  function kick(at, g){
+    const c = ctx; if(!c) return;
+    const o = c.createOscillator(), gn = c.createGain();
+    o.frequency.setValueAtTime(120, at); o.frequency.exponentialRampToValueAtTime(45, at + 0.12);
+    gn.gain.setValueAtTime(g, at); gn.gain.exponentialRampToValueAtTime(0.0001, at + 0.16);
+    o.connect(gn).connect(musicBus);
+    o.start(at); o.stop(at + 0.18);
+  }
+  // 带绝对时间与目标总线的音符（toneTo；tone 保持相对时间+sfx 总线）
+  function toneTo(bus, {freq=880, dur=0.12, type='sine', gain=0.04, at=0, slideTo=0}){
+    const c = ensure(); if(!c) return;
+    const t0 = Math.max(at, c.currentTime);
+    const osc = c.createOscillator(), g = c.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    if(slideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(40, slideTo), t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g).connect(bus);
+    osc.start(t0); osc.stop(t0 + dur + 0.05);
+  }
   function stopMusic(){
     if(musicTimer){ clearTimeout(musicTimer); musicTimer = null; }
-    step = 0;
+    step = 0; bar = 0;
     stopAmbience();
-  }
-  // setTimeout 链：可随时调整节奏（心绪不安时放慢并加入心跳脉冲）
-  function musicLoop(){
-    const slow = currentAmbId === 'anxious';  // 不安时放慢到 1.5s/拍
-    musicTimer = setTimeout(()=>{
-      if(!bgmOn) { stopMusic(); return; }
-      const notes = BGM_THEMES[currentTheme] || BGM_THEMES.default;
-      const anxious = currentAmbId === 'anxious';
-      const dur = anxious ? 0.7 : 0.9;
-      const f = notes[step % notes.length];
-      // 琶音 + 低八度垫音，营造氛围
-      tone({freq:f, dur:dur, type:'sine', gain:0.018});
-      if(step % notes.length === 0) tone({freq:f/2, dur:anxious ? 2.2 : 1.6, type:'sine', gain:0.012});
-      // v0.2.4: 心绪不安时每两拍一个低频心跳脉冲（55Hz，几乎不可闻但压心）
-      if(anxious && step % 2 === 0) tone({freq:55, dur:0.5, type:'sine', gain:0.02});
-      step++;
-      musicLoop();
-    }, slow ? 1500 : 900);
   }
   function startMusic(){
     stopMusic();
-    if(!bgmOn || !unlocked) return;
-    musicLoop();
+    if(!(bgmOn || currentTrack) || !unlocked) return;
+    scheduleBar();
     startAmbience(ambience);
   }
 
@@ -189,6 +281,14 @@ const AudioSys = (() => {
 
   return {
     play(name){ if(soundOn && unlocked && SFX[name]) SFX[name](); },
+    // v0.4.10（E2）：音乐 App 点播——剧情曲真实可播；再次点同曲或传 null 回主题 BGM
+    playTrack(trackId){
+      if(trackId && TRACKS[trackId] && currentTrack === trackId) trackId = null;
+      currentTrack = trackId || null;
+      if(unlocked && (bgmOn || currentTrack)) startMusic();
+      return currentTrack;
+    },
+    playingTrack(){ return currentTrack; },
     isEnabled(){ return soundOn; },
     // v0.4.8: 音量三分级（master/music/sfx，0-1），设置中心滑杆驱动
     setVolume(kind, v){
@@ -211,7 +311,7 @@ const AudioSys = (() => {
     },
     // 主题切换时切换环境音音组
     applyTheme(themeId){
-      currentTheme = BGM_THEMES[themeId] ? themeId : 'default';
+      currentTheme = THEME_PROG[themeId] ? themeId : 'default';
       if(musicTimer) startMusic();  // 正在播则切换音组
     },
     // v0.2.4: 氛围切换时切换底噪档（rainy→雨声；night/dusk/anxious→夜晚底噪；其余无底噪）

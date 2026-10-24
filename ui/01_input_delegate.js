@@ -14,7 +14,7 @@
     const photoBtn = e.target.closest('[data-photo]');
     if(photoBtn){ viewPhoto(photoBtn.dataset.photo); return; }
     const musicBtn = e.target.closest('[data-music]');
-    if(musicBtn){ engine.playMusic(musicBtn.dataset.music); return; }
+    if(musicBtn){ engine.playMusic(musicBtn.dataset.music); AudioSys.playTrack(musicBtn.dataset.music); return; }  // v0.4.10（E2）：点播真实出声
     // v0.1.7: 音乐 App 内的音效/环境音开关
     if(e.target.closest('#ss-sound')){ toggleSoundSetting(); return; }
     if(e.target.closest('#ss-bgm')){ toggleBgmSetting(); return; }
