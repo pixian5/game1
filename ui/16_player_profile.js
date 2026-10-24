@@ -17,6 +17,10 @@
         <span>称谓 · ${escapeHtml(p.pronoun || '她')}</span>
         ${engine.state.playerQuizDone ? '<span style="color:#4ade80">✓ 性格已画像</span>' : '<span style="color:var(--accent2)">性格问答待完成</span>'}
       </div>
+      <div class="player-hero-meta">
+        ${engine.state.ngPlus ? `<span style="color:#fbbf24">周目 ${engine.state.ngPlus + 1}</span>` : '<span>一周目</span>'}
+        <span>结局达成 ${Object.keys(engine.state.endingSeen || {}).length}/17</span>
+      </div>
     </div>`;
     // 性格问答回顾
     const quiz = STORY.playerCustomization?.personalityQuiz || [];

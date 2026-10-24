@@ -18,6 +18,15 @@
     // v0.1.7: 音乐 App 内的音效/环境音开关
     if(e.target.closest('#ss-sound')){ toggleSoundSetting(); return; }
     if(e.target.closest('#ss-bgm')){ toggleBgmSetting(); return; }
+    // v0.5.0（E3 周目）：二周目——携带收集/成就/图鉴重开
+    const ngBtn = e.target.closest('#btn-ngplus');
+    if(ngBtn){
+      engine.newGame({ngPlus: true});
+      afterLoadRefresh();
+      toast('二周目开始——收集与图鉴已继承');
+      showScreen('lock');
+      return;
+    }
     const restartBtn = e.target.closest('[data-action="restart"]');
     if(restartBtn){
       engine.newGame();

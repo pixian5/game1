@@ -854,4 +854,67 @@ test('v0.3.8: i18n——全局 t、zh 模板插值、en 译文与回退', ()=>{
   assert.equal(I18N.translate('已保存到 {slot}', {slot:'存档2'}), '已保存到 存档2', '切回中文');
 });
 
+
+// ===== v0.5.0: 周目系统 =====
+
+test('v0.5.0: 结局快照 → 二周目携带收集/图鉴并清除剧情态', ()=>{
+  const e = engine();
+  e.newGame();
+  e.state.collected.push('postcard_neon', 'stamp_first');
+  e.state.achievements['memory_keeper'] = true;
+  e.state.endingSeen['solo_good'] = true;
+  e.recordEndingGallery('solo_good');
+  e.state.unlockedThemes['starry'] = true;
+  e.triggerEnding('solo_good');
+  assert.ok(e.state.ngCarry, '结局时应生成周目快照（持久化）');
+  // 真实路径：结局屏点「二周目」= 同引擎实例 newGame({ngPlus:true})（读档场景由 ngCarry 持久化覆盖）
+  const e2 = e;
+  e2.newGame({ngPlus: true});
+  // 携带项
+  assert.ok(e2.state.collected.includes('postcard_neon'));
+  assert.equal(e2.state.achievements['memory_keeper'], true);
+  assert.equal(e2.state.endingSeen['solo_good'], true);
+  assert.equal(e2.state.unlockedThemes['starry'], true);
+  assert.equal(e2.state.ngPlus, 1);
+  // 清除项：剧情态归零
+  assert.equal(e2.state.day, 1);
+  assert.equal(Object.keys(e2.state.affection).every(k => e2.state.affection[k] === 0), true);
+  assert.deepEqual(e2.state.conversations.shenyan.messages, []);
+});
+
+test('v0.5.0: 二周目时 <id>_ng2 变体事件自动改道', ()=>{
+  const e = engine();
+  e.newGame();
+  e.triggerEnding('solo_good');   // 真实路径：结局生成 ngCarry → 结局屏点二周目
+  e.newGame({ngPlus: true});
+  // newGame 开场自动调度 intro_susu → 已改道为 intro_susu_ng2
+  assert.equal(e.state.firedEvents['intro_susu_ng2'], true, '开场应播二周目变体');
+  assert.equal(e.state.firedEvents['intro_susu'], undefined, '原开场事件不应触发');
+  // 另一处改道：陆辞重逢
+  e.scheduleEvent('luci_reunion_msg');
+  assert.equal(e.state.firedEvents['luci_reunion_msg_ng2'], true, '重逢应改道二周目变体');
+  // 一周目不受影响
+  const e2 = engine();
+  e2.newGame();
+  e2.scheduleEvent('intro_susu');
+  assert.equal(e2.state.firedEvents['intro_susu'], true);
+});
+
+test('v0.5.0: 真结局二周目尾声——条件齐备才派发', ()=>{
+  const e = engine();
+  e.newGame();
+  e.state.endingSeen.true_ending = true;
+  e.triggerEnding('true_ending'); // 生成快照 → 二周目
+  e.newGame({ngPlus: true});
+  e.state.day = 8; e.state.minute = 10*60;
+  e.checkTrueEndingEpilogue();
+  assert.equal(e.state.flags.epilogue_done, true);
+  // 无真结局不派发
+  const e2 = engine();
+  e2.newGame({ngPlus: true});
+  e2.state.day = 8; e2.state.minute = 10*60;
+  e2.checkTrueEndingEpilogue();
+  assert.equal(e2.state.flags.epilogue_done, undefined);
+});
+
 console.log('全部回归测试通过');

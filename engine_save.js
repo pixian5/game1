@@ -297,6 +297,23 @@ Object.assign(PhoneEngine.prototype, {
     out.unlockedThemes = record(source.unlockedThemes,50,(_value,key)=>!!this.story.themes?.[key]); out.unlockedThemes.default=true;
     out.unlockedIconThemes = record(source.unlockedIconThemes,50,(_value,key)=>!!this.story.iconThemes?.[key]); out.unlockedIconThemes.default=true;
     out.endingSeen = record(source.endingSeen,50,(_value,key)=>!!this.story.endings?.[key]);
+    // v0.5.0（E3 周目）：ngCarry 携带快照与 ngPlus 计数入白名单（读档后二周目仍可用）
+    out.ngPlus = asInt(source.ngPlus, 0, 0, 99);
+    const ngc = object(source.ngCarry);
+    if(ngc && (source.ngCarry !== undefined)){
+      out.ngCarry = {
+        collected: idList(ngc.collected, knownIds(this.story.collectibles), 200),
+        achievements: record(ngc.achievements, 100, (_v, key) => !!this.story.achievements?.[key]),
+        endingSeen: record(ngc.endingSeen, 50, v => !!v),
+        endingGallery: object(ngc.endingGallery),
+        easterEggsSeen: record(ngc.easterEggsSeen, 100, v => !!v),
+        tarotHistory: array(ngc.tarotHistory, 200, t => {const o=object(t); return this.story.tarot?.cards?.[o.cardId] ? {day:asInt(o.day,0,0,9999), cardId:o.cardId, reversed:asBool(o.reversed), ts:asInt(o.ts,0,0,9999999999999)} : null;}),
+        unlockedThemes: record(ngc.unlockedThemes, 50, v => !!v),
+        unlockedIconThemes: record(ngc.unlockedIconThemes, 50, v => !!v),
+        ngPlus: asInt(ngc.ngPlus, 0, 0, 99),
+      };
+      Object.keys(out.ngCarry.achievements).forEach(k => { if(!out.ngCarry.achievements[k]) delete out.ngCarry.achievements[k]; });
+    }
     out.endingGallerySeen = record(source.endingGallerySeen,50,(_value,key)=>!!this.story.endingGallery?.[key]);
     Object.keys(out.endingSeen).forEach(key=>{ if(!out.endingSeen[key]) delete out.endingSeen[key]; });
     Object.keys(out.endingGallerySeen).forEach(key=>{ if(!out.endingGallerySeen[key]) delete out.endingGallerySeen[key]; });

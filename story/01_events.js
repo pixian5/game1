@@ -876,6 +876,73 @@ Object.assign(STORY, {
       ]
     },
 
+    // ===== v0.5.0（E3 周目）：二周目变体——引擎对 <id>_ng2 自动改道，此处只放数据 =====
+    'intro_susu_ng2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'susu', text:'又来霓城了？这次可看仔细点哦——有些东西，第一次会错过。', then:'intro_susu_ng2_2'}
+      ]
+    },
+    'intro_susu_ng2_2': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'susu', text:'（她的语气像在打趣一个老朋友。也许，本来就是。）', then:'intro_susu_2'}
+      ]
+    },
+    'shenyan_first_msg_ng2': {
+      type:'message_batch', delay:2,
+      messages:[
+        {from:'shenyan', text:'林夏。我是沈砚之。', then:'shenyan_first_msg_ng2_2'}
+      ]
+    },
+    'shenyan_first_msg_ng2_2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'shenyan', text:'……感觉像是第三次自我介绍。抱歉，我最近总想起一些没道理的事。', then:'shenyan_first_msg_2'}
+      ]
+    },
+    'luci_reunion_msg_ng2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'luci', text:'听说你回霓城了！', then:'luci_reunion_msg_ng2_2'}
+      ]
+    },
+    'luci_reunion_msg_ng2_2': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'luci', text:'这次换我先到校门口。九年的事，我们边走边说。', then:'luci_reunion_msg_3'}
+      ]
+    },
+    'jiangyu_first_msg_ng2': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'jiangyu', text:'名字不错。', then:'jiangyu_first_msg_ng2_2'}
+      ]
+    },
+    'jiangyu_first_msg_ng2_2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'jiangyu', text:'（他盯着好友申请看了很久，像在确认什么。）——这次，换我先开口。', then:'jiangyu_first_msg_3'}
+      ]
+    },
+
+    // ===== v0.5.0（E3 周目）：真结局二周目尾声——「霓城无事」之后的一周（checkTrueEndingEpilogue 派发） =====
+    'true_ending_epilogue': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'narrator', text:'（独立策展落地后的第一个周一。霓城照常醒来，你也是。）', then:'true_ending_epilogue_2'}
+      ]
+    },
+    'true_ending_epilogue_2': {
+      type:'message_batch', delay:2,
+      messages:[
+        {from:'shenyan', text:'新展的名字定了：《无事》。第一个展签，留给你写。'},
+        {from:'luci', text:'[图片] 清晨的校门口。银杏第一次结了果——九年，值得。'},
+        {from:'jiangyu', text:'《夏》的完整版录好了。这次，B面不是空白。'},
+        {from:'susu', text:'（本群永久置顶：夏夏的幸福进度——已完结，撒花！）'}
+      ]
+    },
+
     // ===== v0.1.12: 塔罗次日指引——换日早晨按昨日牌面 hint 类型播报（苏苏人设：运势播报担当） =====
     'tarot_morning_encounter': {
       type:'message_batch', delay:0,

@@ -293,9 +293,21 @@ class PhoneEngine {
   // 公开接口：供 UI 层调用，避免直接改 state
   applyEffects(effects){ this._applyEffects(effects); this.emit('stateChange', this.state); }
 
-  newGame(){
+  newGame(opts = {}){
+    const prev = this.state;   // v0.5.0: 旧局引用（二周目从 prev.ngCarry 取携带快照）
     this._clearAllTimers();
     this.state = this.defaultState();
+    // v0.5.0（E3 周目系统）：二周目携带跨周目资产（收集/成就/结局图鉴/塔罗图鉴/彩蛋/主题解锁）
+    if(opts.ngPlus && prev && prev.ngCarry){
+      const c = prev.ngCarry;
+      Object.assign(this.state, {
+        collected: c.collected || [], achievements: c.achievements || {},
+        endingSeen: c.endingSeen || {}, endingGallery: c.endingGallery || {},
+        easterEggsSeen: c.easterEggsSeen || {}, tarotHistory: c.tarotHistory || [],
+        unlockedThemes: c.unlockedThemes || {}, unlockedIconThemes: c.unlockedIconThemes || {},
+        ngPlus: (c.ngPlus || 0) + 1,
+      });
+    }
     // 初始金币和心情从 story 配置读取
     if(this.story.shop) this.state.coins = this.story.shop.initialCoins || 500;
     if(this.story.moods) this.state.mood = 'calm';
@@ -387,6 +399,7 @@ class PhoneEngine {
     this.checkTensionWhispers();  // v0.1.10: 暧昧度深夜独白
     this.checkGroupDinner();      // v0.2.0: 群聊聚餐后续（按投票 flag 分歧）
     this.checkRainEvents();       // v0.2.0: 雨天限定剧情
+    this.checkTrueEndingEpilogue();  // v0.5.0: 真结局二周目尾声
   }
   // v0.2.0: 读取「今日抽中的塔罗牌 hint 值」（hint.type 匹配且是今天抽的）；
   // 返回 0 表示无该运势。塔罗数值从"只写 flag"变为真实影响玩法。
@@ -423,6 +436,17 @@ class PhoneEngine {
     this.state.flags.rain_event_done = true;
     this._queueEventDispatch('rain_ambush_msg', 1200);
   }
+  // v0.5.0（E3 周目）：真结局二周目尾声——day≥8 白天派发「霓城无事」后续（每局一次）
+  checkTrueEndingEpilogue(){
+    if(this.state.ended || this.state.flags.epilogue_done) return;
+    if(!this.state.ngPlus || !this.state.endingSeen.true_ending) return;
+    if(this.state.day < 8) return;
+    const hour = Math.floor(this.state.minute / 60);
+    if(hour < 10 || hour >= 22) return;
+    if(!this.story.events?.['true_ending_epilogue']) return;
+    this.state.flags.epilogue_done = true;
+    this._queueEventDispatch('true_ending_epilogue', 1500);
+  }
   _checkTimeEventsForRange(fromDay, fromHour, toDay, toHour){
     // 枚举 (day, hour) 范围内可能被跳过的时间触发事件
     const events = this.story.events;
@@ -449,6 +473,13 @@ class PhoneEngine {
   // ===== 事件调度 =====
   scheduleEvent(eventId){
     if(this.state.ended) return;   // 结局后不再调度
+    // v0.5.0（E3 周目）：二周目时若存在 <id>_ng2 变体事件则调度变体（数据层零侵入的差异内容）
+    if(this.state.ngPlus){
+      const v = eventId + '_ng2';
+      if((this.story.events[v] || this.story.criticalEvents?.[v]) && !this.state.firedEvents[v] && !this._scheduledEvents.has(v)){
+        return this.scheduleEvent(v);
+      }
+    }
     // 优先查 events，fallback 查 criticalEvents（v0.0.13 临界事件单独定义在 STORY.criticalEvents）
     const evt = this.story.events[eventId] || this.story.criticalEvents?.[eventId];
     if(!evt) return;

@@ -545,6 +545,14 @@ Object.assign(PhoneEngine.prototype, {
     if(this.state.ended || !ending) return false;
     this.state.ended = true;
     this.state.endingSeen[endingId] = true;
+    // v0.5.0（E3）：结局时快照跨周目资产（持久化在 state，读档后点二周目依然可用）
+    this.state.ngCarry = {
+      collected: [...this.state.collected], achievements: {...this.state.achievements},
+      endingSeen: {...this.state.endingSeen}, endingGallery: {...this.state.endingGallery},
+      easterEggsSeen: {...this.state.easterEggsSeen}, tarotHistory: [...this.state.tarotHistory],
+      unlockedThemes: {...this.state.unlockedThemes}, unlockedIconThemes: {...this.state.unlockedIconThemes},
+      ngPlus: this.state.ngPlus || 0,
+    };
     // v0.0.15: 同步记录结局图鉴
     this.recordEndingGallery(endingId);
     // 结局后清理所有定时器，避免幽灵消息
