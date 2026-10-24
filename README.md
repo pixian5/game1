@@ -6,7 +6,7 @@
 
 纯前端实现（HTML / CSS / 原生 JS），**运行时零依赖、无构建步骤**。
 
-- 当前版本：**v0.4.0**（版本唯一来源：[VERSION](VERSION)）
+- 当前版本：**v0.4.1**（版本唯一来源：[VERSION](VERSION)）
 - 主角：林夏（策展人）｜路线：沈砚之 / 陆辞 / 江屿 / 独行线（真结局）
 - 内容体量：210 个剧情事件 · 17 个结局（含 4 个隐藏）· 14 件收集品 · 15 个成就 · 3 个谜题 · 16 张塔罗 · 7 套主题（含真实壁纸）· 5 张相册照片 · 4 张角色插画头像 · 3 张氛围壁纸 · 1 张 OG 分享图 · 6 个地点
 
@@ -34,7 +34,7 @@ npm run validate:story     # 剧情数据一致性（事件引用 / 收集品路
 npm run lint               # ESLint 静态检查（v0.2.1 接入）
 npm run test:regressions   # 引擎回归测试（46 项）
 npm run test:story         # 剧情链路测试（294 项断言）
-npm run test:browser       # 浏览器端到端（Playwright，10 项）
+npm run test:browser       # 浏览器端到端（Playwright，11 项）
 npm run test:all           # 一键跑全部
 ```
 
@@ -43,22 +43,22 @@ CI（[.github/workflows/test.yml](.github/workflows/test.yml)）在每次 push /
 
 ## 当前开发进度
 
-v0.4.0 完成：**键盘可玩基础（D1.1 无障碍）**——`ui/01_input_delegate.js` 新增键盘委托
-（锁屏回车解锁 / 非按钮元素回车触发 / Esc 返回）；E2E +1（9→10）覆盖键盘解锁与返回。
-开启 v0.4 无障碍系列（`aria` 近乎空白、无键盘处理 → 逐步补齐）。
+v0.4.1 完成：**语义与 ARIA（D1.2 无障碍）**——返回键 35 处补 `aria-label`；消息记录
+`#chat-body` 加 `role=log` + `aria-live`；会话列表 `#conv-list` 加 `role=list`；
+`:focus-visible` 焦点环；E2E +1（10→11）。
 
-上一轮（v0.3.9）：i18n 调用处迁移（B1-b 续）。
-上上轮（v0.3.8）：i18n 深化（全局 t + 模板 + en 骨架）。
+上一轮（v0.4.0）：键盘可玩基础（D1.1 无障碍）。
+上上轮（v0.3.9）：i18n 调用处迁移（B1-b 续）。
 
-👉 详细进度：[docs/20261024-1431-当前开发进度-CodeArts.md](docs/20261024-1431-当前开发进度-CodeArts.md)
-👉 技术细节：[docs/20261024-1431-v0.4.0-键盘可玩基础-CodeArts.md](docs/20261024-1431-v0.4.0-键盘可玩基础-CodeArts.md)
+👉 详细进度：[docs/20261024-1439-当前开发进度-CodeArts.md](docs/20261024-1439-当前开发进度-CodeArts.md)
+👉 技术细节：[docs/20261024-1439-v0.4.1-语义与ARIA-CodeArts.md](docs/20261024-1439-v0.4.1-语义与ARIA-CodeArts.md)
 
 ## 下一步待实现
 
-方向 D1 无障碍续：D1.2 语义/ARIA（v0.4.1）、D1.3 对比度/动效（v0.4.2）；D2 部署（需凭据）；
-D3 i18n 完成；D4 内容扩张；D5 工程/性能。总体方向见计划文档。
+方向 D1 收尾：D1.3 对比度/动效（v0.4.2）；D2 部署（需凭据）；D3 i18n 完成；
+D4 内容扩张；D5 工程/性能。总体方向见计划文档。
 
-👉 详细清单：[docs/20261024-1431-下一步待实现-CodeArts.md](docs/20261024-1431-下一步待实现-CodeArts.md)
+👉 详细清单：[docs/20261024-1439-下一步待实现-CodeArts.md](docs/20261024-1439-下一步待实现-CodeArts.md)
 
 ## 目录结构
 
