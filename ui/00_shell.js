@@ -36,7 +36,7 @@
     dreams:$('dreams-app'), hints:$('hints-app'),
     nightmare:$('nightmare-screen'),
     // v0.1.0 存档
-    saves:$('saves-app')
+    saves:$('saves-app'), settings:$('settings-app')
   };
   let currentConvId = null;
   let currentGroupId = null;

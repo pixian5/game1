@@ -205,6 +205,7 @@
       case 'hints': renderHints(); showScreen('hints'); break;
     // v0.1.0 存档
       case 'saves': renderSaves(); showScreen('saves'); break;
+      case 'settings': renderSettings(); showScreen('settings'); break;
     }
   }
 

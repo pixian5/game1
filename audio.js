@@ -22,6 +22,27 @@ const AudioSys = (() => {
   let soundOn = readPref('neon_sound', true);
   let bgmOn = readPref('neon_bgm', false);
 
+  // ===== v0.4.8: 音量总线（master/music/sfx 三级，设置中心滑杆驱动） =====
+  let masterGain = null, musicBus = null, sfxBus = null;
+  let vol = { master: 1, music: 0.8, sfx: 1 };
+  try {
+    const saved = JSON.parse(localStorage.getItem('neon_vol') || 'null');
+    if(saved && ['master','music','sfx'].every(k => typeof saved[k] === 'number')) vol = saved;
+  } catch(_) {}
+  function ensureBus(c){
+    if(masterGain) return;
+    masterGain = c.createGain(); masterGain.connect(c.destination);
+    musicBus = c.createGain(); musicBus.connect(masterGain);
+    sfxBus = c.createGain(); sfxBus.connect(masterGain);
+    applyVol();
+  }
+  function applyVol(){
+    if(!masterGain) return;
+    masterGain.gain.value = vol.master;
+    musicBus.gain.value = vol.music;
+    sfxBus.gain.value = vol.sfx;
+  }
+
   function ensure(){
     if(!soundOn && !bgmOn) return null;
     if(!ctx){
@@ -30,10 +51,11 @@ const AudioSys = (() => {
       try { ctx = new AC(); } catch(_) { return null; }
     }
     if(ctx.state === 'suspended') ctx.resume();
+    ensureBus(ctx);
     return ctx;
   }
 
-  // 单个音符：振荡器 + 音量包络
+  // 单个音符：振荡器 + 音量包络（挂 sfx 总线）
   function tone({freq=880, dur=0.12, type='sine', gain=0.04, when=0, slideTo=0}){
     const c = ensure(); if(!c) return;
     const t0 = c.currentTime + when;
@@ -44,7 +66,7 @@ const AudioSys = (() => {
     g.gain.setValueAtTime(0.0001, t0);
     g.gain.exponentialRampToValueAtTime(gain, t0 + 0.012);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    osc.connect(g).connect(c.destination);
+    osc.connect(g).connect(sfxBus);
     osc.start(t0); osc.stop(t0 + dur + 0.05);
   }
 
@@ -89,7 +111,7 @@ const AudioSys = (() => {
     filter.frequency.value = kind === 'rain' ? 1400 : 320;
     filter.Q.value = 0.8;
     gain.gain.setValueAtTime(base, c.currentTime);
-    src.connect(filter).connect(gain).connect(c.destination);
+    src.connect(filter).connect(gain).connect(musicBus);
     src.start();
     let lfo = null;
     if(kind === 'rain'){
@@ -168,6 +190,14 @@ const AudioSys = (() => {
   return {
     play(name){ if(soundOn && unlocked && SFX[name]) SFX[name](); },
     isEnabled(){ return soundOn; },
+    // v0.4.8: 音量三分级（master/music/sfx，0-1），设置中心滑杆驱动
+    setVolume(kind, v){
+      if(!(kind in vol)) return;
+      vol[kind] = Math.max(0, Math.min(1, Number(v) || 0));
+      try { localStorage.setItem('neon_vol', JSON.stringify(vol)); } catch(_) {}
+      applyVol();
+    },
+    getVolumes(){ return { ...vol }; },
     isBgmEnabled(){ return bgmOn; },
     setSound(on){
       soundOn = !!on;
