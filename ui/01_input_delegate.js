@@ -207,3 +207,28 @@
       case 'saves': renderSaves(); showScreen('saves'); break;
     }
   }
+
+  // ===== v0.4.0 (D1.1 无障碍): 键盘可玩基础 =====
+  // 原生 <button> 自带 Enter/Space 触发 click；此处补：锁屏回车解锁、非按钮可点元素回车触发、Esc 返回。
+  document.addEventListener('keydown', e=>{
+    const tag = (e.target && e.target.tagName) || '';
+    if(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;  // 表单内不拦截
+    if(e.key === 'Escape'){
+      const active = document.querySelector('.screen.active');
+      if(active && active.id !== 'home-screen' && active.id !== 'lock-screen'){
+        const back = active.querySelector('[data-back]');
+        if(back) back.click(); else showScreen('home');
+        e.preventDefault();
+      }
+      return;
+    }
+    if(e.key === 'Enter' || e.key === ' '){
+      const lock = document.getElementById('lock-screen');
+      if(lock && lock.classList.contains('active')){ lock.click(); e.preventDefault(); return; }
+      const el = document.activeElement;
+      if(el && el !== document.body && !/^(BUTTON|A|INPUT|TEXTAREA|SELECT)$/.test(el.tagName)){
+        el.click();
+        e.preventDefault();
+      }
+    }
+  });

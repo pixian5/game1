@@ -192,3 +192,16 @@ test('隐私说明页可访问且声明关键信息（v0.3.7）', async ({page})
   await expect(body).toContainText('不经过任何第三方');
   await expect(page.locator('a[href="./index.html"]')).toBeVisible();
 });
+
+// v0.4.0: 键盘可玩基础（D1.1 无障碍）
+test('键盘可解锁并返回（v0.4.0）', async ({page}) => {
+  await page.goto('/');
+  await expect(page.locator('#lock-screen')).toHaveClass(/active/);
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#home-screen')).toHaveClass(/active/);
+  // 打开消息 App，按 Esc 返回主屏
+  await page.locator('#app-grid [data-app="messages"]').click();
+  await expect(page.locator('#messages-app')).toHaveClass(/active/);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#home-screen')).toHaveClass(/active/);
+});
