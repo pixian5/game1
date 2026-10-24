@@ -7,6 +7,8 @@
   if(typeof window === 'undefined') return;
   window.I18N_PACKS = window.I18N_PACKS || {};
   window.I18N_PACKS['en-US'] = {
+    '在线': 'Online',
+    '正在输入…': 'Typing…',
     // 商城/心情
     '请选择赠送对象': 'Choose someone to send a gift to',
     '先写点什么吧': 'Write something first',

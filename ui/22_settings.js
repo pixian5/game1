@@ -86,3 +86,16 @@
       if(lang && typeof I18N !== 'undefined' && I18N.setLang) I18N.setLang(lang);
     } catch(_) {}
   })();
+
+  // v0.5.4（E4）：语言切换后重渲染当前可见文本（已渲染 DOM 不会自动重译）
+  window.addEventListener('i18nchange', () => {
+    try {
+      if(screens.chat && screens.chat.classList.contains('active') && typeof currentConvId === 'string'){
+        renderChatBody(currentConvId);
+        const conv = engine.state.conversations[currentConvId];
+        $('chat-status').textContent = conv && conv.typing ? t('正在输入…') : t('在线');
+      }
+      if(screens.messages && screens.messages.classList.contains('active')) renderConvList();
+      if(screens.settings && screens.settings.classList.contains('active')) renderSettings();
+    } catch(_) {}
+  });

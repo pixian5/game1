@@ -29,6 +29,8 @@
       localStorage.setItem('neon_lang', currentLang);
       document.documentElement.lang = currentLang;   // v0.5.3（E4）：css 排版随语言
     } catch(_) {}
+    // v0.5.4（E4）：通知 UI 重渲染已显示的文本（消息体/选项/图鉴等出口读取时机不同）
+    try { window.dispatchEvent(new CustomEvent('i18nchange', {detail: {lang: currentLang}})); } catch(_) {}
   }
   function getLang(){ return currentLang; }
   function availableLangs(){ return Object.keys(packs()); }

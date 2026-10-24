@@ -7,6 +7,8 @@
   if(typeof window === 'undefined') return;
   window.I18N_PACKS = window.I18N_PACKS || {};
   window.I18N_PACKS['zh-CN'] = {
+    '在线': '在线',
+    '正在输入…': '正在输入…',
     // 商城/心情
     '请选择赠送对象': '请选择赠送对象',
     '先写点什么吧': '先写点什么吧',
