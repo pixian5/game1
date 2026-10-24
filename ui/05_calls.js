@@ -76,7 +76,7 @@
       } else {
         const lineDiv = document.createElement('div');
         lineDiv.className = 'line';
-        const speaker = line.who === 'me' ? `<span class="you">你：</span>` : `<span class="speaker">${call.name}：</span>`;
+        const speaker = line.who === 'me' ? `<span class="you">你：</span>` : `<span class="speaker">${escapeHtml(call.name)}：</span>`;
         lineDiv.innerHTML = speaker + escapeHtml(line.text);
         scriptEl.appendChild(lineDiv);
         scriptEl.scrollTop = scriptEl.scrollHeight;

@@ -83,10 +83,21 @@
     toastTimer = setUiTimeout(()=>{ t.hidden = true; }, 1500);
   }
 
+  // ===== 共享工具 =====
+  function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function nl2brEscaped(s){
+    return escapeHtml(s).replace(/\n/g, '<br>');
+  }
+  function mergeOptionEffects(opt){
+    return engine.normalizeOptionEffects ? engine.normalizeOptionEffects(opt) : {...(opt?.effects||{})};
+  }
+
   // ===== 角色头像 =====
   function avatarImg(char){
     if(char && char.avatarImg){
-      return `<img class="avatar-img" src="${char.avatarImg}" alt="" loading="lazy">`;
+      return `<img class="avatar-img" src="${char.avatarImg}" alt="" loading="lazy" decoding="async" width="512" height="512">`;
     }
     return escapeHtml(char && char.avatar ? char.avatar : '?');
   }

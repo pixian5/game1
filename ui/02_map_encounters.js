@@ -17,7 +17,7 @@
       item.innerHTML = `
         <div class="map-item-icon">${loc.icon}</div>
         <div class="map-item-info">
-          <div class="map-item-name">${loc.name}</div>
+          <div class="map-item-name">${escapeHtml(loc.name)}</div>
           <div class="map-item-hint">${loc.hint}</div>
         </div>
         ${id===cur ? '<div class="map-item-tag">当前</div>' : '<div class="map-item-go">前往</div>'}
@@ -49,7 +49,7 @@
       enc.choice.options.forEach((opt, i)=>{
         const btn = document.createElement('button');
         btn.className = 'dream-opt';
-        btn.innerHTML = opt.text + (opt.hint?` <span style="color:var(--ink-mute);font-size:11px">(${opt.hint})</span>`:'');
+        btn.innerHTML = escapeHtml(opt.text) + (opt.hint?` <span style="color:var(--ink-mute);font-size:11px">(${escapeHtml(opt.hint)})</span>`:'');
         btn.dataset.encOpt = i;
         opts.appendChild(btn);
       });

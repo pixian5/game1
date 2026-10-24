@@ -80,7 +80,7 @@
       lastScene.choice.options.forEach((opt, i)=>{
         const btn = document.createElement('button');
         btn.className = 'dream-opt';
-        btn.innerHTML = opt.text + (opt.shard?` <span style="color:#c8a84a;font-size:11px">✦ ${opt.shard}</span>`:'');
+        btn.innerHTML = escapeHtml(opt.text) + (opt.shard?` <span style="color:#c8a84a;font-size:11px">✦ ${escapeHtml(opt.shard)}</span>`:'');
         btn.dataset.fbOpt = i;
         optsEl.appendChild(btn);
       });

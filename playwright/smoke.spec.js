@@ -206,6 +206,42 @@ test('键盘可解锁并返回（v0.4.0）', async ({page}) => {
   await expect(page.locator('#home-screen')).toHaveClass(/active/);
 });
 
+// v0.4.4: 防御性转义——来自存档/状态的文本不允许注入 DOM
+test('恶意存档文本不会注入 DOM（v0.4.4）', async ({page}) => {
+  const errors = [];
+  page.on('pageerror', err => errors.push(err.message));
+  await page.goto('/');
+  await page.locator('#lock-screen').click();
+
+  // 构造一段会被浏览器当作 HTML 解析的文本，模拟篡改后的导入存档
+  const payload = '<img src=x onerror="window.__xss=1">';
+  await page.evaluate((text) => {
+    const e = window.__neonTest.engine;
+    // 关闭「正在输入」占位，确保预览渲染的是最后一条消息本身
+    e.state.conversations.susu.typing = false;
+    e.state.conversations.susu.messages.push({from: 'susu', text, time: '22:41', day: 1, ts: Date.now()});
+    e.state.groups.bad = {
+      name: text,
+      members: ['me', 'susu'],
+      messages: [{from: 'susu', text, time: '22:42', day: 1, ts: Date.now()}],
+      unread: 1,
+      typing: false
+    };
+    window.renderConvList();
+    window.renderGroupList();
+  }, payload);
+
+  // 会话预览与群名都以字面量显示，且没有任何元素被创建
+  await expect(page.locator('#conv-list .conv-item[data-conv="susu"] .conv-preview')).toContainText(payload);
+  await expect(page.locator('#conv-list .conv-preview img')).toHaveCount(0);
+  await expect(page.locator('#group-list .conv-item[data-group="bad"] .conv-name')).toContainText(payload);
+  await expect(page.locator('#group-list img')).toHaveCount(0);
+
+  // 注入没有执行，页面也没有脚本错误
+  expect(await page.evaluate(() => window.__xss)).toBeUndefined();
+  expect(errors).toEqual([]);
+});
+
 // v0.4.1: 语义与 ARIA（D1.2 无障碍）
 test('主要控件具备可访问名与语义（v0.4.1）', async ({page}) => {
   await page.goto('/');

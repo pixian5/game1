@@ -105,8 +105,8 @@
       html += '<div class="profile-shards"><div class="profile-shards-title">记忆碎片</div>';
       profile.shardDetails.forEach(s=>{
         html += `<div class="profile-shard">
-          <div class="profile-shard-title">✦ ${s.shard || s.title}</div>
-          ${s.meaning ? `<div class="profile-shard-meaning">${s.meaning}</div>` : ''}
+          <div class="profile-shard-title">✦ ${escapeHtml(s.shard || s.title)}</div>
+          ${s.meaning ? `<div class="profile-shard-meaning">${escapeHtml(s.meaning)}</div>` : ''}
         </div>`;
       });
       html += '</div>';
@@ -116,8 +116,8 @@
       html += '<div class="profile-shards"><div class="profile-shards-title">回忆碎片</div>';
       profile.memoryShards.forEach(s=>{
         html += `<div class="profile-shard">
-          <div class="profile-shard-title">✦ ${s.shard || s.title}</div>
-          ${s.meaning ? `<div class="profile-shard-meaning">${s.meaning}</div>` : ''}
+          <div class="profile-shard-title">✦ ${escapeHtml(s.shard || s.title)}</div>
+          ${s.meaning ? `<div class="profile-shard-meaning">${escapeHtml(s.meaning)}</div>` : ''}
         </div>`;
       });
       html += '</div>';
@@ -145,9 +145,9 @@
       else if(pending){ status = '待回复 · ' + (inv.schedule || ''); cls = 'inv-active'; }
       else { status = '尚未达成'; cls = 'inv-locked'; }
       html += `<div class="profile-shard ${cls}">
-        <div class="profile-shard-title">${char.avatar} ${char.name} · ${escapeHtml(inv.schedule||'邀约')}</div>
+        <div class="profile-shard-title">${escapeHtml(char.avatar)} ${escapeHtml(char.name)} · ${escapeHtml(inv.schedule||'邀约')}</div>
         <div class="profile-shard-meaning">${escapeHtml(inv.text)}</div>
-        <div style="margin-top:4px;font-size:11px;color:var(--ink-mute)">状态：${status}</div>
+        <div style="margin-top:4px;font-size:11px;color:var(--ink-mute)">状态：${escapeHtml(status)}</div>
       </div>`;
     });
     html += '</div>';

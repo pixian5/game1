@@ -29,7 +29,7 @@
             <span class="conv-name">${char.name}</span>
             <span class="conv-time">${last?.time || ''}</span>
           </div>
-          <div class="conv-preview">${conv.typing?'<span style="color:var(--accent)">正在输入…</span>':preview}</div>
+          <div class="conv-preview">${conv.typing?'<span style="color:var(--accent)">正在输入…</span>':escapeHtml(preview)}</div>
         </div>
         ${conv.unread>0?`<span class="conv-unread">${conv.unread}</span>`:''}
       `;

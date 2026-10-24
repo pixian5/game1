@@ -78,10 +78,10 @@
         <div class="group-avatar">群</div>
         <div class="group-info">
           <div class="conv-top">
-            <span class="conv-name">${g.name}</span>
+            <span class="conv-name">${escapeHtml(g.name)}</span>
             <span class="conv-time">${last?.time || ''}</span>
           </div>
-          <div class="group-preview">${g.typing?'<span style="color:var(--accent)">正在输入…</span>':preview}</div>
+          <div class="group-preview">${g.typing?'<span style="color:var(--accent)">正在输入…</span>':escapeHtml(preview)}</div>
         </div>
         ${g.unread>0?`<span class="conv-unread">${g.unread}</span>`:''}
       `;

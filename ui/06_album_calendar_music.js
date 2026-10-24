@@ -24,15 +24,6 @@
       grid.innerHTML = '<div style="color:var(--ink-mute);text-align:center;padding:40px;grid-column:1/-1;">暂无照片</div>';
     }
   }
-  function escapeHtml(s){
-    return String(s == null ? '' : s).replace(/[&<>"']/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
-  function nl2brEscaped(s){
-    return escapeHtml(s).replace(/\n/g, '<br>');
-  }
-  function mergeOptionEffects(opt){
-    return engine.normalizeOptionEffects ? engine.normalizeOptionEffects(opt) : {...(opt?.effects||{})};
-  }
   function viewPhoto(pid){
     const p = STORY.photos[pid];
     if(!p) return;
@@ -79,9 +70,9 @@
       const div = document.createElement('div');
       div.className = 'cal-event' + (e.day < t.day ? ' past':'');
       div.innerHTML = `
-        <div class="ce-time">${e.time}</div>
-        <div class="ce-title">${e.title}</div>
-        <div class="ce-loc">${e.loc}</div>
+        <div class="ce-time">${escapeHtml(e.time)}</div>
+        <div class="ce-title">${escapeHtml(e.title)}</div>
+        <div class="ce-loc">${escapeHtml(e.loc)}</div>
       `;
       events.appendChild(div);
     });
@@ -116,8 +107,8 @@
       item.dataset.music = id;
       item.innerHTML = `
         <span class="mi-num">${isPlaying?'▶':(Object.keys(STORY.music).indexOf(id)+1)}</span>
-        <span class="mi-title">${m.title}</span>
-        <span class="mi-dur">${m.duration}</span>
+        <span class="mi-title">${escapeHtml(m.title)}</span>
+        <span class="mi-dur">${escapeHtml(m.duration)}</span>
       `;
       playlist.appendChild(item);
     });
