@@ -28,6 +28,6 @@
   function availableLangs(){ return Object.keys(packs()); }
 
   const I18N = { translate, setLang, getLang, availableLangs, DEFAULT_LANG };
-  if(typeof window !== 'undefined') window.I18N = I18N;
-  else if(typeof globalThis !== 'undefined') globalThis.I18N = I18N;
+  if(typeof window !== 'undefined'){ window.I18N = I18N; window.t = translate; }
+  else if(typeof globalThis !== 'undefined'){ globalThis.I18N = I18N; globalThis.t = translate; }
 })();

@@ -834,4 +834,24 @@ test('v0.3.6: i18n 框架——查表/回退/切换/插值', ()=>{
   assert.equal(I18N.availableLangs().includes('zh-CN'), true, '语言包注册');
 });
 
+// ===== v0.3.8 (B1-b): i18n 深化——en 骨架 + 带变量模板 =====
+
+test('v0.3.8: i18n——全局 t、zh 模板插值、en 译文与回退', ()=>{
+  const fs = require('fs'); const pathm = require('path'); const vm = require('vm');
+  const sandbox = { window: {} };
+  vm.createContext(sandbox);
+  for(const f of ['i18n/zh-CN.js','i18n/en-US.js','i18n/index.js']){
+    vm.runInContext(fs.readFileSync(pathm.join(__dirname, f), 'utf8'), sandbox, { filename: f });
+  }
+  const I18N = sandbox.window.I18N;
+  assert.equal(typeof sandbox.window.t, 'function', '全局 t 暴露');
+  assert.equal(sandbox.window.t('已保存到 {slot}', {slot:'存档1'}), '已保存到 存档1', 'zh 模板插值');
+  I18N.setLang('en-US');
+  assert.equal(I18N.translate('已保存到 {slot}', {slot:'Slot 1'}), 'Saved to Slot 1', 'en 模板译文');
+  assert.equal(I18N.translate('光与影'), '光与影', 'en 未收录回退中文');
+  assert.ok(I18N.availableLangs().includes('en-US'), 'en 包已注册');
+  I18N.setLang('zh-CN');
+  assert.equal(I18N.translate('已保存到 {slot}', {slot:'存档2'}), '已保存到 存档2', '切回中文');
+});
+
 console.log('全部回归测试通过');

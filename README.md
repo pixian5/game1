@@ -6,7 +6,7 @@
 
 纯前端实现（HTML / CSS / 原生 JS），**运行时零依赖、无构建步骤**。
 
-- 当前版本：**v0.3.7**（版本唯一来源：[VERSION](VERSION)）
+- 当前版本：**v0.3.8**（版本唯一来源：[VERSION](VERSION)）
 - 主角：林夏（策展人）｜路线：沈砚之 / 陆辞 / 江屿 / 独行线（真结局）
 - 内容体量：210 个剧情事件 · 17 个结局（含 4 个隐藏）· 14 件收集品 · 15 个成就 · 3 个谜题 · 16 张塔罗 · 7 套主题（含真实壁纸）· 5 张相册照片 · 4 张角色插画头像 · 3 张氛围壁纸 · 1 张 OG 分享图 · 6 个地点
 
@@ -32,7 +32,7 @@ npm run check:version      # 版本号一致性（VERSION / package.json / index
 npm run check:ui           # 前端语法合并编译 + 引用完整性（index.html/sw.js 交叉核对）
 npm run validate:story     # 剧情数据一致性（事件引用 / 收集品路径 / flag 读写 / 结局图鉴）
 npm run lint               # ESLint 静态检查（v0.2.1 接入）
-npm run test:regressions   # 引擎回归测试（45 项）
+npm run test:regressions   # 引擎回归测试（46 项）
 npm run test:story         # 剧情链路测试（294 项断言）
 npm run test:browser       # 浏览器端到端（Playwright，9 项）
 npm run test:all           # 一键跑全部
@@ -43,22 +43,22 @@ CI（[.github/workflows/test.yml](.github/workflows/test.yml)）在每次 push /
 
 ## 当前开发进度
 
-v0.3.7 完成：**PWA / SEO / 隐私说明（计划 B2）**——新增 `privacy.html`（隐私与数据说明）+
-设置 App 入口；manifest 补 `screenshots`（3 张真实截图 780×1688）与 `shortcuts`；
-sw.js PRECACHE 78→79；E2E 8→9（隐私页可达）。
+v0.3.8 完成：**i18n 深化（计划 B1-b）**——暴露全局 `t()`；中文语言包增 17 个带变量模板；
+新增英文骨架 `i18n/en-US.js`（21 条示范译文，未收录回退中文）；示范改造 `ui/20_saves.js`
+5 处带变量 toast；sw.js PRECACHE 79→80；回归 45→46。
 
-上一轮（v0.3.6）：i18n 结构抽取（计划 B1-a）。
-上上轮（v0.3.5）：类型化收尾（M3.7 / 计划 A3）。
+上一轮（v0.3.7）：PWA / SEO / 隐私说明（计划 B2）。
+上上轮（v0.3.6）：i18n 结构抽取（计划 B1-a）。
 
-👉 详细进度：[docs/20261024-1026-当前开发进度-CodeArts.md](docs/20261024-1026-当前开发进度-CodeArts.md)
-👉 技术细节：[docs/20261024-1026-v0.3.7-PWA与隐私说明-CodeArts.md](docs/20261024-1026-v0.3.7-PWA与隐私说明-CodeArts.md)
+👉 详细进度：[docs/20261024-1036-当前开发进度-CodeArts.md](docs/20261024-1036-当前开发进度-CodeArts.md)
+👉 技术细节：[docs/20261024-1036-v0.3.8-i18n深化-CodeArts.md](docs/20261024-1036-v0.3.8-i18n深化-CodeArts.md)
 
 ## 下一步待实现
 
-阶段 B 续：B1-b i18n 深化（动态文案 + en 骨架）、B3 部署（需 SSH 凭据）；A2 音频待反馈；
-阶段 C 可选（图像 API / 单线日常 / 缓存策略）。总体路线见计划文档。
+阶段 B 仅剩 B3 部署（需 SSH 凭据）；i18n 后续按需迁移其余文案 + en 译文；A2 音频待反馈；
+阶段 C 可选。总体路线见计划文档。
 
-👉 详细清单：[docs/20261024-1026-下一步待实现-CodeArts.md](docs/20261024-1026-下一步待实现-CodeArts.md)
+👉 详细清单：[docs/20261024-1036-下一步待实现-CodeArts.md](docs/20261024-1036-下一步待实现-CodeArts.md)
 
 ## 目录结构
 

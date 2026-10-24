@@ -94,7 +94,7 @@
     if(!action) return;
     if(action === 'write'){
       const ok = engine.save(slot || 'slot1', {note: '手动存档'});
-      toast(ok ? `已保存到 ${slotDisplayName(slot)}` : '保存失败');
+      toast(ok ? t('已保存到 {slot}', {slot: slotDisplayName(slot)}) : '保存失败');
       renderSaves();
       updateLockContinueBtn();
       return;
@@ -103,7 +103,7 @@
       const ok = engine.load(slot);
       if(ok){
         const restored = afterLoadRefresh();
-        toast(`已读取 ${slotDisplayName(slot)}`);
+        toast(t('已读取 {slot}', {slot: slotDisplayName(slot)}));
         if(!restored) showScreen('home');
       } else toast('读取失败');
       return;
@@ -134,11 +134,11 @@
         reader.onload = ()=>{
           const res = engine.importSave(String(reader.result || ''), slot || 'slot1');
           if(res && res.ok){
-            toast(`已导入到 ${slotDisplayName(res.slot || slot)}`);
+            toast(t('已导入到 {slot}', {slot: slotDisplayName(res.slot || slot)}));
             renderSaves();
             updateLockContinueBtn();
           } else {
-            toast('导入失败：' + (res?.reason || '未知错误'));
+            toast(t('导入失败：{reason}', {reason: res?.reason || '未知错误'}));
           }
         };
         reader.readAsText(file);
@@ -185,5 +185,5 @@
     updateLockContinueBtn();
   });
   engine.on('saveFailed', ({error})=>{
-    toast('存档失败：' + (error || '未知错误'));
+    toast(t('存档失败：{reason}', {reason: error || '未知错误'}));
   });
