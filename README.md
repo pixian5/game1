@@ -127,7 +127,9 @@ v0.4.5 完成：**自有服务器上线**——`deploy.sh` 部署清单补齐 `i
 ## 开发约定
 
 - 这是开发测试版：重构无需考虑旧存档兼容与旧数据，但必须先备份/可回溯
-- 提交信息使用中文；每轮修改完成后提交并推送（gitee、github 与 gitcode 三远端）
+- 提交信息使用中文；**每轮修改完成后必须三远端成套推送**（gitee / github / gitcode）：
+  用 `bash push_all.sh`（自动全推并校验三者一致）。**不要用裸 `git push`**——
+  本项目没有 `origin`，无参数 push 会失败或只推部分远端，历史上曾导致 gitee 落后 29 个提交
 - 每次修改后必须跑通 `npm run test:all` 才能停下
 - 新增剧情数据 → 写进 `story/` 对应板块文件（不要在 `18_patches.js` 叠补丁），先跑 `npm run validate:story`
 - 新增源码文件 → `story/`、`engine_*.js` 会被测试清单自动包含；`ui/`、`audio.js`、`pwa.js` 需手动加入 `index.html` 与 `sw.js` 的 PRECACHE
