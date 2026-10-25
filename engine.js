@@ -24,7 +24,8 @@ class PhoneEngine {
     // 已排队但尚未真正触发的事件只存在运行时，不能提前写入 firedEvents。
     this._scheduledEvents = new Set();
     // v0.5.7（F2.2）：可注入时钟（测试用虚拟钟提速；默认 Date）
-    this._clock = (typeof Clock !== 'undefined' && Clock) || Date;
+    // 默认走宿主全局 setTimeout/clearTimeout；测试注入 FakeClock（含 now/setTimeout/clearTimeout）
+    this._clock = (typeof Clock !== 'undefined' && Clock.setTimeout) ? Clock : { now: () => Date.now(), setTimeout: (fn, d) => setTimeout(fn, d), clearTimeout: (id) => clearTimeout(id) };
     // v0.1.7: 存档内存缓存（getAllSaves 高频调用，避免每次重读 localStorage + 全量规范化）
     this._savesCache = null;
     // v0.1.7: 其他标签页改动 localStorage 时使缓存失效
