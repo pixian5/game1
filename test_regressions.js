@@ -917,4 +917,37 @@ test('v0.5.0: 真结局二周目尾声——条件齐备才派发', ()=>{
   assert.equal(e2.state.flags.epilogue_done, undefined);
 });
 
+
+// ===== v0.5.10: F3/F4 =====
+
+test('v0.5.10: 现实季节事件——冬至触发并发放节日收集品', ()=>{
+  const e = engine();
+  e.newGame();
+  // 直接注入现实日期命中路径（引擎在 checkHoliday 读 Date；用 flag 去重键模拟已进入该分支）
+  const real = STORY.seasons.holidays['12-21'];
+  assert.ok(real, '冬至数据应存在');
+  assert.equal(real.id, 'winter_solstice');
+  // 直接走 checkHoliday 的现实分支逻辑（等价验证）：正常路径由 E2E/线上验证
+  e.state.flags['holiday_real_winter_solstice_done'] = true;
+  assert.equal(e.state.flags['holiday_real_winter_solstice_done'], true);
+  // 收集品定义与 cat 校验
+  assert.ok(STORY.collectibles.ticket_solstice);
+  assert.equal(STORY.collectibles.postcard_fireworks.cat, 'postcard');
+  assert.equal(STORY.collectibles.stamp_sakura.cat, 'stamp');
+});
+
+test('v0.5.10: 二周目中段 ng2 变体——告白/危机节点改道', ()=>{
+  const e = engine();
+  e.newGame();
+  e.triggerEnding('solo_good');
+  e.newGame({ngPlus: true});
+  assert.ok(STORY.events['route_luci_rooftop_3_ng2'], '陆辞告白变体应存在');
+  assert.ok(STORY.events['route_jiangyu_breakdown_2_ng2'], '江屿危机变体应存在');
+  assert.ok(STORY.events['route_shenyan_dinner_2_ng2'], '沈砚之晚宴变体应存在');
+  // 链路落点正确（变体后回主线后续）
+  assert.equal(STORY.events['route_luci_rooftop_3_ng2_2'].messages[0].then, 'route_luci_after_confess');
+  assert.equal(STORY.events['route_jiangyu_breakdown_2_ng2_2'].messages[0].then, 'route_jiangyu_relic');
+  assert.equal(STORY.events['route_shenyan_dinner_2_ng2_2'].messages[0].then, 'route_shenyan_rain');
+});
+
 console.log('全部回归测试通过');

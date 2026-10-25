@@ -944,6 +944,44 @@ Object.assign(STORY, {
       ]
     },
 
+    // ===== v0.5.10（F3）：二周目中段变体——告白/危机节点的专属反应（此前变体全在开场） =====
+    'route_luci_rooftop_3_ng2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'luci', text:'林夏。上一次在这个天台，我把话憋回去了九年。', then:'route_luci_rooftop_3_ng2_2'}
+      ]
+    },
+    'route_luci_rooftop_3_ng2_2': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'luci', text:'这一次我不打算再等。我喜欢你——从高一你借我橡皮那天起，到这个第二次的天台。', then:'route_luci_after_confess'}
+      ]
+    },
+    'route_jiangyu_breakdown_2_ng2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'jiangyu', text:'我活着，有什么用。……这句话，我好像说过一次了。', then:'route_jiangyu_breakdown_2_ng2_2'}
+      ]
+    },
+    'route_jiangyu_breakdown_2_ng2_2': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'jiangyu', text:'但你还是来了。第二次也来了。……抱住我。这次我不装了。', then:'route_jiangyu_relic'}
+      ]
+    },
+    'route_shenyan_dinner_2_ng2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'narrator', text:'（又是那场晚宴。他介绍你时——你先一步伸出了手。）', then:'route_shenyan_dinner_2_ng2_2'}
+      ]
+    },
+    'route_shenyan_dinner_2_ng2_2': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'shenyan', text:'……林夏会抢在我前面介绍了。她是我请来的策展人，也是这里的常客。', then:'route_shenyan_rain'}
+      ]
+    },
+
     // ===== v0.1.12: 塔罗次日指引——换日早晨按昨日牌面 hint 类型播报（苏苏人设：运势播报担当） =====
     'tarot_morning_encounter': {
       type:'message_batch', delay:0,

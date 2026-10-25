@@ -160,8 +160,20 @@ Object.assign(PhoneEngine.prototype, {
   checkHoliday(){
     if(!this.story.seasons?.holidays) return null;
     const date = this.getDateLabel();
-    const key = `${date.month}-${date.date}`;
-    const holiday = this.story.seasons.holidays[key];
+    let key = `${date.month}-${date.date}`;
+    let holiday = this.story.seasons.holidays[key];
+    // v0.5.10（F4）：现实世界季节事件——玩家设备月-日命中同一张表（霜降/冬至/跨年/春分等）
+    if(!holiday && typeof Date !== 'undefined'){
+      try {
+        const now = new Date();
+        const rk = `${now.getMonth() + 1}-${now.getDate()}`;
+        const real = this.story.seasons.holidays[rk];
+        if(real && real.id && !this.state.flags['holiday_real_' + real.id + '_done']){
+          this.state.flags['holiday_real_' + real.id + '_done'] = true;
+          holiday = real;
+        }
+      } catch(_) {}
+    }
     if(!holiday) return null;
     // 防止同一天重复触发
     const flagKey = 'holiday_' + holiday.id + '_day' + this.state.day;

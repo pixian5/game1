@@ -171,6 +171,25 @@
       <div class="watch-status-sub">${isOn ? `策略：${escapeHtml(strategies[curStrategy]?.name || '平衡')}` : '开启后剧情将自动推进'}</div>
       <button class="watch-toggle-btn ${isOn?'off':''}" data-action="toggle-watch">${isOn ? '停止观赏' : '开启观赏模式'}</button>
     </div>`;
+    // v0.5.10（F3）：导演视角——三周目起解锁的数值面板（剧情党考古用）
+    if((engine.state.ngPlus || 0) >= 2){
+      const aff = engine.state.affection, ad = engine.state.affectionDetail;
+      const rows = ['shenyan','luci','jiangyu'].map(cid => {
+        const c = STORY.characters[cid];
+        const d = ad[cid] || {closeness:0, trust:0, tension:0};
+        return `<div class="director-row"><span style="background:${c.bg}">${c.avatar}</span> ${c.name}
+          好感 ${aff[cid]||0} · 密 ${d.closeness} / 信 ${d.trust} / 暧 ${d.tension}</div>`;
+      }).join('');
+      const flags = ['shenyan_resist','luci_confess','jiangyu_hold','solo_independent','group_dinner_hotpot','rain_event_done']
+        .filter(f => engine.state.flags[f]).join('、') || '（关键 flag 未触发）';
+      html += `<div class="watch-status-card" style="margin-top:12px">
+        <div class="watch-status-icon">🎬</div>
+        <div class="watch-status-title">导演视角 · 三周目</div>
+        <div class="director-rows">${rows}</div>
+        <div class="director-flags">关键走向：${flags}</div>
+        <div class="watch-status-sub" style="font-size:11px">周目 ${engine.state.ngPlus + 1} · 结局达成 ${Object.keys(engine.state.endingSeen||{}).length}/17</div>
+      </div>`;
+    }
     html += '<div class="watch-section-title">选择自动策略</div>';
     html += '<div class="watch-strategy-list">';
     Object.values(strategies).forEach(s=>{

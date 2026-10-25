@@ -1320,3 +1320,8 @@ html[lang="en-US"] .msg, html[lang="en-US"] .nightmare-dialogue-item, html[lang=
   word-break: normal; overflow-wrap: anywhere; hyphens: auto; line-height: 1.55;
 }
 html[lang="en-US"] .dream-opt, html[lang="en-US"] .chat-choice-btn{ overflow-wrap: anywhere; text-align: left; }
+/* v0.5.10（F3）：导演视角与图鉴提示 */
+.director-rows{display:flex;flex-direction:column;gap:6px;margin:10px 0;}
+.director-row{font-size:12px;color:var(--text,#eee);display:flex;align-items:center;gap:6px;}
+.director-row span{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;}
+.director-flags{font-size:11px;color:var(--ink-mute,#999);margin-top:8px;line-height:1.5;}

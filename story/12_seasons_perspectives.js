@@ -24,6 +24,12 @@ STORY.seasons = {
   },
   // 节日事件：按 月-日 触发
   holidays: {
+    // ===== v0.5.10（F4）：现实世界季节事件——按玩家设备月-日触发（纯数据，节日限定收集品×3）=====
+    '10-24': { id:'frost_descent', name:'霜降', icon:'❄️', text:'霜降。霓城的夜风开始带刀子，便利店的热饮柜换上了第二排。', effect:{ flag:'frost_descent_seen' } },
+    '12-21': { id:'winter_solstice', name:'冬至', icon:'🥟', text:'冬至。北方吃饺子，南方吃汤圆——雾港今晚两种都备了。', effect:{ collectible:'ticket_solstice' } },
+    '12-31': { id:'new_years_eve', name:'跨年夜', icon:'🎆', text:'跨年夜。整条江边的灯串亮到零点，霓城在倒数里换了一年。', effect:{ collectible:'postcard_fireworks' } },
+    '3-20':  { id:'spring_equinox', name:'春分', icon:'🌸', text:'春分。老城区的巷子口，第一株樱花开得毫无预兆。', effect:{ collectible:'stamp_sakura' } },
+
     '7-15':  { id:'arrive_day',  name:'抵达霓城纪念日', icon:'🌃', text:'一年前的今天，你第一次踏上霓城。', effect:{ coins:100 } },
     '8-10':  { id:'luci_birthday', name:'陆辞生日', icon:'🎂', text:'陆辞的生日。他没告诉你，但苏苏发来提醒。', effect:{ flag:'luci_birthday_known' } },
     '8-25':  { id:'jiangyu_first_song', name:'《夏》首唱纪念日', icon:'🎤', text:'一年前的今天，江屿在雾港首唱了《夏》。', effect:{ coins:100 } },

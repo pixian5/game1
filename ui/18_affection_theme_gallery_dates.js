@@ -147,6 +147,23 @@
   }
 
   // ===== v0.0.15 结局图鉴 App =====
+  // v0.5.10（F3）：未解锁结局的模糊线索（不剧透 flag 名）
+  const DIRECTOR_HINTS = {
+    shenyan_hidden: '在晚宴上守住自己，并留住一支画了五年的钢笔……',
+    luci_hidden: '雨夜里追出去的人，会看到一封九年前的信……',
+    jiangyu_hidden: '陪他唱完那首歌，歌词的线索藏在储物柜里……',
+    shenyan_good: '正视他画的"她"，也正视自己的位置。',
+    luci_good: '他收拾行李的那天，你的回答会改变一切。',
+    jiangyu_good: '舞台上的最后一句，等一个人来接。',
+    shenyan_bad: '被"展示"的时候，你沉默了。',
+    luci_bad: '有些告别，一旦说出口就收不回。',
+    jiangyu_bad: '空着的那个座位，等的人没有来。',
+    solo_good: '谁的消息都不回的那个夜晚，你听见了自己。',
+    solo_normal: '善意可以收下，边界也可以留下。',
+    solo_bad: '把自己关在门里，窗也忘了开。',
+    solo_hidden: '十件收藏，或一颗足够独立的心。',
+    true_ending: '不依附任何路线，把霓城走完。',
+  };
   function renderEndings(){
     const content = $('endings-content');
     if(!content) return;
@@ -183,7 +200,7 @@
           <div class="ending-card-tier ${e.tier}">${e.tier}</div>
           <div class="ending-card-char">${escapeHtml(e.charName)}</div>
           <div class="ending-card-name">${e.seen ? escapeHtml(e.name) : '???'}</div>
-          <div class="ending-card-desc">${e.seen ? escapeHtml(e.desc) : '尚未解锁此结局，继续游戏以发现它。'}</div>
+          <div class="ending-card-desc">${e.seen ? escapeHtml(e.desc) : escapeHtml(DIRECTOR_HINTS[e.id] || '尚未解锁此结局，继续游戏以发现它。')}</div>
         </div>`;
       });
       html += '</div>';

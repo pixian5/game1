@@ -24,7 +24,11 @@ STORY.collectibles = {
   memento_camera:   { id:'memento_camera',   cat:'memento',   name:'陆辞的胶卷',      icon:'📷', desc:'陆辞给你的过期胶卷，拍出来的人会更温柔一点。', how:'陆辞线 · 重逢邀约' },
   // v0.4.7: 新收集品×2——雨天限定 + 闺蜜谜题奖励（与既有发放路径零重叠）
   postcard_rain:    { id:'postcard_rain',    cat:'postcard',  name:'雨天限定明信片',  icon:'🌧️', desc:'雨天的霓城被拉成一条条彩线。苏苏说：雨天也要互相报平安。', how:'雨天剧情 · 选择叫苏苏来接' },
-  stamp_bff:        { id:'stamp_bff',        cat:'stamp',     name:'闺蜜暗号邮戳',    icon:'🔐', desc:'苏苏的闺蜜暗号刻成的邮戳：1350，友谊不过期。', how:'解开「苏苏的闺蜜暗号」谜题' }
+  stamp_bff:        { id:'stamp_bff',        cat:'stamp',     name:'闺蜜暗号邮戳',    icon:'🔐', desc:'苏苏的闺蜜暗号刻成的邮戳：1350，友谊不过期。', how:'解开「苏苏的闺蜜暗号」谜题' },
+  // v0.5.10（F4）：节日限定（现实日期触发，跨周目可集齐）
+  ticket_solstice:  { id:'ticket_solstice',  cat:'ticket',    name:'冬至饺子券',      icon:'🥟', desc:'雾港的冬至限定：饺子汤圆双拼，两种都热。', how:'冬至（12月21日）登录' },
+  postcard_fireworks:{ id:'postcard_fireworks', cat:'postcard', name:'跨年烟花明信片', icon:'🎆', desc:'零点的江边灯串连成一条河。背面写着：新年也要来看。', how:'跨年夜（12月31日）登录' },
+  stamp_sakura:     { id:'stamp_sakura',     cat:'stamp',     name:'春樱邮戳',        icon:'🌸', desc:'巷口第一株樱花的落款。苏苏说：樱花只开十天，邮戳能留一年。', how:'春分（3月20日）登录' }
 };
 
 
