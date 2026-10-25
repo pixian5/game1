@@ -34,6 +34,31 @@ Object.assign(STORY, {
       duration:'4:32',
       desc:'写给没能活到夏天的妹妹的歌。'
     },
+    // v0.6.1（G2）：曲库扩容——江屿音乐人设定补全
+    wu: {
+      title:'《雾》',
+      artist:'渡鸦乐队',
+      duration:'3:58',
+      desc:'解散前录的最后一首demo。雾散不散，他们没吵出答案。'
+    },
+    hai: {
+      title:'《海》',
+      artist:'沈砚之',
+      duration:'5:04',
+      desc:'他从不放给人听的一首钢琴小品。画《海》的那半年写的。'
+    },
+    deng: {
+      title:'《灯》',
+      artist:'林夏',
+      duration:'2:47',
+      desc:'你在天台那晚之后哼出来的调子。苏苏说像霓城的路灯。'
+    },
+    bside: {
+      title:'《无名 B 面》',
+      artist:'江屿',
+      duration:'4:19',
+      desc:'《夏》的B面。最后一句话是：无事发生。'
+    },
     duya: {
       title:'《渡鸦》',
       artist:'渡鸦乐队',

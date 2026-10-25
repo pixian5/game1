@@ -944,6 +944,186 @@ Object.assign(STORY, {
       ]
     },
 
+    // ===== v0.6.1（G2）：新曲解锁链 =====
+    'music_wu_unlock':   { type:'music_unlock', music:'wu' },
+    'music_hai_unlock':  { type:'music_unlock', music:'hai' },
+    'music_bside_unlock':{ type:'music_unlock', music:'bside' },
+    // 《灯》：天台照片解锁后的第二天，苏苏转来你那晚哼的调子（她自己录的）
+    'music_deng_unlock': {
+      type:'message_batch', delay:0,
+      trigger:{ day:6, hour:12 },
+      messages:[
+        {from:'susu', text:'夏夏！天台那晚你哼的那个调子，我录下来了发给小杨——他编成完整的一段！'}
+      ],
+      then:'music_deng_grant'
+    },
+    'music_deng_grant': { type:'music_unlock', music:'deng' },
+
+    // ===== v0.6.1（G1 电话之夜）：三男主各 2 通电话——「模拟手机」的核心形式补全 =====
+    // 沈砚之 ①：深夜"工作电话"说到一半变成私事（day12 晚）
+    'shenyan_call_labels': {
+      type:'call', delay:2, from:'shenyan',
+      trigger:{ day:12, hour:22 },
+      script:[
+        {who:'him', text:'林夏。打扰了。展签第三面墙的英文译名，我念给你听——'},
+        {who:'him', text:'……不对。'},
+        {who:'choice', options:[
+          {text:'哪里不对？', effects:{affection:{shenyan:1}}},
+          {text:'译名明天再核吧，太晚了', effects:{affection:{shenyan:2}}}
+        ]},
+        {who:'him', text:'不对的不是译名。是我不该在十点半，用工作当借口打这通电话。'},
+        {who:'him', text:'……办公室很安静。那幅《海》挂在对面。我看了它五年，今晚第一次觉得，它想听的不是我的声音。'},
+        {who:'choice', options:[
+          {text:'那你想听谁的声音？', effects:{affection:{shenyan:2}}},
+          {text:'早点回去休息', effects:{affection:{shenyan:1}}}
+        ]},
+        {who:'him', text:'……晚安，林夏。明天九点，译名的事——当我没打过这通电话。'}
+      ],
+      onDecline:'shenyan_call_labels_declined',
+      then:'shenyan_call_after'
+    },
+    'shenyan_call_labels_declined': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'shenyan', text:'（语音信箱 23"）：展签译名……算了。晚安。'}
+      ]
+    },
+    'shenyan_call_after': {
+      type:'message_batch', delay:2,
+      messages:[
+        {from:'shenyan', text:'译名已核。第三面墙用你说的那个。——电话里提的事，忘了吧。'}
+      ]
+    },
+    // 沈砚之 ②：南方回程车上的沉默电话（day14 挂载在南方出差之后）
+    'shenyan_call_silent': {
+      type:'call', delay:3, from:'shenyan',
+      trigger:{ day:15, hour:23 },
+      script:[
+        {who:'him', text:'……'},
+        {who:'him', text:'（听筒里是车窗风声，很长的一段沉默。）'},
+        {who:'choice', options:[
+          {text:'（也不说话，陪着听）', effects:{affection:{shenyan:3}}},
+          {text:'你到家了吗？', effects:{affection:{shenyan:2}}}
+        ]},
+        {who:'him', text:'高铁过江了。那座桥的灯，一盏一盏往后退。'},
+        {who:'him', text:'我小时候坐这趟车，总在数灯。数到睡着，就不会想家里的事。'},
+        {who:'him', text:'……刚才数到第一百盏，想告诉你。仅此而已。晚安。'}
+      ],
+      onDecline:'shenyan_call_silent_declined',
+      then:'music_hai_unlock'
+    },
+    'shenyan_call_silent_declined': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'shenyan', text:'（语音信箱 8"）：……风声，和一串灯。抱歉，按错了。'}
+      ]
+    },
+    // 陆辞 ①：暗房水声电话（day11 晚）
+    'luci_call_darkroom': {
+      type:'call', delay:2, from:'luci',
+      trigger:{ day:11, hour:21 },
+      script:[
+        {who:'him', text:'嘘——别挂。听。'},
+        {who:'him', text:'（水声。缓慢的、定时的水流过什么东西的声音。）'},
+        {who:'choice', options:[
+          {text:'这是……显影的水声？', effects:{affection:{luci:2}}},
+          {text:'你在洗照片？', effects:{affection:{luci:1}}}
+        ]},
+        {who:'him', text:'对。红灯下，照片正在慢慢浮出来。这是我听过最安静的等待。'},
+        {who:'him', text:'以前这个时候我谁也不告诉。今天想让电话那头也有人听着。'},
+        {who:'choice', options:[
+          {text:'那我就听着，直到它浮出来', effects:{affection:{luci:3}}},
+          {text:'洗完给我看', effects:{affection:{luci:2}}}
+        ]},
+        {who:'him', text:'（水声停了。）……好了。是一张你的侧脸——今天你在展厅打光的侧影。明天给你。'}
+      ],
+      onDecline:'luci_call_darkroom_declined',
+      then:'photo_luci_side_unlock'
+    },
+    'luci_call_darkroom_declined': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'luci', text:'（语音信箱 15"）：水声，和……嗯，没什么。明天你看相册就知道了。'}
+      ]
+    },
+    'photo_luci_side_unlock': {
+      type:'photo_unlock', photo:'luci_album'
+    },
+    // 陆辞 ②：机场广播里的告别电话（米兰线，day17）
+    'luci_call_airport': {
+      type:'call', delay:2, from:'luci',
+      trigger:{ day:17, hour:19 },
+      condition: s_flag => true,
+      script:[
+        {who:'him', text:'（背景是机场广播：飞往米兰的旅客——）'},
+        {who:'him', text:'林夏。我在安检口。'},
+        {who:'choice', options:[
+          {text:'你真的决定走了？', effects:{affection:{luci:2}}},
+          {text:'……一路平安', effects:{affection:{luci:1}}}
+        ]},
+        {who:'him', text:'九年前没说出口的话，我写在了信封里。如果你哪天想找答案，去旧学校的储物柜。'},
+        {who:'him', text:'广播催了。这次换我先挂——不然我又会像九年前一样，话到嘴边就转弯。'},
+        {who:'him', text:'……再见，林夏。不。是，再见。'}
+      ],
+      onDecline:'luci_call_airport_declined'
+    },
+    'luci_call_airport_declined': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'luci', text:'（语音信箱 20"）：广播响了……答案在储物柜。密码是那一天。你要自己想起来才算数。'}
+      ]
+    },
+    // 江屿 ①：唱完歌后台的喘息电话（day13）
+    'jiangyu_call_afterstage': {
+      type:'call', delay:2, from:'jiangyu',
+      trigger:{ day:13, hour:23 },
+      script:[
+        {who:'him', text:'（喘息声。琴弦的余震。）……台下来了三个人。'},
+        {who:'choice', options:[
+          {text:'唱完了？感觉怎么样', effects:{affection:{jiangyu:2}}},
+          {text:'你在抖', effects:{affection:{jiangyu:3}}}
+        ]},
+        {who:'him', text:'唱完才发现，手一直是抖的。三年没上台，我以为我好了。'},
+        {who:'him', text:'……刚才闭眼唱副歌的时候，台下有一盏灯特别亮。我当那是你。'},
+        {who:'choice', options:[
+          {text:'那就是我', effects:{affection:{jiangyu:3}}},
+          {text:'下次我站到最前面', effects:{affection:{jiangyu:2}}}
+        ]},
+        {who:'him', text:'……好。下次，第一排中间。灯给你留着。'}
+      ],
+      onDecline:'jiangyu_call_afterstage_declined',
+      then:'music_wu_unlock'
+    },
+    'jiangyu_call_afterstage_declined': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'jiangyu', text:'（语音信箱 11"）：喘气声很吵，抱歉……今晚，谢谢。'}
+      ]
+    },
+    // 江屿 ②：《夏》B面写完那晚的"无事发生"电话（真结局后二周目 / day19）
+    'jiangyu_call_bside': {
+      type:'call', delay:2, from:'jiangyu',
+      trigger:{ day:19, hour:22 },
+      script:[
+        {who:'him', text:'……喂。没什么事。'},
+        {who:'him', text:'B面写完了。最后一句话：无事发生。'},
+        {who:'choice', options:[
+          {text:'无事发生，是最好的事', effects:{affection:{jiangyu:2}}},
+          {text:'唱给我听', effects:{affection:{jiangyu:2}}}
+        ]},
+        {who:'him', text:'（轻轻哼了两句，没有伴奏。）……以前打电话都要有事。跟你，才知道没事也可以打。'},
+        {who:'him', text:'霓城今晚没有雾。就这样。晚安。'}
+      ],
+      onDecline:'jiangyu_call_bside_declined',
+      then:'music_bside_unlock'
+    },
+    'jiangyu_call_bside_declined': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'jiangyu', text:'（语音信箱 6"）：……霓城没雾。晚安。'}
+      ]
+    },
+
     // ===== v0.5.10（F3）：二周目中段变体——告白/危机节点的专属反应（此前变体全在开场） =====
     'route_luci_rooftop_3_ng2': {
       type:'message_batch', delay:0,

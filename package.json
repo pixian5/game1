@@ -1,7 +1,7 @@
 {
   "name": "neon-heart-game",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.6.1",
   "scripts": {
     "test:regressions": "node test_regressions.js",
     "test:story": "node test_story.js",
@@ -12,7 +12,7 @@
     "serve": "node test_server.js",
     "check:ui": "node check_ui.js",
     "lint": "eslint .",
-    "test:cov": "c8 --include \"engine.js\" --include \"engine_*.js\" --include \"interaction_queue.js\" --include \"save_migrations.js\" node test_engine_direct.mjs"
+    "test:cov": "c8 --include \"engine.js\" --include \"engine_*.js\" --include \"interaction_queue.js\" --include \"save_migrations.js\" --reporter=lcov node test_engine_direct.mjs && node tools/check_coverage.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",

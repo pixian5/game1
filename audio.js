@@ -169,6 +169,15 @@ const AudioSys = (() => {
             melody:['B4','D5','G5','D5','B4','G4','A4','B4','D5','G5','A5','G5','D5','B4','A4','G4'], lead:'sine', hat:false, shimmer:true },
     duya: { bpm:0.5, chords:[['A3','C4','E4'],['F3','A3','C4'],['D4','F4','A4'],['E4','G4','B4']], bass:['A2','F2','D3','E3'],
             melody:['A4','C5','E5','D5','C5','A4','E4','A4','F5','E5','D5','C5','B4','C5','D5','E5'], lead:'square', hat:true, kickEvery:2 },
+    // v0.6.1（G2）：新曲×4——《雾》暗色徘徊 /《海》钢琴感慢板 /《灯》上行明亮 / B面收束平静
+    wu:    { bpm:0.55, chords:[['A3','C4','E4'],['F3','A3','C4'],['A3','C4','E4'],['E3','G3','B3']], bass:['A2','F2','A2','E2'],
+             melody:['A4','E4','C5','B4','A4','G4','A4','B4','C5','B4','A4','G4','E4','A4','B4','G4'], lead:'sine', hat:true, kickEvery:4 },
+    hai:   { bpm:0.62, chords:[['C4','E4','G4'],['G3','B3','D4'],['A3','C4','E4'],['F3','A3','C4']], bass:['C3','G2','A2','F2'],
+             melody:['E5','G5','C5','D5','E5','D5','C5','G4','A4','C5','D5','E5','G5','E5','D5','C5'], lead:'sine', hat:false, shimmer:true },
+    deng:  { bpm:0.36, chords:[['G3','B3','D4'],['C4','E4','G4'],['G3','B3','D4'],['D4','F4','A4']], bass:['G2','C3','G2','D3'],
+             melody:['D5','E5','G5','B4','D5','G4','B4','C5','D5','E5','D5','B4','G4','A4','B4','D5'], lead:'triangle', hat:false },
+    bside: { bpm:0.44, chords:[['G3','B3','D4'],['E4','G4','B4'],['C4','E4','G4'],['G3','B3','D4']], bass:['G2','E3','C3','G2'],
+             melody:['B4','D5','G5','D5','B4','A4','G4','A4','B4','C5','D5','B4','A4','G4','D4','G4'], lead:'sine', hat:false, shimmer:true },
   };
   let currentTrack = null;    // 正在播的剧情曲 id（null = 主题 BGM）
   let bar = 0;                // 小节计数
