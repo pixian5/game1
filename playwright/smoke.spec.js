@@ -255,3 +255,22 @@ test('主要控件具备可访问名与语义（v0.4.1）', async ({page}) => {
   // 会话列表为 list 语义
   await expect(page.locator('#conv-list')).toHaveAttribute('role', 'list');
 });
+
+// v0.5.9（F1）：英文模式序章链路——切换语言后开局，首条消息与选项为英文
+test('英文模式序章可玩（F1 英化二期）', async ({page}) => {
+  await page.goto('/');
+  await page.locator('#lock-screen').click();
+  await page.evaluate(() => { openApp('settings'); });
+  await page.evaluate(() => { document.querySelector('input[name=set-lang][value=en-US]').click(); });
+  await page.evaluate(() => { const e = window.__neonTest.engine; e.newGame(); });
+  await page.waitForTimeout(600);
+  // 序章：苏苏欢迎消息应为英文
+  await page.waitForFunction(() => {
+    const msgs = window.__neonTest.engine.state.conversations.susu.messages;
+    return msgs.length > 0;
+  }, {timeout: 15000});
+  await page.evaluate(() => { openConversation('susu'); });
+  const first = await page.locator('#chat-body .msg').first().textContent();
+  expect(first).toContain('Lin Xia');
+  // 回中文清理（localStorage 语言态不影响其他用例——各用例独立 context）
+});

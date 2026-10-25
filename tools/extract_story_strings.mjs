@@ -81,7 +81,7 @@ collect(STORY.dateScenes);
 
 // 读取现有 story-en 译文（合并保留）
 const existing = {};
-for (const f of ['i18n/story-en-translations.js', 'i18n/story-en-translations-2.js']) {
+for (const f of ['i18n/story-en-translations.js', 'i18n/story-en-translations-2.js', 'i18n/story-en-translations-3.js']) {
   const p = path.join(ROOT, f);
   if (!fs.existsSync(p)) continue;
   const sb2 = { window: {} };
