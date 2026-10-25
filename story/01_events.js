@@ -8,8 +8,9 @@ Object.assign(STORY, {
 
   events: {
     // ===== 序章：抵达霓城 =====
+    // v0.6.3：序章节奏——首条延后 1.5s（给"手机响了"的入场停顿），后续链自然拉开
     'intro_susu': {
-      type:'message_batch', delay:0, collectible:'postcard_neon',
+      type:'message_batch', delay:1.5, collectible:'postcard_neon',
       messages:[
         {from:'susu', text:'林夏！！！你到霓城了吗？？', then:'intro_susu_2'}
       ]
@@ -22,7 +23,7 @@ Object.assign(STORY, {
     },
     // v0.1.10: 汇流节点差异化——第一晚的回复不再直连梦境，苏苏的回应因你的选择而不同
     'intro_susu_3': {
-      type:'message_batch', delay: 0,
+      type:'message_batch', delay: 1.2,
       messages:[
         {from:'susu', text:'到了回我一声！别让我担心！', choice:{
           prompt:'苏苏在等你的回复：',

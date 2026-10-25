@@ -948,6 +948,8 @@ async function run(){
   const eng_r = new PhoneEngine(STORY);
   eng_r.newGame();
   await sleep(200);
+  // v0.6.3：newGame 会调度序章消息（带延迟），因此改用「增量」断言而非绝对值
+  const timersBaseline = eng_r._timers.size;
   // 把沈砚之好感度拉到阶段3，触发 criticalEvent
   eng_r.state.affection.shenyan = 8;
   eng_r.checkRelationshipStageUp('shenyan');
@@ -963,7 +965,9 @@ async function run(){
   const timersAfter2 = eng_r._timers.size;
   // 等 2.5s 让第一次的 criticalEvent 定时器执行完
   await sleep(2500);
-  check('Bug21: 反复横跳后定时器数量未异常增长', timersAfter2 <= 2, `定时器数:${timersAfter2}`);
+  // 断言：反复横跳带来的增量不应超过 2（正常应只有 1 个 criticalEvent 定时器）
+  check('Bug21: 反复横跳后定时器数量未异常增长', (timersAfter2 - timersBaseline) <= 2,
+    `增量:${timersAfter2 - timersBaseline}(基线${timersBaseline})`);
 
   // ===== v0.0.15 好感度深度系统测试 =====
   const eng_aff = new PhoneEngine(STORY);

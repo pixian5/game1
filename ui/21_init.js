@@ -14,6 +14,7 @@
       engine.newGame();
     }
     afterLoadRefresh();
+    muteNotifs(4000);   // v0.6.3：开局/续玩 4 秒内不弹通知，先让玩家看清界面
     AudioSys.applyTheme(engine.state.currentTheme);  // v0.1.7: 启动时按当前主题配置环境音
     // 启动后再强制写一次自动存档，保证下次能继续
     engine.autoSave(true);

@@ -103,11 +103,19 @@
   }
 
   // ===== 通知 =====
+  // v0.6.3：读档/新开局后的静默窗口——期间到达的消息只计未读，不弹通知。
+  // 修复「打开就看到一堆弹窗」：恢复 pending 消息时玩家还没进入状态。
+  let notifMuteUntil = 0;
+  function muteNotifs(ms){ notifMuteUntil = Date.now() + ms; }
+
   function showNotif(from, text, onClick){
     const char = STORY.characters[from];
     if(!char) return;
+    if(Date.now() < notifMuteUntil) return;   // 静默窗口内不打扰
     AudioSys.play('msg');  // v0.1.7: 消息提示音
     const stack = $('notif-stack');
+    // v0.6.3：通知栈上限 3 条，避免一次性涌入叠成一堵墙
+    while(stack.children.length >= 3) stack.firstElementChild?.remove();
     const n = document.createElement('div');
     n.className = 'notif';
     n.innerHTML = `

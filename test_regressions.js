@@ -299,13 +299,22 @@ test('v2 单例交互存档会迁移为 v3 队列', ()=>{
 test('多个来电可并发排队并逐个处理', ()=>{
   const e = engine();
   e.story.events.test_call_secondary = {...e.story.events.jiangyu_call_night, from:'shenyan'};
+  // v0.6.3：只在本实例上屏蔽定时器，且用完立即恢复——否则会污染后续用例
+  // （历史上这是 test:all 链上偶发失败的根因：前序用例把实例方法改成空函数后未还原）
+  const origSetTimeout = e._setTimeout;
   e._setTimeout = () => 1;
-  e.triggerCall('jiangyu_call_night', Date.now() + 60000);
-  e.triggerCall('test_call_secondary', Date.now() + 60000);
-  assert.equal(e.getPendingInteractions().filter(item=>item.type === 'call').length, 2);
-  e.declineCall('jiangyu_call_night');
-  assert.equal(e.getPendingInteractions().filter(item=>item.type === 'call').length, 1);
-  assert.equal(e.getPendingInteractions()[0].eventId, 'test_call_secondary');
+  try {
+    e.triggerCall('jiangyu_call_night', Date.now() + 60000);
+    e.triggerCall('test_call_secondary', Date.now() + 60000);
+    assert.equal(e.getPendingInteractions().filter(item=>item.type === 'call').length, 2);
+    e.declineCall('jiangyu_call_night');
+    assert.equal(e.getPendingInteractions().filter(item=>item.type === 'call').length, 1);
+    assert.equal(e.getPendingInteractions()[0].eventId, 'test_call_secondary');
+  } finally {
+    e._setTimeout = origSetTimeout;
+    delete e.story.events.test_call_secondary;   // 清理注入的测试事件
+    e._clearAllTimers();
+  }
 });
 
 test('停止自动存档会注销状态监听器', ()=>{
@@ -332,9 +341,13 @@ test('继续游戏选择时间最新的存档', ()=>{
 test('存储写入异常会显式失败', ()=>{
   const saved = sandbox.localStorage.setItem;
   sandbox.localStorage.setItem = () => { throw new Error('quota'); };
-  const e = engine();
-  assert.equal(e.save('slot1'), false);
-  sandbox.localStorage.setItem = saved;
+  try {
+    const e = engine();
+    assert.equal(e.save('slot1'), false);
+  } finally {
+    // v0.6.3：无论断言成败都必须还原，否则后续用例的存档全部失败（链上偶发失败的真正根因）
+    sandbox.localStorage.setItem = saved;
+  }
 });
 
 // ===== v0.1.6 新增 =====
