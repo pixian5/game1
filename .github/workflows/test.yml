@@ -20,6 +20,7 @@ jobs:
       - run: npm run check:ui
       - run: npm run lint
       - run: npm run test:regressions
+      - run: npm run test:cov
       - run: npm run test:story
       - name: Cache Playwright browsers
         uses: actions/cache@v4

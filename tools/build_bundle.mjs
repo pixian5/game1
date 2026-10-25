@@ -32,7 +32,13 @@ if (srcs.length < 10) throw new Error('script 清单异常：仅解析到 ' + sr
 
 const parts = [`/* neon-heart bundle v${VERSION} — 由 ${srcs.length} 个源文件按加载顺序合并（tools/build_bundle.mjs） */`];
 for (const src of srcs) {
-  const code = fs.readFileSync(path.join(ROOT, src), 'utf8');
+  let code = fs.readFileSync(path.join(ROOT, src), 'utf8');
+  // v0.5.6（F2.1）：源文件已 ES Modules 化，bundle 为传统脚本——剥离 import/export 语句
+  if (src.startsWith('story/')) {
+    code = code
+      .replace(/^import\s+\{[^}]*\}\s+from\s+'[^']*';\s*$/gm, '')
+      .replace(/^export const STORY/m, 'const STORY');
+  }
   parts.push(`/* ===== ${src} ===== */\n` + code.replace(/^\s*\/\* =+ .+? =+ \*\/\s*$/, '').trimStart());
 }
 const bundle = parts.join('\n\n') + '\n';

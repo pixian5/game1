@@ -3,7 +3,7 @@
  */
 
 /* ===== 霓虹心事 · 手机模拟应用入口 ===== */
-  const engine = new PhoneEngine(STORY);
+  const engine = new PhoneEngine(window.STORY);  // v0.5.6（F2.1）：story 已 ESM 化，从 window 取
   const $ = id => document.getElementById(id);
   const screens = {
     lock:$('lock-screen'), home:$('home-screen'),

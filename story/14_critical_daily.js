@@ -4,6 +4,7 @@
  */
 
 
+
 // 临界事件：进入新阶段时触发的特殊事件
 STORY.criticalEvents = {
   shenyan_critical_3: {

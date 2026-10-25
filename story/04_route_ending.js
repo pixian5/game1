@@ -4,6 +4,7 @@
  */
 
 
+
 // 路线选择数据（由 engine.chooseRoute 触发对应 thenEvent）
 STORY.routeChoice = {
   prompt:'夜深了。你决定先回谁的消息？这将决定你的心属于谁。',

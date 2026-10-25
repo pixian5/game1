@@ -26,4 +26,11 @@ function runInSandbox(sandbox, files = SOURCE_FILES) {
   return sandbox;
 }
 
-module.exports = { SOURCE_FILES, runInSandbox };
+// v0.5.6（F2.1）：story 侧提供 ESM 聚合入口（story/index.mjs）——
+// 需要完整 STORY 的调用方可渐进迁移到 import；runInSandbox 保持引擎/队列的传统加载。
+async function loadStoryESM(){
+  const mod = await import(path.join(ROOT, 'story/index.mjs'));
+  return mod.STORY;
+}
+
+module.exports = { SOURCE_FILES, runInSandbox, loadStoryESM };

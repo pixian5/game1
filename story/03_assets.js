@@ -3,6 +3,7 @@
  * 拆分方案：见 docs/ 与 README「目录结构」。修改剧情数据后请运行 npm run validate:story。
  */
 
+
 Object.assign(STORY, {
 
   // ===== 相册 =====

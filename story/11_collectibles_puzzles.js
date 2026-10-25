@@ -4,6 +4,7 @@
  */
 
 
+
 // ===== v0.0.10 收集柜+隐藏彩蛋 =====
 // 多类道具：postcard(明信片)/stamp(印章)/evidence(证据)/recording(录音)/ticket(票根)/memento(信物)
 STORY.collectibles = {

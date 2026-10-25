@@ -7,6 +7,7 @@ const port = Number(process.env.TEST_PORT || 4187)  // v0.1.7: 4173 易与其他
 const mime = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',

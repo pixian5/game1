@@ -4,6 +4,7 @@
  */
 
 
+
 // ===== v0.0.15 好感度深度系统 =====
 // 在 state.affection[charId] 综合分之上，新增三轴：closeness(亲密度) / trust(信任度) / tension(暧昧度)
 // 旧 effects.affection{charId:n} 仍驱动综合分；三轴按 50%/30%/20% 自动折算
