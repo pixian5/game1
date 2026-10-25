@@ -8,6 +8,7 @@ const require = createRequire(import.meta.url);
 
 // engine 依赖 window.PhoneEngine 挂载链：先给全局 window
 globalThis.window = globalThis;
+require('./engine_domains.js');
 require('./interaction_queue.js');
 require('./save_migrations.js');
 require('./engine.js');

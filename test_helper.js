@@ -14,6 +14,7 @@ const SOURCE_FILES = [
   'interaction_queue.js',
   'save_migrations.js',
   'engine.js',
+  // engine_* 混入（含 F2.3 的 engine_domains，自动按序）
   ...fs.readdirSync(ROOT).filter(f => /^engine_.+\.js$/.test(f)).sort(),
 ];
 

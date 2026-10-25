@@ -7,7 +7,7 @@ const browser = {
   fetch: 'readonly', caches: 'readonly', self: 'readonly', location: 'readonly',
   console: 'readonly', requestAnimationFrame: 'readonly', URL: 'readonly', crypto: 'readonly',
 };
-const runtimeShared = { STORY: 'readonly', PhoneEngine: 'readonly', InteractionQueue: 'readonly', SaveMigrations: 'readonly', AudioSys: 'readonly', Clock: 'writable', FakeClock: 'readonly' };
+const runtimeShared = { STORY: 'readonly', PhoneEngine: 'readonly', InteractionQueue: 'readonly', SaveMigrations: 'readonly', AudioSys: 'readonly', Clock: 'writable', FakeClock: 'readonly', EventScheduler: 'readonly', SaveManager: 'readonly' };
 const node = { window: 'readonly', require: 'readonly', module: 'readonly', exports: 'readonly', __dirname: 'readonly', process: 'readonly', Buffer: 'readonly', console: 'readonly', setTimeout: 'readonly', clearTimeout: 'readonly', setInterval: 'readonly', clearInterval: 'readonly' };
 const rules = {
   'no-undef': 'error', 'no-dupe-keys': 'error', 'no-dupe-args': 'error', 'no-unreachable': 'error',

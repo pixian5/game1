@@ -8,21 +8,19 @@
 class PhoneEngine {
   constructor(story){
     this.story = story;
+    // v0.5.8（F2.3）：职责域组合——调度器与存档管理独立成对象（方法经转发保持调用面不变）
+    this.scheduler = new EventScheduler(this);
+    this.saveManager = new SaveManager(this);
     this.state = this.defaultState();
     this.listeners = {};
-    this._timers = new Set();   // 注册所有 setTimeout，便于 newGame/load 时全量清理
-    this._callMissTimers = new Map();  // eventId -> timerId，支持并发通话
     this._pendingCallEventId = null;
     this._pendingEncounterThen = null;
     this._pendingDate = null;  // v0.0.16: 进行中的约会（不持久化）
-    this._memorySaves = {};  // localStorage 不可用时的内存存档
     this._disableAutoSave = false;
     this._lastAutoSaveAt = 0;
     this._autoSaveStarted = false;
     this._autoSaveInterval = null;
     this._autoSaveStateListener = null;
-    // 已排队但尚未真正触发的事件只存在运行时，不能提前写入 firedEvents。
-    this._scheduledEvents = new Set();
     // v0.5.7（F2.2）：可注入时钟（测试用虚拟钟提速；默认 Date）
     // 默认走宿主全局 setTimeout/clearTimeout；测试注入 FakeClock（含 now/setTimeout/clearTimeout）
     this._clock = (typeof Clock !== 'undefined' && Clock.setTimeout) ? Clock : { now: () => Date.now(), setTimeout: (fn, d) => setTimeout(fn, d), clearTimeout: (id) => clearTimeout(id) };
@@ -34,29 +32,15 @@ class PhoneEngine {
       window.addEventListener('storage', this._storageListener);
     }
   }
-  // 统一注册 setTimeout，便于清理
-  _setTimeout(fn, delay){
-    // v0.5.7（F2.2）：经 _clock 注册（测试注入虚拟定时器后全程零真实等待）
-    const handle = this._clock.setTimeout(() => {
-      this._timers.delete(handle);
-      try { fn(); } catch(e){ console.error('[engine timer]', e); }
-    }, delay);
-    this._timers.add(handle);
-    return handle;
-  }
-  _clearTimeout(handle){
-    clearTimeout(handle);
-    this._timers.delete(handle);
-  }
+  // v0.5.8（F2.3）：转发 EventScheduler（实现见 engine_domains.js）
+  _setTimeout(fn, delay){ return this.scheduler.setTimeout(fn, delay); }
+  _clearTimeout(handle){ this.scheduler.clearTimeout(handle); }
   _clearAllTimers(){
-    this._timers.forEach(id=> clearTimeout(id));
-    this._timers.clear();
-    this._callMissTimers.forEach(id=> clearTimeout(id));
-    this._callMissTimers.clear();
+    // v0.5.8（F2.3）：集合清理转发 scheduler（引擎自身的挂起态字段仍在此处理）
+    this.scheduler.clearAll();
     this._pendingCallEventId = null;
     this._pendingEncounterThen = null;
     this._pendingDate = null;
-    this._scheduledEvents.clear();
   }
   _addInteraction(item){
     return InteractionQueue.upsert(this.state, item);
@@ -849,5 +833,14 @@ class PhoneEngine {
 
 
 }
+
+// v0.5.8（F2.3）：旧字段名转发到组合对象（调用面/测试零改动）
+Object.defineProperties(PhoneEngine.prototype, {
+  _timers:          { get(){ return this.scheduler.timers; }, configurable: true },
+  _callMissTimers:  { get(){ return this.scheduler.callMissTimers; }, configurable: true },
+  _scheduledEvents: { get(){ return this.scheduler.scheduledEvents; }, configurable: true },
+  _memorySaves:     { get(){ return this.saveManager.memorySaves; }, set(v){ this.saveManager.memorySaves = v; }, configurable: true },
+  _savesCache:      { get(){ return this.saveManager.cache; }, set(v){ this.saveManager.cache = v; }, configurable: true },
+});
 
 if (typeof window !== 'undefined') window.PhoneEngine = PhoneEngine;
