@@ -23,6 +23,8 @@ class PhoneEngine {
     this._autoSaveStateListener = null;
     // 已排队但尚未真正触发的事件只存在运行时，不能提前写入 firedEvents。
     this._scheduledEvents = new Set();
+    // v0.5.7（F2.2）：可注入时钟（测试用虚拟钟提速；默认 Date）
+    this._clock = (typeof Clock !== 'undefined' && Clock) || Date;
     // v0.1.7: 存档内存缓存（getAllSaves 高频调用，避免每次重读 localStorage + 全量规范化）
     this._savesCache = null;
     // v0.1.7: 其他标签页改动 localStorage 时使缓存失效
@@ -33,12 +35,17 @@ class PhoneEngine {
   }
   // 统一注册 setTimeout，便于清理
   _setTimeout(fn, delay){
-    const id = setTimeout(()=>{
-      this._timers.delete(id);
+    // v0.5.7（F2.2）：经 _clock 注册（测试注入虚拟定时器后全程零真实等待）
+    const handle = this._clock.setTimeout(() => {
+      this._timers.delete(handle);
       try { fn(); } catch(e){ console.error('[engine timer]', e); }
     }, delay);
-    this._timers.add(id);
-    return id;
+    this._timers.add(handle);
+    return handle;
+  }
+  _clearTimeout(handle){
+    clearTimeout(handle);
+    this._timers.delete(handle);
   }
   _clearAllTimers(){
     this._timers.forEach(id=> clearTimeout(id));

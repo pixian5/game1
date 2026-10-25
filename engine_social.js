@@ -131,7 +131,7 @@ Object.assign(PhoneEngine.prototype, {
     // 25 秒未接听 → 自动 missed 并留语音信箱
     // 支持并发：用 Map 按 eventId 注册定时器
     const oldTimer = this._callMissTimers.get(eventId);
-    if(oldTimer) clearTimeout(oldTimer);
+    if(oldTimer) clearTimeout(oldTimer);  // 旧定时器句柄（全局 setTimeout 产生）
     const tid = this._setTimeout(()=>{
       this._callMissTimers.delete(eventId);
       const pending = this._findInteraction(item=>item.type === 'call' && item.eventId === eventId);

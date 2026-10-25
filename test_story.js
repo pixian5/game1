@@ -6,11 +6,15 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
+// v0.5.7（F2.2）：虚拟时钟——引擎全部定时事件零真实等待（294 断言 ~2min → 秒级）
+require('./tools/fake_clock.js');  // 挂 globalThis.FakeClock
+const clock = FakeClock.create();
 const sandbox = {
   window: {},
   localStorage: { getItem: ()=>null, setItem: ()=>{} },
-  setTimeout: setTimeout,
-  clearTimeout: clearTimeout,
+  setTimeout: clock.setTimeout,
+  clearTimeout: clock.clearTimeout,
+  Clock: { now: clock.Date.now, setTimeout: clock.setTimeout, clearTimeout: clock.clearTimeout },
   console: console,
   Date: Date,
   Math: Math,
@@ -24,6 +28,7 @@ sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
 
 
+vm.runInContext(fs.readFileSync(path.join(__dirname, 'tools/fake_clock.js'), 'utf8'), sandbox);
 for(const file of require('./test_helper.js').SOURCE_FILES){
   vm.runInContext(fs.readFileSync(path.join(__dirname, file), 'utf8'), sandbox);
 }
@@ -37,7 +42,8 @@ function check(name, cond, detail=''){
 }
 
 const engine = new PhoneEngine(STORY);
-const sleep = ms => new Promise(r=>setTimeout(r, ms));
+const sleep = ms => { clock.advance(ms); return Promise.resolve(); };  // 虚拟推进，零等待
+const sleepReal = ms => new Promise(r=>setTimeout(r, ms));
 
 // ===== 事件日志 =====
 const eventLog = [];
