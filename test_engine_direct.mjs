@@ -111,8 +111,14 @@ if (enc) e2.resolveEncounter(enc, 0);
   e.triggerDream('dream_day1');
   e.resolveDream('dream_day1', 0);
   assert.ok(e.state.resolvedDreams.dream_day1);
+  // v0.6.7：地点渐进解锁——gallery 需 day≥2，测试里先推进到 day2
+  e.state.day = 2;
   e.goToLocation('gallery');
   assert.equal(e.state.currentLocation, 'gallery');
+  // 未解锁地点应被门禁拦截（天台需事件/day5）
+  e.state.day = 2;
+  assert.equal(e.isLocationUnlocked('rooftop'), false, 'day2 天台应未解锁');
+  assert.equal(e.goToLocation('rooftop'), false, '未解锁地点不可前往');
   // --- content：日记/塔罗/礼物/心情 ---
   e.addDiary('今天霓城放晴');
   e.setMood('happy');
