@@ -19,7 +19,7 @@
     tarot:       s => s.day >= 3,
     mood:        s => s.day >= 3,
     groups:      s => !!s.flags?.group_created_group_neon,                 // 群聊建群时
-    collection:  s => (s.collected || []).length >= 1,                     // 第一件收集品
+    collection:  s => (s.collected || []).length >= 2,                     // v0.6.9：第 2 件起（序章首件明信片不触发，避免开局空柜）
     achievements:s => Object.keys(s.achievements || {}).length >= 1,       // 第一个成就
     puzzles:     s => (s.discoveredClues && Object.keys(s.discoveredClues).length >= 1) || s.day >= 5,
     hints:       s => s.day >= 4,
@@ -33,7 +33,7 @@
     tasks:       s => s.day >= 5,     // v0.6.7：每日任务 day5 上线（此前漏配导致开局可见）
     watch:       s => s.day >= 8,
     'perspective': s => s.day >= 9,
-    holiday:     s => s.day >= 10,
+    calendar2:   s => s.day >= 10,   // 节日 App（data-app=calendar2，v0.6.9 修正：此前误写 holiday 导致永远可见）
   };
 
   const APP_NAMES = {
@@ -41,7 +41,7 @@
     tarot:'塔罗占卜', mood:'心情', groups:'群聊', collection:'收集柜', achievements:'成就',
     puzzles:'线索本', hints:'智能提示', dates:'约会', affection:'好感度深度',
     relations:'关系', player:'主角档案', themes:'主题', endings:'结局图鉴',
-    dreams:'梦魇录', watch:'观赏模式', perspective:'男主视角', holiday:'节日',
+    dreams:'梦魇录', watch:'观赏模式', perspective:'男主视角', calendar2:'节日',
   };
 
   function computeUnlockedApps(state){
