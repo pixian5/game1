@@ -9,11 +9,14 @@
 ```bash
 git clone https://github.com/pixian5/game1.git game1 && cd game1
 # 如 github 拉不动，用 gitee： git clone https://gitee.com/ibjxk/leame.git game1
+# gitcode 也可：git clone https://gitcode.com/laotongtian/game1.git game1
 # 或 gitcode：        git clone https://gitcode.com/laotongtian/game1.git game1
 ```
 
-无需任何令牌即可克隆（公开仓库）。**推送时如果需要凭据**：gitee 令牌
-`2a48e973ac155f1df55fd0a6de5de39f`（用于 https://ibjxk:2a48e973ac155f1df55fd0a6de5de39f@gitee.com/ibjxk/leame.git）。
+无需任何令牌即可克隆（公开仓库）。推送凭据：
+- **gitcode：无需凭据**（实测匿名即可推送——注意这也是安全隐患，见文末安全提醒）
+- **gitee**：remote url 写成 `https://ibjxk:2a48e973ac155f1df55fd0a6de5de39f@gitee.com/ibjxk/leame.git`
+- **github**：需要用户已 `gh auth login`，否则跳过 github 只推另外两个
 
 ## 2. 仓库结构速览
 
@@ -90,3 +93,11 @@ bash deploy.sh
 
 先读 `docs/20261026-全功能渐进解锁-v0.6.6到v0.6.7-GLM.md` 和
 `docs/20261028-v0.7.0-测试稳定性根修与服务器故障-GLM.md` 了解最新状态，然后向用户确认第一项任务。
+
+
+## 8. 安全提醒（给用户看；AI 勿自行修改仓库权限）
+
+- **gitcode 仓库 laotongtian/game1 实测匿名可推送**（2026-10-29 用 probe 提交验证并已恢复）。
+  建议用户登录 gitcode → 项目设置 → 仓库权限，改为「仅成员可写」。
+- 服务器 SSH 私钥 game1_deploy 如泄露，需在服务器 authorized_keys 中删除对应公钥并重新生成。
+- gitee 令牌泄露时在 gitee 设置 → 私人令牌中撤销重建。
