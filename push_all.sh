@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# ===== 三远端成套推送（v0.6.5）=====
-# 背景：本项目有三个远端（gitee/github/gitcode），历史上多次出现「只推了其中一个」导致
-# CI 跑旧代码、备份线落后几十个提交。此脚本一次全推并在最后校验三者是否一致。
-# 用法：bash push_all.sh
+# ===== 三远端成套推送（v0.6.7 修正版）=====
+# 一次推送 gitee/github/gitcode 三个远端，推送后校验三者与本地一致，不一致即报错退出。
+# 用法：bash push_all.sh [分支名，默认 main]
 set -uo pipefail
 cd "$(dirname "$0")"
 
@@ -11,13 +10,14 @@ FAILED=()
 
 for remote in gitee github gitcode; do
   if ! git remote | grep -qx "$remote"; then
-    echo "⚠ 跳过 $remote（未配置）"; continue
+    echo "跳过 $remote（未配置）"
+    continue
   fi
-  printf '==> 推送到 %-8s ' "$remote"
-  if git push "$remote" "$BRANCH" 2>&1 | tail -1; then
-    echo "    ✓ $remote"
+  echo "==> 推送到 $remote"
+  if git push "$remote" "$BRANCH"; then
+    echo "    OK $remote"
   else
-    echo "    ✗ $remote 失败"
+    echo "    FAIL $remote"
     FAILED+=("$remote")
   fi
 done
@@ -33,17 +33,17 @@ for remote in gitee github gitcode; do
   R=$(git rev-parse --short "$remote/$BRANCH" 2>/dev/null || echo "?")
   BEHIND=$(git rev-list --count "$remote/$BRANCH..$BRANCH" 2>/dev/null || echo "?")
   if [ "$R" = "$LOCAL" ] && [ "$BEHIND" = "0" ]; then
-    echo "  ✓ $remote/$BRANCH = $R"
+    echo "  OK  $remote/$BRANCH = $R"
   else
-    echo "  ✗ $remote/$BRANCH = $R（落后 $BEHIND 个提交）"
+    echo "  BAD $remote/$BRANCH = $R（落后 $BEHIND 个提交）"
     MISMATCH=1
   fi
 done
 
-if [ ${#FAILED[@]} -gt 0 ] || [ "$MISMATCH" = "1" ]; then
+if [ "${#FAILED[@]}" -gt 0 ] || [ "$MISMATCH" = "1" ]; then
   echo ""
-  echo "❌ 推送未完全成功：${FAILED[*]:-（远端不一致）}"
+  echo "推送未完全成功：${FAILED[*]:-（远端不一致）}"
   exit 1
 fi
 echo ""
-echo "✅ 三远端全部同步到 $LOCAL"
+echo "三远端全部同步到 $LOCAL"
