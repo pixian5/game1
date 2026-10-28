@@ -28,6 +28,16 @@
   });
 
   // 选项触发：若玩家正在该会话则立即显示，否则 engine 已挂起 pendingChoice
+  // v0.6.6（P1-4）：首支剧情曲解锁 → 引导去音乐 App / 开环境音乐（只提醒一次）
+  engine.on('musicUnlocked', (m)=>{
+    if(!engine.state.flags.music_guide_shown && m && m.title){
+      engine.state.flags.music_guide_shown = true;
+      setUiTimeout(()=>{
+        toast(`🎧 已解锁 ${m.title}——去「音乐」App 听，或在设置开启环境音乐`);
+      }, 1200);
+    }
+  });
+
   engine.on('choicePrompt', ({convId, choice, conv})=>{
     // v0.0.13 观赏模式：自动选择（用 engine._setTimeout 集中管理，读档/关闭时清理）
     if(engine.state.watchMode && choice.options && choice.options.length > 0 && !choice.isInvitation){

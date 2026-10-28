@@ -64,6 +64,8 @@ await mark('回复后');
 
 // 4. 巡览全部 App（布局/渲染异常检测）
 console.log('\n=== 4. App 巡览 ===');
+await page.evaluate(() => { const e = window.__neonTest.engine; e.state.day = 12; e.emit('stateChange', e.state); });
+await page.waitForTimeout(600);
 const apps = ['messages', 'moments', 'album', 'calendar', 'music', 'notes', 'profile', 'map',
   'groups', 'contacts', 'shop', 'mood', 'tarot', 'achievements', 'collection', 'puzzles',
   'player', 'relations', 'tasks', 'watch', 'affection', 'themes', 'endings', 'dates',

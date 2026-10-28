@@ -255,7 +255,7 @@ for(const m of (engineText + appText).matchAll(/\bflags\[([^\]]+)\]\s*=(?!=)/g))
     if(text && text.length >= 3) dynamicFlagParts.push(text);
   }
 }
-const dynamicFlags = new Set(['followup_triggered']);  // 引擎运行时写入的已知 flag
+const dynamicFlags = new Set(['followup_triggered', 'music_guide_shown']);  // 引擎/UI 运行时写入的已知 flag
 flagReaders.forEach(f=>{
   if(flagWriters.has(f) || dynamicFlags.has(f)) return;
   if(dynamicFlagParts.some(part => f.startsWith(part) || f.endsWith(part))) return;

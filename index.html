@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; object-src 'none'; base-uri 'none'">
-<title>霓虹心事 · 林夏的手机 · v0.6.5</title>
-<meta name="version" content="v0.6.5">
+<title>霓虹心事 · 林夏的手机 · v0.6.6</title>
+<meta name="version" content="v0.6.6">
 <meta name="description" content="「模拟一部手机」的沉浸式多线互动叙事游戏：三位男主同时找你，何时回复、回谁、已读不回都有后果。196 事件 · 17 结局。">
 <meta name="theme-color" content="#0a0612">
 <!-- Open Graph / 社交分享卡片（v0.2.8 起） -->
@@ -27,7 +27,7 @@
 {"@context":"https://schema.org","@type":"VideoGame","name":"霓虹心事 · 林夏的手机","description":"「模拟一部手机」的沉浸式多线互动叙事游戏：三位男主同时找你，何时回复、回谁、已读不回都有后果。","genre":["互动小说","恋爱模拟","剧情"],"gamePlatform":"Web Browser","applicationCategory":"Game","operatingSystem":"Any","inLanguage":"zh-CN","playMode":"SinglePlayer","offers":{"@type":"Offer","price":"0","priceCurrency":"CNY"}}
 </script>
 <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/icon-180.png">
-<link rel="stylesheet" href="style.css?v=0.6.5">
+<link rel="stylesheet" href="style.css?v=0.6.6">
 </head>
 <body>
 <div id="phone-frame">
@@ -336,6 +336,7 @@
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
         <h1>出行</h1>
       </header>
+      <div class="map-tip" role="note">🚶 出行会推进时间，可能遇见某个人、触发新消息</div>
       <div class="map-current" id="map-current">
         <div class="map-current-label">当前位置</div>
         <div class="map-current-name" id="map-current-name">家</div>
@@ -722,64 +723,66 @@
   </div>
 </div>
 
-<script src="i18n/zh-CN.js?v=0.6.5"></script>
-<script src="i18n/en-US.js?v=0.6.5"></script>
-<script src="i18n/story-en-translations.js?v=0.6.5"></script>
-<script src="i18n/story-en-translations-2.js?v=0.6.5"></script>
-<script src="i18n/story-en-translations-3.js?v=0.6.5"></script>
-<script src="i18n/story-en-translations-4.js?v=0.6.5"></script>
-<script src="i18n/index.js?v=0.6.5"></script>
-<script src="story/00_core.js?v=0.6.5"></script>
-<script src="story/01_events.js?v=0.6.5"></script>
-<script src="story/02_moments_dreams.js?v=0.6.5"></script>
-<script src="story/03_assets.js?v=0.6.5"></script>
-<script src="story/04_route_ending.js?v=0.6.5"></script>
-<script src="story/05_locations.js?v=0.6.5"></script>
-<script src="story/06_intel_invitations.js?v=0.6.5"></script>
-<script src="story/07_groups_profiles.js?v=0.6.5"></script>
-<script src="story/08_flashbacks.js?v=0.6.5"></script>
-<script src="story/09_shop_moods.js?v=0.6.5"></script>
-<script src="story/10_tarot_achievements.js?v=0.6.5"></script>
-<script src="story/11_collectibles_puzzles.js?v=0.6.5"></script>
-<script src="story/12_seasons_perspectives.js?v=0.6.5"></script>
-<script src="story/13_player_relationship.js?v=0.6.5"></script>
-<script src="story/14_critical_daily.js?v=0.6.5"></script>
-<script src="story/15_affection_themes.js?v=0.6.5"></script>
-<script src="story/16_dates_nightmares.js?v=0.6.5"></script>
-<script src="story/17_hints_ambiences.js?v=0.6.5"></script>
-<script src="interaction_queue.js?v=0.6.5"></script>
-<script src="save_migrations.js?v=0.6.5"></script>
-<script src="engine_domains.js?v=0.6.5"></script>
-<script src="engine.js?v=0.6.5"></script>
-<script src="engine_content.js?v=0.6.5"></script>
-<script src="engine_progress.js?v=0.6.5"></script>
-<script src="engine_save.js?v=0.6.5"></script>
-<script src="audio.js?v=0.6.5"></script>
-<script src="debug.js?v=0.6.5"></script>
-<script src="engine_social.js?v=0.6.5"></script>
-<script src="ui/00_shell.js?v=0.6.5"></script>
-<script src="ui/01_input_delegate.js?v=0.6.5"></script>
-<script src="ui/02_map_encounters.js?v=0.6.5"></script>
-<script src="ui/03_messages.js?v=0.6.5"></script>
-<script src="ui/04_engine_events.js?v=0.6.5"></script>
-<script src="ui/05_calls.js?v=0.6.5"></script>
-<script src="ui/06_album_calendar_music.js?v=0.6.5"></script>
-<script src="ui/07_notes_logs_endings.js?v=0.6.5"></script>
-<script src="ui/08_moments.js?v=0.6.5"></script>
-<script src="ui/09_dreams_memories_intel.js?v=0.6.5"></script>
-<script src="ui/10_voicemail_groups.js?v=0.6.5"></script>
-<script src="ui/11_contacts_flashbacks.js?v=0.6.5"></script>
-<script src="ui/12_shop_mood.js?v=0.6.5"></script>
-<script src="ui/13_tarot_achievements.js?v=0.6.5"></script>
-<script src="ui/14_collection_puzzles.js?v=0.6.5"></script>
-<script src="ui/15_holiday_perspective.js?v=0.6.5"></script>
-<script src="ui/16_player_profile.js?v=0.6.5"></script>
-<script src="ui/17_relationship_tasks_watch.js?v=0.6.5"></script>
-<script src="ui/18_affection_theme_gallery_dates.js?v=0.6.5"></script>
-<script src="ui/19_listeners_nightmares.js?v=0.6.5"></script>
-<script src="ui/20_saves.js?v=0.6.5"></script>
-<script src="ui/22_settings.js?v=0.6.5"></script>
-<script src="ui/21_init.js?v=0.6.5"></script>
-<script src="pwa.js?v=0.6.5"></script>
+<script src="i18n/zh-CN.js?v=0.6.6"></script>
+<script src="i18n/en-US.js?v=0.6.6"></script>
+<script src="i18n/story-en-translations.js?v=0.6.6"></script>
+<script src="i18n/story-en-translations-2.js?v=0.6.6"></script>
+<script src="i18n/story-en-translations-3.js?v=0.6.6"></script>
+<script src="i18n/story-en-translations-4.js?v=0.6.6"></script>
+<script src="i18n/index.js?v=0.6.6"></script>
+<script src="story/00_core.js?v=0.6.6"></script>
+<script src="story/01_events.js?v=0.6.6"></script>
+<script src="story/02_moments_dreams.js?v=0.6.6"></script>
+<script src="story/03_assets.js?v=0.6.6"></script>
+<script src="story/04_route_ending.js?v=0.6.6"></script>
+<script src="story/05_locations.js?v=0.6.6"></script>
+<script src="story/06_intel_invitations.js?v=0.6.6"></script>
+<script src="story/07_groups_profiles.js?v=0.6.6"></script>
+<script src="story/08_flashbacks.js?v=0.6.6"></script>
+<script src="story/09_shop_moods.js?v=0.6.6"></script>
+<script src="story/10_tarot_achievements.js?v=0.6.6"></script>
+<script src="story/11_collectibles_puzzles.js?v=0.6.6"></script>
+<script src="story/12_seasons_perspectives.js?v=0.6.6"></script>
+<script src="story/13_player_relationship.js?v=0.6.6"></script>
+<script src="story/14_critical_daily.js?v=0.6.6"></script>
+<script src="story/15_affection_themes.js?v=0.6.6"></script>
+<script src="story/16_dates_nightmares.js?v=0.6.6"></script>
+<script src="story/17_hints_ambiences.js?v=0.6.6"></script>
+<script src="interaction_queue.js?v=0.6.6"></script>
+<script src="save_migrations.js?v=0.6.6"></script>
+<script src="engine_domains.js?v=0.6.6"></script>
+<script src="engine.js?v=0.6.6"></script>
+<script src="engine_content.js?v=0.6.6"></script>
+<script src="engine_progress.js?v=0.6.6"></script>
+<script src="engine_save.js?v=0.6.6"></script>
+<script src="audio.js?v=0.6.6"></script>
+<script src="debug.js?v=0.6.6"></script>
+<script src="engine_social.js?v=0.6.6"></script>
+<script src="ui/00_shell.js?v=0.6.6"></script>
+<script src="ui/01_input_delegate.js?v=0.6.6"></script>
+<script src="ui/02_map_encounters.js?v=0.6.6"></script>
+<script src="ui/03_messages.js?v=0.6.6"></script>
+<script src="ui/04_engine_events.js?v=0.6.6"></script>
+<script src="ui/05_calls.js?v=0.6.6"></script>
+<script src="ui/06_album_calendar_music.js?v=0.6.6"></script>
+<script src="ui/07_notes_logs_endings.js?v=0.6.6"></script>
+<script src="ui/08_moments.js?v=0.6.6"></script>
+<script src="ui/09_dreams_memories_intel.js?v=0.6.6"></script>
+<script src="ui/10_voicemail_groups.js?v=0.6.6"></script>
+<script src="ui/11_contacts_flashbacks.js?v=0.6.6"></script>
+<script src="ui/12_shop_mood.js?v=0.6.6"></script>
+<script src="ui/13_tarot_achievements.js?v=0.6.6"></script>
+<script src="ui/14_collection_puzzles.js?v=0.6.6"></script>
+<script src="ui/15_holiday_perspective.js?v=0.6.6"></script>
+<script src="ui/16_player_profile.js?v=0.6.6"></script>
+<script src="ui/17_relationship_tasks_watch.js?v=0.6.6"></script>
+<script src="ui/18_affection_theme_gallery_dates.js?v=0.6.6"></script>
+<script src="ui/19_listeners_nightmares.js?v=0.6.6"></script>
+<script src="ui/20_saves.js?v=0.6.6"></script>
+<script src="ui/22_settings.js?v=0.6.6"></script>
+<script src="ui/23_idle_hint.js?v=0.6.6"></script>
+<script src="ui/24_app_unlock.js?v=0.6.6"></script>
+<script src="ui/21_init.js?v=0.6.6"></script>
+<script src="pwa.js?v=0.6.6"></script>
 </body>
 </html>

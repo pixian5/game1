@@ -235,9 +235,12 @@
         const isDone = !!engine.state.firedEvents[sc.id];
         const canPick = !isDone && s.canDate;
         const cls = isDone ? 'done' : (canPick ? '' : 'locked');
-        const statusHtml = isDone
-          ? '<span class="date-scene-status done">已体验</span>'
-          : (canPick ? '<span class="date-scene-status available">可约会</span>' : '');
+        // v0.6.6（P2-5）：未就绪时说明原因而非空白（此前只在角色级显示冷却，场景级一片空白）
+        let statusHtml;
+        if(isDone) statusHtml = '<span class="date-scene-status done">已体验</span>';
+        else if(canPick) statusHtml = '<span class="date-scene-status available">可约会</span>';
+        else if(!s.canDate) statusHtml = `<span class="date-scene-status locked">冷却中 · 剩${s.remainingDays}天</span>`;
+        else statusHtml = '<span class="date-scene-status locked">本周已约过</span>';
         html += `<div class="date-scene-item ${cls}" ${canPick?`data-date="${escapeHtml(sc.id)}"`:''}>
           <div class="date-scene-name">${escapeHtml(sc.name)}${statusHtml}</div>
           <div class="date-scene-desc">${escapeHtml(sc.desc)}</div>

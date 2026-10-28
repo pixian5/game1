@@ -3,7 +3,7 @@
  * 缓存版本号必须与根目录 VERSION 一致——check_version.js 会校验（CACHE_VERSION 行）。
  * 每次发版：VERSION +0.0.1 后同步修改这里的 CACHE_VERSION。
  */
-const CACHE_VERSION = 'neon-heart-v0.6.5';
+const CACHE_VERSION = 'neon-heart-v0.6.6';
 
 // 预缓存核心资源（与 index.html 的脚本清单保持一致）
 const PRECACHE = [
@@ -75,6 +75,8 @@ const PRECACHE = [
   './ui/19_listeners_nightmares.js',
   './ui/20_saves.js',
   './ui/21_init.js',
+  './ui/23_idle_hint.js',
+  './ui/24_app_unlock.js',
   './ui/22_settings.js',
   // 图标（安装与桌面图标必需）
   './assets/icons/icon-192.png',

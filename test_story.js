@@ -1133,7 +1133,7 @@ async function run(){
   // 智能提示开关
   const eng_h = new PhoneEngine(STORY);
   eng_h.newGame();
-  check('v0.0.16: 默认showOptionHints=false', eng_h.state.showOptionHints === false);
+  check('v0.0.16: 默认showOptionHints（v0.6.6 一周目默认开）', eng_h.state.showOptionHints === true);
   eng_h.setShowOptionHints(true);
   check('v0.0.16: setShowOptionHints(true)生效', eng_h.state.showOptionHints === true);
   // 无 effects 时 getOptionHint 返回 null

@@ -188,7 +188,7 @@ class PhoneEngine {
       lastNightmareDay: 0,       // 上次梦魇的游戏日
       activeNightmare: null,     // 等待玩家选择的梦魇 id
       // v0.0.16 智能提示开关
-      showOptionHints: false,    // 是否显示选项影响提示
+      showOptionHints: true,     // v0.6.6（P1-3）：一周目默认开提示（新玩家理解选择后果；老存档的显式 false 会被保留）
       // v0.0.16 男主朋友圈互动
       momentReplies: {}          // {momentId: {charId, commentIdx, replyIdx}}
     };

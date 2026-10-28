@@ -1325,3 +1325,17 @@ html[lang="en-US"] .dream-opt, html[lang="en-US"] .chat-choice-btn{ overflow-wra
 .director-row{font-size:12px;color:var(--text,#eee);display:flex;align-items:center;gap:6px;}
 .director-row span{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;}
 .director-flags{font-size:11px;color:var(--ink-mute,#999);margin-top:8px;line-height:1.5;}
+
+/* v0.6.6（P0-1）：空窗引导 */
+.map-tip{margin:10px 14px 0;padding:8px 12px;border-radius:10px;background:rgba(255,95,168,0.10);border:1px solid rgba(255,95,168,0.25);color:var(--text,#eee);font-size:12px;line-height:1.5;}
+.idle-hint{position:fixed;left:50%;transform:translateX(-50%);bottom:84px;z-index:90;background:rgba(10,6,18,0.92);border:1px solid rgba(255,95,168,0.45);color:#ffd9ec;padding:9px 16px;border-radius:14px;font-size:13px;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,0.4);animation:screenIn .4s ease;}
+
+/* v0.6.6（P0-2）：App 解锁亮起动画 */
+@keyframes appUnlock{
+  0%{ transform:scale(0.6); filter:brightness(2.2); }
+  55%{ transform:scale(1.15); filter:brightness(1.4); }
+  100%{ transform:scale(1); filter:brightness(1); }
+}
+@media (prefers-reduced-motion: reduce){ .app-icon{ animation:none !important; } }
+
+.date-scene-status.locked{color:var(--ink-mute,#999);font-size:11px;}
