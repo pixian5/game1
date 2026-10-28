@@ -82,7 +82,79 @@ const AudioSys = (() => {
     stingNightmare(){ [415,392,370,349].forEach((f,i)=>tone({freq:f, dur:0.55, when:i*0.3, type:'sawtooth', gain:0.028})); },
     stingInvite(){ tone({freq:784, dur:0.14, gain:0.04}); tone({freq:1047, dur:0.22, when:0.14, gain:0.038}); },
     stingPuzzle(){ [523,659,880,1047,1319].forEach((f,i)=>tone({freq:f, dur:0.18, when:i*0.08, type:'triangle', gain:0.045})); },
+    // v0.7.3：语音信箱——按键起播与播完挂断（短促电子音，和线路噪声区分开）
+    vmStart(){ tone({freq:660, dur:0.06, type:'triangle', gain:0.03}); },
+    vmEnd(){ tone({freq:494, dur:0.11, gain:0.028, slideTo:392}); tone({freq:988, dur:0.05, when:0.03, gain:0.014}); }
   };
+
+  // ===== v0.7.3：语音信箱底声——合成「电话那头有人在说话」的听感 =====
+  // 约束：项目不引入任何音频素材，全部 WebAudio 实时合成。
+  // 做法（共振峰近似）：锯齿波声源（基频随角色不同）→ 两路带通滤波（元音共振峰 F1/F2）
+  //   → 音节包络 LFO（约 3.2Hz，模拟说话的一顿一顿）+ 一路低音量线路噪声。
+  // 刻意不追求听清内容——只提供「有人在讲话、语调在起伏」的听觉暗示。
+  let vmNodes = null;
+  // 角色基频：男主偏低沉、苏苏偏高；未收录的角色走默认值
+  const VM_PITCH = { shenyan: 116, luci: 124, jiangyu: 134, susu: 196, wugang: 128, nicheng: 122 };
+  function startVoicemailBed(charId){
+    stopVoicemailBed();          // 同一时刻只可能有一条在播
+    if(!soundOn) return false;   // 音效总开关关闭时静默（UI 仍在走进度）
+    const c = ensure();
+    if(!c) return false;
+    const now = c.currentTime;
+    const base = VM_PITCH[charId] || 124;
+
+    // 总线：120ms 淡入，避免按键瞬间爆音
+    const bus = c.createGain();
+    bus.gain.setValueAtTime(0.0001, now);
+    bus.gain.exponentialRampToValueAtTime(1, now + 0.12);
+    bus.connect(sfxBus);
+
+    // 声源：锯齿 + 轻微失谐三角，两个副本叠加避免过于电子
+    const oscA = c.createOscillator(); oscA.type = 'sawtooth'; oscA.frequency.value = base;
+    const oscB = c.createOscillator(); oscB.type = 'triangle'; oscB.frequency.value = base * 1.006;
+    const src = c.createGain(); src.gain.value = 0.6;
+    oscA.connect(src); oscB.connect(src);
+
+    // 共振峰：F1≈700Hz（元音主体）+ F2≈1300Hz（亮度），并联后合流
+    const f1 = c.createBiquadFilter(); f1.type = 'bandpass'; f1.frequency.value = 700; f1.Q.value = 4.5;
+    const f2 = c.createBiquadFilter(); f2.type = 'bandpass'; f2.frequency.value = 1300; f2.Q.value = 6;
+    const voice = c.createGain(); voice.gain.value = 0.4;
+    src.connect(f1).connect(voice);
+    src.connect(f2).connect(voice);
+
+    // 音节起伏 3.2Hz + 呼吸弛缓 0.7Hz，叠加在共振峰通道的增益上
+    const syll = c.createOscillator(); syll.type = 'sine'; syll.frequency.value = 3.2;
+    const syllGain = c.createGain(); syllGain.gain.value = 0.22;
+    syll.connect(syllGain).connect(voice.gain);
+    const breath = c.createOscillator(); breath.type = 'sine'; breath.frequency.value = 0.7;
+    const breathGain = c.createGain(); breathGain.gain.value = 0.1;
+    breath.connect(breathGain).connect(voice.gain);
+
+    // 线路噪声：极低音量低通粉噪，给合成声一点"电话空间感"
+    const noise = c.createBufferSource();
+    noise.buffer = noiseBuffer(c); noise.loop = true;
+    const nf = c.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 1100; nf.Q.value = 0.7;
+    const ng = c.createGain(); ng.gain.value = 0.014;
+    noise.connect(nf).connect(ng).connect(bus);
+
+    voice.connect(bus);
+    [oscA, oscB, syll, breath].forEach(n => n.start(now));
+    noise.start(now);
+    vmNodes = { bus, nodes: [oscA, oscB, syll, breath, noise] };
+    return true;
+  }
+  function stopVoicemailBed(){
+    if(!vmNodes) return;
+    const group = vmNodes; vmNodes = null;
+    try {
+      const t = ctx ? ctx.currentTime : 0;
+      if(ctx){
+        group.bus.gain.cancelScheduledValues(t);
+        group.bus.gain.setTargetAtTime(0.0001, t, 0.05);   // 50ms 指数淡出
+      }
+      group.nodes.forEach(n => { try { n.stop(t + 0.3); } catch(_) {} });
+    } catch(_) {}
+  }
 
   // ===== v0.2.4: 底噪层（本地合成，无外部素材） =====
 
@@ -290,6 +362,10 @@ const AudioSys = (() => {
 
   return {
     play(name){ if(soundOn && unlocked && SFX[name]) SFX[name](); },
+    // v0.7.3：语音信箱——按角色基频起播/停播合成底声。返回是否真的发声：
+    // 音效关闭或未解锁时为 false，此时 UI 侧仍照常走进度条（视觉不受音频开关影响）。
+    startVoicemail(charId){ return startVoicemailBed(charId); },
+    stopVoicemail(){ stopVoicemailBed(); },
     // v0.4.10（E2）：音乐 App 点播——剧情曲真实可播；再次点同曲或传 null 回主题 BGM
     playTrack(trackId){
       if(trackId && TRACKS[trackId] && currentTrack === trackId) trackId = null;

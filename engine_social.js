@@ -261,12 +261,73 @@ Object.assign(PhoneEngine.prototype, {
       from, text, eventId, callbackEvent,
       time: this.getTime().time,
       day: this.state.day,
-      heard: false
+      heard: false,
+      durationSec: this.voicemailMeta(text).durationSec   // v0.7.3：由文本派生，不占存档名额
     };
     this.state.voicemails.unshift(vm);
     this.emit('voicemailReceived', vm);
     this.emit('stateChange', this.state);
     return vm.id;
+  },
+
+  // ===== v0.7.3：语音信箱时长元数据 =====
+  // 剧情数据里的留言自带时长标记，形如「（语音信箱 23"）：展签译名……算了。晚安。」，
+  // 英译包中同一条为「(Voicemail 23"): The wall titles... never mind. Good night.」。
+  // 此前这些秒数被当作正文的一部分丢掉了；解析出来后可显示时长并驱动播放进度。
+  parseVoicemailMeta(text){
+    const src = typeof text === 'string' ? text : String(text == null ? '' : text);
+    const m = /^[（(]\s*(?:语音信箱|voicemail)\s*(\d{1,3})\s*(?:["″]|秒|s)?\s*[）)]\s*[:：]?\s*/i.exec(src);
+    if(m){
+      const sec = parseInt(m[1], 10);
+      const body = src.slice(m[0].length).trim();
+      return { durationSec: (sec > 0 && sec <= 600) ? sec : null, body: body || src.trim() };
+    }
+    return { durationSec: null, body: src.trim() };
+  },
+  // 无显式标记时的兜底估算：中文按 5.5 字/秒、西文按 2.6 词/秒（含换气停顿），加 1.5s 起手留白。
+  // 保证任何留言都有合理秒数，UI 不会拿到 0 / NaN。
+  estimateVoicemailDuration(body){
+    const src = String(body == null ? '' : body);
+    const cnCount = (src.match(/[\u4e00-\u9fa5]/g) || []).length;
+    const wordCount = (src.replace(/[\u4e00-\u9fa5]/g, ' ').match(/[A-Za-z0-9']+/g) || []).length;
+    const sec = Math.max(cnCount / 5.5, wordCount / 2.6) + 1.5;
+    return Math.min(60, Math.max(3, Math.round(sec)));
+  },
+  // 统一入口：任何地方拿到留言文本都走这里，返回 {durationSec, body}
+  voicemailMeta(text){
+    const meta = this.parseVoicemailMeta(text);
+    if(meta.durationSec == null) meta.durationSec = this.estimateVoicemailDuration(meta.body);
+    return meta;
+  },
+
+  // ===== v0.7.3：已听标记与删除 =====
+  unreadVoicemailCount(){
+    return (this.state.voicemails || []).filter(vm => !vm.heard).length;
+  },
+  markVoicemailRead(vmId){
+    const vm = (this.state.voicemails || []).find(v => v.id === vmId);
+    if(!vm || vm.heard) return false;
+    vm.heard = true;
+    this.emit('voicemailUpdate', vm);
+    this.emit('stateChange', this.state);
+    return true;
+  },
+  markAllVoicemailsRead(){
+    const targets = (this.state.voicemails || []).filter(vm => !vm.heard);
+    if(targets.length === 0) return 0;
+    targets.forEach(vm => { vm.heard = true; });
+    this.emit('voicemailUpdate', null);
+    this.emit('stateChange', this.state);
+    return targets.length;
+  },
+  deleteVoicemail(vmId){
+    const list = this.state.voicemails || [];
+    const idx = list.findIndex(v => v.id === vmId);
+    if(idx < 0) return false;
+    const removed = list.splice(idx, 1)[0];
+    this.emit('voicemailDeleted', removed);
+    this.emit('stateChange', this.state);
+    return true;
   },
 
   playVoicemail(vmId){

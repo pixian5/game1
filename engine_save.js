@@ -225,7 +225,8 @@ Object.assign(PhoneEngine.prototype, {
     out.notes = array(source.notes, 200, item=>{ const n=object(item); return {title:asText(n.title,120), preview:asText(n.preview,1000), time:asText(n.time,40)}; });
     out.calendar = array(source.calendar, 200, item=>{ const e=object(item); return {title:asText(e.title,120), time:asText(e.time,40), desc:asText(e.desc,1000)}; });
     out.callLog = array(source.callLog, 300, item=>{ const c=object(item); const from=chars.includes(c.from)?c.from:'susu'; return {from,type:['incoming','missed','declined','outgoing'].includes(c.type)?c.type:'incoming',duration:asText(c.duration,20),name:asText(c.name,40),time:asText(c.time,8),day:asInt(c.day,0,0,9999)}; });
-    out.voicemails = array(source.voicemails, 100, item=>{ const vm=object(item); const from=chars.includes(vm.from)?vm.from:'susu'; return {id:asText(vm.id,100),from,text:asText(vm.text,1000),eventId:asText(vm.eventId,100),callbackEvent:eventIds.has(vm.callbackEvent)?vm.callbackEvent:null,time:asText(vm.time,8),day:asInt(vm.day,0,0,9999),heard:asBool(vm.heard)}; });
+    // v0.7.3：durationSec 由文本重算而非存档字段——老存档无需迁移即可得到时长
+    out.voicemails = array(source.voicemails, 100, item=>{ const vm=object(item); const from=chars.includes(vm.from)?vm.from:'susu'; const vmText=asText(vm.text,1000); return {id:asText(vm.id,100),from,text:vmText,eventId:asText(vm.eventId,100),callbackEvent:eventIds.has(vm.callbackEvent)?vm.callbackEvent:null,time:asText(vm.time,8),day:asInt(vm.day,0,0,9999),heard:asBool(vm.heard),durationSec:this.voicemailMeta(vmText).durationSec}; });
     out.moments = array(source.moments, 250, item=>{
       const m=object(item); const author=['me',...chars].includes(m.author)?m.author:'me';
       const id = /^[a-zA-Z0-9_:-]{1,100}$/.test(m.id || '') ? m.id : null;

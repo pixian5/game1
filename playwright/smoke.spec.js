@@ -266,6 +266,83 @@ test('主要控件具备可访问名与语义（v0.4.1）', async ({page}) => {
   await expect(page.locator('#conv-list')).toHaveAttribute('role', 'list');
 });
 
+// v0.7.3：语音信箱 UI 深化——详情抽屉（整条可点）、时长来自剧情文本、播放/暂停、未听计数
+test('语音信箱详情抽屉与播放控制（v0.7.3）', async ({page}) => {
+  await page.goto('/');
+  await page.locator('#lock-screen').click();
+  await page.evaluate(() => {
+    // 造一条与剧情数据同形态的留言（文本自带秒数标记）
+    window.__neonTest.engine.addVoicemail('shenyan', '（语音信箱 8"）：展签译名……算了。晚安。', '', null);
+    openApp('phone');
+  });
+  await page.locator('[data-phone-tab="voicemail"]').click();
+  const item = page.locator('.voicemail-item').first();
+  await expect(item).toBeVisible();
+  // 时长标签应当从剧情文本里解析出来，而不是把「（语音信箱 8"）」当正文
+  await expect(item.locator('.vm-dur')).toHaveText('0:08');
+  await expect(item.locator('.vm-text')).toHaveText('展签译名……算了。晚安。');
+  // 未听：tab 红点 + App 徽标
+  await expect(page.locator('#phone-vm-dot')).toBeVisible();
+  await expect(page.locator('#badge-phone')).toHaveText('1');
+  // 点整条可打开详情（此前这里是点击死区）
+  await item.click();
+  await expect(page.locator('.vm-sheet')).toBeVisible();
+  await expect(page.locator('.vm-body')).toHaveText('展签译名……算了。晚安。');
+  await expect(page.locator('#vm-total')).toHaveText('0:08');
+  // 波形条已生成
+  await expect(page.locator('#vm-wave .vm-wave-bar').first()).toBeVisible();
+  // 播放：进度推进
+  await expect(page.locator('#vm-elapsed')).toHaveText('0:00');
+  await page.locator('.vm-play-toggle').click();
+  await expect(page.locator('.vm-play-toggle')).toHaveText('❙❙');
+  await page.waitForTimeout(1200);
+  expect(await page.locator('#vm-elapsed').textContent()).not.toBe('0:00');
+  await expect(page.locator('#vm-progress-fill')).not.toHaveJSProperty('style.width', '0%');
+  // 起播即标记已听
+  await expect(page.locator('#badge-phone')).toBeHidden();
+  // 暂停：计时停在原地
+  await page.locator('.vm-play-toggle').click();
+  await expect(page.locator('.vm-play-toggle')).toHaveText('▶');
+  const pausedAt = await page.locator('#vm-elapsed').textContent();
+  await page.waitForTimeout(700);
+  expect(await page.locator('#vm-elapsed').textContent()).toBe(pausedAt);
+  // 关闭抽屉
+  await page.locator('[data-vm-close]').click();
+  await expect(page.locator('.vm-sheet')).toBeHidden();
+});
+
+// v0.7.3：未听筛选、批量已听、删除二次确认
+test('语音信箱筛选与删除（v0.7.3）', async ({page}) => {
+  await page.goto('/');
+  await page.locator('#lock-screen').click();
+  await page.evaluate(() => {
+    const e = window.__neonTest.engine;
+    e.addVoicemail('shenyan', '（语音信箱 8"）：第一条留言', '', null);
+    e.addVoicemail('luci', '（语音信箱 15"）：第二条留言', '', null);
+    openApp('phone');
+  });
+  await page.locator('[data-phone-tab="voicemail"]').click();
+  await expect(page.locator('.voicemail-item')).toHaveCount(2);
+  await expect(page.locator('#vm-filter-hint')).toContainText('未听 2');
+  // 批量已听 → 计数清零
+  await page.locator('#vm-read-all').click();
+  await expect(page.locator('#badge-phone')).toBeHidden();
+  await expect(page.locator('#vm-read-all')).toBeDisabled();
+  // 切到未听筛选应为空态
+  await page.locator('[data-vm-filter="unheard"]').click();
+  await expect(page.locator('.vm-empty')).toBeVisible();
+  await page.locator('[data-vm-filter="all"]').click();
+  await expect(page.locator('.voicemail-item')).toHaveCount(2);
+  // 删除需二次确认，误触不会立刻生效
+  await page.locator('.voicemail-item').first().click();
+  await page.locator('[data-vm-del]').click();
+  await expect(page.locator('[data-vm-del]')).toHaveText('确认删除？');
+  await expect(page.locator('.voicemail-item')).toHaveCount(2);
+  await page.locator('[data-vm-del]').click();
+  await expect(page.locator('.vm-sheet')).toBeHidden();
+  await expect(page.locator('.voicemail-item')).toHaveCount(1);
+});
+
 // v0.5.9（F1）：英文模式序章链路——切换语言后开局，首条消息与选项为英文
 test('英文模式序章可玩（F1 英化二期）', async ({page}) => {
   await page.goto('/');

@@ -72,6 +72,28 @@
     '已发表': 'Posted',
     // 提示
     '智能提示已开启': 'Hints on',
-    '智能提示已关闭': 'Hints off'
+    '智能提示已关闭': 'Hints off',
+    // v0.7.3 Voicemail UI overhaul (keys are the zh-CN source strings; keep the two packs in sync)
+    '语音信箱': 'Voicemail',
+    '全部': 'All',
+    '未听': 'Unplayed',
+    '全部标为已听': 'Mark all played',
+    '第 {day} 天': 'Day {day}',
+    '共 {n} 条 · 未听 {m}': '{n} total · {m} unplayed',
+    '还没有留言': 'No voicemails yet',
+    '电话打来却没接的时候，对方会在这里留下几秒钟的话。': 'Miss a call, and they leave a few seconds of their voice here.',
+    '没有未听的留言': 'No unplayed voicemails',
+    '所有留言都听过了。': 'Every voicemail has been played.',
+    '播放留言': 'Play voicemail',
+    '播放进度': 'Playback progress',
+    '关闭': 'Close',
+    '回拨': 'Call back',
+    '已听完': 'Played',
+    '标记已听': 'Mark as played',
+    '已标记为听完': 'Marked as played',
+    '已标记 {n} 条为听完': 'Marked {n} as played',
+    '删除': 'Delete',
+    '确认删除？': 'Confirm delete?',
+    '留言已删除': 'Voicemail deleted'
   };
 })();
