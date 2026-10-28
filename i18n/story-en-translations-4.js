@@ -111,6 +111,17 @@
     "（你掀开被子。霓城不相信赖床的人。）": "(You throw off the covers. Nicheng doesn't believe in sleepers-in.)",
     "（你拍下了一张没有霓虹的霓城。相册里第一张\"素颜\"照片。）": "(You take a shot of Nicheng without neon. The first bare-faced photo in the album.)",
     "（发出去三秒就收到回复。原来也有人醒着。）": "(A reply in three seconds. So someone else is awake too.)",
-    "（你把闹钟按掉。十分钟后自然醒，窗外已经亮了。）": "(You silence the alarm. Ten minutes later you wake on your own — the window's already bright.)"
+    "（你把闹钟按掉。十分钟后自然醒，窗外已经亮了。）": "(You silence the alarm. Ten minutes later you wake on your own — the window's already bright.)",
+    // ===== v0.7.1：三条线中段二周目变体 =====
+    "你不用回答我。上一次，我就这样说了然后真的走了。": "You don't have to answer. Last time I said exactly this — and then I actually left.",
+    "这一次我把话说完：机票我买了，但退掉的手续费我也查好了。所以——你只要说一个字，我就不上那班飞机。": "This time I'll finish the sentence: I bought the ticket, but I also checked the refund fee. So — say one word, and I won't board that flight.",
+    "他把选择权交给你的第二次。": "He hands you the choice, for the second time.",
+    "我可能唱不完。但我想试。……上一次我也是这么说的。": "I might not make it through. But I want to try. ...I said the same thing last time.",
+    "上一次我停在副歌前。这一次我想知道，如果知道你在台下，我能不能唱完。": "Last time I stopped before the chorus. This time I want to know — if I know you're in the audience, can I finish it?",
+    "同一个舞台，第二次。": "The same stage, the second time.",
+    "他说你忙。可你根本没收到过那些电话，对吧？……这话我上一次也说过。": "He said you were busy. But you never got those calls at all, did you? ...I said this last time too.",
+    "上一次你选择替沈砚之解释，然后我沉默了九年。这一次——我不问对错了，只问你还想不想被人替他\"过滤\"掉。": "Last time you chose to explain for Shen Yanzhi, and I stayed silent for nine years. This time — I won't ask who's right. I'll only ask: do you still want to be \"filtered\" on his behalf?",
+    "同一个问题，第二次。": "The same question, the second time."
+
   });
 })();

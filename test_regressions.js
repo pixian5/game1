@@ -994,4 +994,37 @@ test('v0.6.7: 地点按 unlock 条件渐进解锁（day/event 门禁）', ()=>{
   assert.notEqual(e3.state.currentLocation, 'rooftop');
 });
 
+
+// ===== v0.7.1：三条线二周目变体均衡 =====
+
+test('v0.7.1: 三条线各有≥2个中段二周目变体且改道正确', ()=>{
+  const routes = ['shenyan','luci','jiangyu'];
+  for (const route of routes) {
+    const variants = Object.keys(STORY.events).filter(id =>
+      id.startsWith('route_' + route) && id.endsWith('_ng2'));
+    assert.ok(variants.length >= 2, route + ' 变体不足 2 个（实际 ' + variants.length + '）');
+  }
+  // 新增三个变体的落点正确
+  assert.equal(STORY.events['route_luci_milan_2_ng2_2'].messages[0].choice.options[0].effects.thenEvent, 'route_luci_chase_rain');
+  assert.equal(STORY.events['route_jiangyu_show_msg_2_ng2_2'].messages[0].choice.options[0].effects.thenEvent, 'route_jiangyu_end_check');
+  assert.equal(STORY.events['route_shenyan_control_msg_3_ng2_2'].messages[0].choice.options[0].effects.thenEvent, 'route_shenyan_cafe');
+});
+
+test('v0.7.1: 三新变体在二周目改道、一周目不触发', ()=>{
+  const e = engine();
+  e.newGame();
+  e.triggerEnding('solo_good');
+  e.newGame({ngPlus: true});
+  for (const id of ['route_luci_milan_2','route_jiangyu_show_msg_2','route_shenyan_control_msg_3']) {
+    e.scheduleEvent(id);
+    assert.equal(e.state.firedEvents[id + '_ng2'], true, id + ' 应变体');
+    assert.equal(e.state.firedEvents[id], undefined, id + ' 原事件不应触发');
+  }
+  const e2 = engine();
+  e2.newGame();
+  e2.scheduleEvent('route_luci_milan_2');
+  assert.equal(e2.state.firedEvents['route_luci_milan_2'], true, '一周目直通原事件');
+  assert.equal(e2.state.firedEvents['route_luci_milan_2_ng2'], undefined);
+});
+
 console.log('全部回归测试通过');

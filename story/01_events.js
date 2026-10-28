@@ -960,6 +960,65 @@ Object.assign(STORY, {
     },
     'music_deng_grant': { type:'music_unlock', music:'deng' },
 
+    // ===== v0.7.1：二周目变体补齐——三条线的中段情感节点（此前每线仅 1 个变体） =====
+    // 陆辞「米兰道别」（原：你不用回答我。我只是……来道个别。）
+    'route_luci_milan_2_ng2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'luci', text:'你不用回答我。上一次，我就这样说了然后真的走了。', then:'route_luci_milan_2_ng2_2'}
+      ]
+    },
+    'route_luci_milan_2_ng2_2': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'luci', text:'这一次我把话说完：机票我买了，但退掉的手续费我也查好了。所以——你只要说一个字，我就不上那班飞机。', choice:{
+          prompt:'他把选择权交给你的第二次。',
+          options:[
+            {text:'喊住他，不让他走', effects:{affection:{luci:2}, thenEvent:'route_luci_chase_rain'}, hint:'向 GOOD END'},
+            {text:'看着他离开', effects:{affection:{luci:1}, thenEvent:'route_luci_rain_night'}, hint:'向 BAD END'}
+          ]
+        }}
+      ]
+    },
+    // 江屿「试登台」（原：我可能唱不完。但我想试。）
+    'route_jiangyu_show_msg_2_ng2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'jiangyu', text:'我可能唱不完。但我想试。……上一次我也是这么说的。', then:'route_jiangyu_show_msg_2_ng2_2'}
+      ]
+    },
+    'route_jiangyu_show_msg_2_ng2_2': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'jiangyu', text:'上一次我停在副歌前。这一次我想知道，如果知道你在台下，我能不能唱完。', choice:{
+          prompt:'同一个舞台，第二次。',
+          options:[
+            {text:'站起来，走到台前', effects:{affection:{jiangyu:2}, flags:{jiangyu_stand:1}, thenEvent:'route_jiangyu_end_check'}, hint:'向 GOOD END'},
+            {text:'安静等他自己开口', effects:{affection:{jiangyu:1}, flags:{jiangyu_silent:1}, thenEvent:'route_jiangyu_end_check'}, hint:'向 BAD END'}
+          ]
+        }}
+      ]
+    },
+    // 沈砚之「朋友的警告」（原：他说你忙。可你根本没收到过那些电话，对吧？）
+    'route_shenyan_control_msg_3_ng2': {
+      type:'message_batch', delay:0,
+      messages:[
+        {from:'luci', text:'他说你忙。可你根本没收到过那些电话，对吧？……这话我上一次也说过。', then:'route_shenyan_control_msg_3_ng2_2'}
+      ]
+    },
+    'route_shenyan_control_msg_3_ng2_2': {
+      type:'message_batch', delay:1,
+      messages:[
+        {from:'luci', text:'上一次你选择替沈砚之解释，然后我沉默了九年。这一次——我不问对错了，只问你还想不想被人替他"过滤"掉。', choice:{
+          prompt:'同一个问题，第二次。',
+          options:[
+            {text:'立刻去找陆辞问清楚', effects:{affection:{luci:2}, thenEvent:'route_shenyan_cafe'}, hint:'追查真相'},
+            {text:'替沈砚之解释', effects:{affection:{luci:1}, thenEvent:'route_shenyan_end_check'}, hint:'继续相信他'}
+          ]
+        }}
+      ]
+    },
+
     // ===== v0.6.1（G1 电话之夜）：三男主各 2 通电话——「模拟手机」的核心形式补全 =====
     // 沈砚之 ①：深夜"工作电话"说到一半变成私事（day12 晚）
     'shenyan_call_labels': {
