@@ -228,9 +228,26 @@ Object.assign(PhoneEngine.prototype, {
     }
   },
 
+  // v0.6.7：地点渐进解锁（story.locations[].unlock：{day} / {event, dayFallback}）
+  isLocationUnlocked(locId){
+    const loc = this.story.locations?.[locId];
+    if(!loc) return false;
+    const u = loc.unlock;
+    if(!u) return true;   // 无条件（如：家）
+    if(u.day && this.state.day >= u.day) return true;
+    if(u.event){
+      if(this.state.firedEvents?.[u.event]) return true;
+      if(u.dayFallback && this.state.day >= u.dayFallback) return true;
+    }
+    return false;
+  },
   goToLocation(locId){
     const loc = this.story.locations[locId];
     if(!loc) return false;
+    if(!this.isLocationUnlocked(locId)){
+      this.emit('locationLocked', {locId});
+      return false;
+    }
     this.state.currentLocation = locId;
     this.state.locationVisits.push({locId, day:this.state.day, ts:Date.now()});
     if(this.state.locationVisits.length > 200) this.state.locationVisits.splice(0, this.state.locationVisits.length - 200);

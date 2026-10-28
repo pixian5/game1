@@ -13,15 +13,29 @@
     Object.entries(STORY.locations).forEach(([id, loc])=>{
       const item = document.createElement('button');
       item.className = 'map-item' + (id===cur ? ' current' : '');
+      // v0.6.7：未解锁地点显示为暗色「尚未到达」卡（保留位置感，不剧透内容）
+      const unlocked = engine.isLocationUnlocked ? engine.isLocationUnlocked(id) : true;
       item.dataset.loc = id;
-      item.innerHTML = `
-        <div class="map-item-icon">${loc.icon}</div>
-        <div class="map-item-info">
-          <div class="map-item-name">${escapeHtml(loc.name)}</div>
-          <div class="map-item-hint">${loc.hint}</div>
-        </div>
-        ${id===cur ? '<div class="map-item-tag">当前</div>' : '<div class="map-item-go">前往</div>'}
-      `;
+      if(!unlocked){
+        item.classList.add('locked');
+        item.disabled = true;
+        item.innerHTML = `
+          <div class="map-item-icon">🔒</div>
+          <div class="map-item-info">
+            <div class="map-item-name">？？？</div>
+            <div class="map-item-hint">还没来过这里——继续剧情，路会自己出现</div>
+          </div>
+        `;
+      } else {
+        item.innerHTML = `
+          <div class="map-item-icon">${loc.icon}</div>
+          <div class="map-item-info">
+            <div class="map-item-name">${escapeHtml(loc.name)}</div>
+            <div class="map-item-hint">${loc.hint}</div>
+          </div>
+          ${id===cur ? '<div class="map-item-tag">当前</div>' : '<div class="map-item-go">前往</div>'}
+        `;
+      }
       list.appendChild(item);
     });
   }

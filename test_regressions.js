@@ -963,4 +963,35 @@ test('v0.5.10: 二周目中段 ng2 变体——告白/危机节点改道', ()=>{
   assert.equal(STORY.events['route_shenyan_dinner_2_ng2_2'].messages[0].then, 'route_shenyan_rain');
 });
 
+
+// ===== v0.6.7：地点渐进解锁 =====
+
+test('v0.6.7: 地点按 unlock 条件渐进解锁（day/event 门禁）', ()=>{
+  const e = engine();
+  e.newGame();
+  // day1：只有家（gallery day2，其余事件/更晚）
+  assert.equal(e.isLocationUnlocked('home'), true, '家常开');
+  assert.equal(e.isLocationUnlocked('gallery'), false, 'gallery day2 前');
+  assert.equal(e.isLocationUnlocked('bar'), false, 'bar 需邀约事件');
+  // day2：gallery 开
+  e.state.day = 2;
+  assert.equal(e.isLocationUnlocked('gallery'), true);
+  // 事件解锁：bar_invitation 触发后 bar 开（dayFallback 之前）
+  e.state.day = 2;
+  e.state.firedEvents['bar_invitation'] = true;
+  assert.equal(e.isLocationUnlocked('bar'), true);
+  // dayFallback 兜底
+  const e2 = engine();
+  e2.newGame();
+  e2.state.day = 3;   // bar dayFallback:3
+  assert.equal(e2.isLocationUnlocked('bar'), true, 'dayFallback 兜底');
+  // goToLocation 门禁：未解锁返回 false 不移动
+  const e3 = engine();
+  e3.newGame();
+  e3.state.day = 1;
+  const moved = e3.goToLocation('rooftop');
+  assert.equal(moved, false, '未解锁不可前往');
+  assert.notEqual(e3.state.currentLocation, 'rooftop');
+});
+
 console.log('全部回归测试通过');

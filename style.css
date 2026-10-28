@@ -1339,3 +1339,7 @@ html[lang="en-US"] .dream-opt, html[lang="en-US"] .chat-choice-btn{ overflow-wra
 @media (prefers-reduced-motion: reduce){ .app-icon{ animation:none !important; } }
 
 .date-scene-status.locked{color:var(--ink-mute,#999);font-size:11px;}
+
+/* v0.6.7：未解锁地点 */
+.map-item.locked{opacity:.45;filter:grayscale(.8);}
+.map-item.locked .map-item-name{letter-spacing:2px;}

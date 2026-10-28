@@ -40,6 +40,7 @@ STORY.locations = {
     ]
   },
   school: {
+    unlock: {event:'inv_luci_school_accept', dayFallback:7},   // 母校之行邀约后解锁
     name:'旧学校', icon:'🏫', bg:'linear-gradient(160deg,#1a2e0a 0%,#071208 100%)',
     hint:'操场边的银杏又长高了，九年的落叶堆在台阶上',
     // v0.1.9: 补齐旧学校偶遇（此前为空）
@@ -73,6 +74,7 @@ STORY.locations = {
     ]
   },
   gallery: {
+    unlock: {day:2},   // v0.6.7：第二天报到后解锁
     name:'砚美术馆', icon:'🎨', bg:'linear-gradient(160deg,#2a0f4a 0%,#0a0712 100%)',
     hint:'空旷的展厅，回声里都是秘密',
     encounters: [
@@ -92,6 +94,7 @@ STORY.locations = {
     ]
   },
   bar: {
+    unlock: {event:'bar_invitation', dayFallback:3},   // 陆辞带你去过后解锁
     name:'雾港酒吧', icon:'🍸', bg:'linear-gradient(160deg,#4a2a0f 0%,#1a0e05 100%)',
     hint:'爵士乐混着酒精，故事发酵的地方',
     encounters: [
@@ -111,6 +114,7 @@ STORY.locations = {
     ]
   },
   rooftop: {
+    unlock: {event:'rooftop_jiangyu_close', dayFallback:5},   // 天台之夜后解锁
     name:'天台', icon:'🌃', bg:'linear-gradient(160deg,#0a1a2e 0%,#050810 100%)',
     hint:'霓城的灯海，从这里看像一条流动的银河',
     encounters: [
@@ -130,6 +134,7 @@ STORY.locations = {
     ]
   },
   street: {
+    unlock: {day:5},   // 熟悉霓城后解锁
     name:'霓城街头', icon:'🛣️', bg:'linear-gradient(160deg,#2e1a0a 0%,#1a0e05 100%)',
     hint:'霓虹与雨水的城市，每个转角都是未知',
     encounters: [

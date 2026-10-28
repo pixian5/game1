@@ -222,6 +222,15 @@ Object.keys(STORY.collectibles || {}).forEach(id=>{
   else if(sources.length > 1) warn(`收集品「${id}」有多条获取路径：${sources.join('、')}`);
 });
 
+// ---------- 9.5) 地点解锁条件引用（v0.6.7） ----------
+Object.entries(STORY.locations || {}).forEach(([id, loc])=>{
+  const u = loc.unlock;
+  if(!u) return;
+  if(u.event && !STORY.events[u.event] && !STORY.criticalEvents?.[u.event])
+    err(`locations.${id}.unlock.event「${u.event}」不存在`);
+  if(u.day && !Number.isFinite(u.day)) err(`locations.${id}.unlock.day 非法`);
+});
+
 // ---------- 10. flag 读写一致性（警告级） ----------
 const appText = uiText;
 const allText = storyText + engineText + appText;

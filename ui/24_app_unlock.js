@@ -30,6 +30,7 @@
     themes:      s => Object.keys(s.unlockedThemes || {}).length >= 2,     // 第二套主题解锁时
     endings:     s => Object.keys(s.endingSeen || {}).length >= 1,         // 首个结局后（或图鉴预测）
     dreams:      s => s.day >= 7,
+    tasks:       s => s.day >= 5,     // v0.6.7：每日任务 day5 上线（此前漏配导致开局可见）
     watch:       s => s.day >= 8,
     'perspective': s => s.day >= 9,
     holiday:     s => s.day >= 10,
