@@ -114,7 +114,11 @@ test('角色头像在聊天/通讯录加载（v0.2.6）', async ({page}) => {
   await expect(page.locator('#chat-screen')).toHaveClass(/active/);
   const chatAvatar = page.locator('#chat-avatar img');
   await expect(chatAvatar).toHaveAttribute('src', 'assets/avatars/thumbs/susu.jpg');
-  expect(await chatAvatar.evaluate(i => i.naturalWidth)).toBe(128);
+  // v0.6.10：头像是 loading=lazy，必须等解码完成再读 naturalWidth（否则偶发 0）
+  await page.waitForFunction(() => {
+    const i = document.querySelector('#chat-avatar img');
+    return i && i.complete && i.naturalWidth === 128;
+  }, { timeout: 10000 });
 
   await page.evaluate(() => { renderContacts(); showScreen('contacts'); });
   await expect(page.locator('.contact-avatar img')).toHaveCount(4);
@@ -125,7 +129,10 @@ test('角色头像在聊天/通讯录加载（v0.2.6）', async ({page}) => {
   await expect(page.locator('#char-profile-screen')).toHaveClass(/active/);
   const profileAvatar = page.locator('.char-profile-avatar img');
   await expect(profileAvatar).toHaveAttribute('src', 'assets/avatars/thumbs/shenyan.jpg');
-  expect(await profileAvatar.evaluate(i => i.naturalWidth)).toBe(128);
+  await page.waitForFunction(() => {
+    const i = document.querySelector('.char-profile-avatar img');
+    return i && i.complete && i.naturalWidth === 128;
+  }, { timeout: 10000 });
 
   await page.evaluate(() => {
     engine.postMoment('moment_shenyan_opening');
@@ -134,7 +141,10 @@ test('角色头像在聊天/通讯录加载（v0.2.6）', async ({page}) => {
   });
   const momentAvatar = page.locator('.moment-avatar img').first();
   await expect(momentAvatar).toHaveAttribute('src', 'assets/avatars/thumbs/shenyan.jpg');
-  expect(await momentAvatar.evaluate(i => i.naturalWidth)).toBe(128);
+  await page.waitForFunction(() => {
+    const i = document.querySelector('.moment-avatar img');
+    return i && i.complete && i.naturalWidth === 128;
+  }, { timeout: 10000 });
 });
 
 // v0.2.7: 氛围纹理（雨天/夜晚/不安）随 ambience 合成进壁纸层（M1.3）
