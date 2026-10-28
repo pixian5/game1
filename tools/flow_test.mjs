@@ -3,8 +3,8 @@
  * → 推进到结局 → 二周目，全程收集 NeonDebug 异常。
  * 运行：node tools/flow_test.mjs   （需本地 test_server 已启动于 4187）
  */
-import pw from '/Users/x/code/game1/node_modules/@playwright/test/index.js';
-const { chromium } = pw;
+// v0.7.3：改为按包名解析——原写法硬编码维护者本机绝对路径，换机器/CI 一律 ERR_MODULE_NOT_FOUND
+import { chromium } from '@playwright/test';
 
 const BASE = process.env.FLOW_BASE || 'http://127.0.0.1:4187';
 const browser = await chromium.launch({ channel: 'chrome', headless: true });

@@ -66,10 +66,14 @@
     if($('time-adv')) $('time-adv').hidden = true;
     document.getElementById('route-choice-modal')?.remove();
     document.getElementById('narrator-choice-modal')?.remove();
+    // v0.7.3：清掉语音信箱详情抽屉（内部会停掉正在播放的留言）
+    closeVmDetail();
   }
 
   // ===== 屏幕切换 =====
   function showScreen(name){
+    // v0.7.3：离开当前屏幕即停播留言，避免声音与进度条残留在后台继续走
+    stopVmPlayback();
     Object.values(screens).forEach(s=>{ if(s) s.classList.remove('active'); });
     if(screens[name]) screens[name].classList.add('active');
   }

@@ -174,6 +174,16 @@ if (enc) e2.resolveEncounter(enc, 0);
   e.addVoicemail('jiangyu', '测试信箱', null, null);
   assert.ok(e.state.voicemails.length >= 1);
   e.playVoicemail(e.state.voicemails[e.state.voicemails.length-1].id);
+  // v0.7.3：信箱时长解析 / 已听 / 批量已听 / 删除
+  assert.equal(e.voicemailMeta('（语音信箱 12"）：直测').durationSec, 12);
+  assert.equal(e.voicemailMeta('（语音信箱 12"）：直测').body, '直测');
+  assert.ok(e.voicemailMeta('没有标记的留言').durationSec >= 3, '无标记时应兜底估算');
+  const vmDirect = e.state.voicemails[e.state.voicemails.length-1].id;
+  e.markVoicemailRead(vmDirect);
+  e.markAllVoicemailsRead();
+  assert.equal(e.unreadVoicemailCount(), 0);
+  e.deleteVoicemail(vmDirect);
+  assert.equal(e.state.voicemails.some(v=>v.id===vmDirect), false);
   e.addCallLog('jiangyu', 'missed', '00:00');
   e.chooseRoute('shenyan');
   e.normalizeOptionEffects({text:'a', effects:{affection:{shenyan:1}, thenEvent:'x'}});
@@ -181,6 +191,11 @@ if (enc) e2.resolveEncounter(enc, 0);
   e.trackPersonality('active', 1);
   e.getAffectionDetail('shenyan');
   e.getAllAffectionDetail();
+  // v0.7.3：读档重建留言（覆盖 engine_save 的 durationSec 派生分支）——放在末尾，避免 load 重置状态扰动上面各步
+  e.addVoicemail('luci', '（语音信箱 9"）：存读直测', null, null);
+  assert.equal(e.save('slot2'), true);
+  assert.equal(e.load('slot2'), true);
+  assert.equal(e.state.voicemails[0].durationSec, 9, '读档应由文本重算时长');
   console.log('✓ G3 覆盖率爬坡直测通过（content/progress/social 核心路径）');
 }
 

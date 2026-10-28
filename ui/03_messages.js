@@ -55,6 +55,8 @@
     updateDreamsBadge();
     // v0.1.0 存档徽章
     updateSavesBadge();
+    // v0.7.3 语音信箱徽章（未听条数）
+    updateVmBadges();
   }
   function updateDreamsBadge(){
     const b = $('badge-dreams');

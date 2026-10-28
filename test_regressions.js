@@ -1027,4 +1027,74 @@ test('v0.7.1: 三新变体在二周目改道、一周目不触发', ()=>{
   assert.equal(e2.state.firedEvents['route_luci_milan_2_ng2'], undefined);
 });
 
+// ===== v0.7.3：语音信箱时长元数据 / 已听 / 删除 =====
+test('v0.7.3: 留言自带的「（语音信箱 23"）」被解析为时长并剥离前缀', ()=>{
+  const e = engine();
+  e.newGame();
+  // 中文标记（剧情数据里的原始形态）
+  const cn = e.voicemailMeta('（语音信箱 23"）：展签译名……算了。晚安。');
+  assert.equal(cn.durationSec, 23);
+  assert.equal(cn.body, '展签译名……算了。晚安。');
+  // 英文包里的同一条，也要能解析
+  const en = e.voicemailMeta('(Voicemail 23"): The wall titles... never mind. Good night.');
+  assert.equal(en.durationSec, 23);
+  assert.equal(en.body, 'The wall titles... never mind. Good night.');
+  // 无标记的留言：按正文长度兜底估算，落在 3~60 秒的合理区间
+  const plain = e.voicemailMeta('展签译名……算了。晚安。');
+  assert.ok(plain.durationSec >= 3 && plain.durationSec <= 60, '估算时长越界：' + plain.durationSec);
+  assert.equal(plain.body, '展签译名……算了。晚安。');
+  // 空文本也不能算出 NaN / 0
+  const empty = e.voicemailMeta('');
+  assert.ok(Number.isFinite(empty.durationSec) && empty.durationSec >= 3, '空留言时长异常');
+  // addVoicemail 写入的留言自带秒数
+  e.addVoicemail('shenyan', '（语音信箱 8"）：……风声，和一串灯。抱歉，按错了。', '', null);
+  assert.equal(e.state.voicemails[0].durationSec, 8);
+});
+
+test('v0.7.3: 未听计数、标记已听与批量已听', ()=>{
+  const e = engine();
+  e.newGame();
+  assert.equal(e.state.voicemails.length, 0);
+  e.addVoicemail('shenyan', '（语音信箱 8"）：A', '', null);
+  e.addVoicemail('luci', '（语音信箱 15"）：B', '', null);
+  assert.equal(e.unreadVoicemailCount(), 2);
+  const firstId = e.state.voicemails[0].id;
+  assert.equal(e.markVoicemailRead(firstId), true);
+  assert.equal(e.unreadVoicemailCount(), 1);
+  assert.equal(e.markVoicemailRead(firstId), false, '重复标记应返回 false');
+  assert.equal(e.markVoicemailRead('vm_not_exist'), false, '不存在的 id 返回 false');
+  assert.equal(e.markAllVoicemailsRead(), 1);
+  assert.equal(e.unreadVoicemailCount(), 0);
+  assert.equal(e.markAllVoicemailsRead(), 0, '无未听时返回 0');
+});
+
+test('v0.7.3: 删除留言后列表同步', ()=>{
+  const e = engine();
+  e.newGame();
+  e.addVoicemail('jiangyu', '（语音信箱 6"）：……霓城没雾。晚安。', '', null);
+  e.addVoicemail('jiangyu', '（语音信箱 11"）：喘气声很吵，抱歉……今晚，谢谢。', '', null);
+  assert.equal(e.state.voicemails.length, 2);
+  const targetId = e.state.voicemails[0].id;
+  assert.equal(e.deleteVoicemail(targetId), true);
+  assert.equal(e.state.voicemails.length, 1);
+  assert.equal(e.state.voicemails.some(v => v.id === targetId), false);
+  assert.equal(e.deleteVoicemail(targetId), false, '删除不存在的留言返回 false');
+  assert.equal(e.unreadVoicemailCount(), 1, '删除不影响剩余留言的未听计数');
+});
+
+test('v0.7.3: 读档重建留言时补出 durationSec（老存档无需迁移）', ()=>{
+  const e = engine();
+  e.newGame();
+  e.addVoicemail('luci', '（语音信箱 20"）：广播响了……答案在储物柜。密码是那一天。', '', null);
+  assert.equal(e.save('slot1'), true);
+  const restored = engine();
+  restored.newGame();
+  assert.equal(restored.load('slot1'), true);
+  const vm = restored.state.voicemails[0];
+  assert.ok(vm, '读档后应有留言');
+  assert.equal(vm.from, 'luci');
+  assert.equal(vm.durationSec, 20, 'durationSec 应由文本重算，而非依赖存档字段');
+  assert.equal(vm.heard, false);
+});
+
 console.log('全部回归测试通过');
