@@ -63,7 +63,7 @@
       const tag = s.isAuto ? 'AUTO' : 'MANUAL';
       const meta = s.empty
         ? '空槽位 · 可写入当前进度'
-        : `${escapeHtml(s.label || '')}<br>${escapeHtml(summary.playerName || '林夏')} · ${escapeHtml(summary.routeLabel || '未选线')}<br>${escapeHtml(formatSaveTime(s.time))}${s.note ? ' · ' + escapeHtml(s.note) : ''}`;
+        : `${escapeHtml(s.label || '')}<br>${escapeHtml(window.t(summary.playerName || '林夏'))} · ${escapeHtml(window.t(summary.routeLabel || '未选线'))}<br>${escapeHtml(formatSaveTime(s.time))}${s.note ? ' · ' + escapeHtml(s.note) : ''}`;
       html += `<div class="save-slot ${s.empty?'empty':''}">
         <div class="save-slot-top">
           <div class="save-slot-title">${escapeHtml(title)}</div>

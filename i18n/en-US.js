@@ -94,6 +94,30 @@
     '已标记 {n} 条为听完': 'Marked {n} as played',
     '删除': 'Delete',
     '确认删除？': 'Confirm delete?',
-    '留言已删除': 'Voicemail deleted'
+    '留言已删除': 'Voicemail deleted',
+    // v0.7.4 Character name labels (pinyin per project convention; sync with zh-CN)
+    '林夏': 'Lin Xia',
+    '沈砚之': 'Shen Yanzhi',
+    '陆辞': 'Lu Ci',
+    '江屿': 'Jiang Yu',
+    '苏苏': 'Su Su',
+    '夏夏': 'Xiaxia',
+    '小夏': 'Xiao Xia',
+    '老夏': 'Lao Xia',
+    '夏': 'Xia',
+    '霓城': 'Nicheng',
+    '雾港': 'Wugang',
+    '霓城小分队': 'Nicheng Squad',
+    '未知': 'Unknown',
+    '独行线': 'Solo Route',
+    '真结局': 'True Ending',
+    '我': 'Me',
+    '你': 'You',
+    '昵称 · {nick}': 'Nickname · {nick}',
+    '{char}发来邀约': '{char} sent an invitation',
+    '进入{char}线': "Entering {char}'s route",
+    '已送出 · {char} 好感 +{gain}': 'Sent to {char} · Affection +{gain}',
+    '在「{group}」发了消息': 'New message in "{group}"',
+    '★ {char} 关系阶段提升：{stage} · {title}': '★ {char} stage up: {stage} · {title}'
   };
 })();

@@ -6,7 +6,7 @@
   function showIncomingCall({from, name, script, eventId}){
     AudioSys.play('ring');  // v0.1.7: 来电铃声
     const char = STORY.characters[from];
-    $('call-name').textContent = name;
+    $('call-name').textContent = window.t(name || char?.name || '');
     $('call-bg').style.background = `radial-gradient(ellipse at center, ${char?.bg || '#2a2f5a'}, #000)`;
     $('call-label').textContent = '来电…';
     $('call-actions').hidden = false;
@@ -76,7 +76,7 @@
       } else {
         const lineDiv = document.createElement('div');
         lineDiv.className = 'line';
-        const speaker = line.who === 'me' ? `<span class="you">你：</span>` : `<span class="speaker">${escapeHtml(call.name)}：</span>`;
+        const speaker = line.who === 'me' ? `<span class="you">${escapeHtml(window.t('你'))}：</span>` : `<span class="speaker">${escapeHtml(window.t(call.name))}：</span>`;
         lineDiv.innerHTML = speaker + escapeHtml(line.text);
         scriptEl.appendChild(lineDiv);
         scriptEl.scrollTop = scriptEl.scrollHeight;

@@ -15,7 +15,7 @@
       item.innerHTML = `
         <div class="contact-avatar" style="background:${char.bg}">${avatarImg(char)}</div>
         <div class="contact-info">
-          <div class="contact-name">${char.name}</div>
+          <div class="contact-name">${escapeHtml(window.t(char.name))}</div>
           <div class="contact-desc">${profile?.bio || char.desc || ''}</div>
         </div>
       `;
@@ -30,7 +30,7 @@
     let html = `
       <div class="char-profile-header">
         <div class="char-profile-avatar" style="background:${char.bg}">${avatarImg(char)}</div>
-        <div class="char-profile-name">${char.name}</div>
+        <div class="char-profile-name">${escapeHtml(window.t(char.name))}</div>
         <div class="char-profile-bio">${profile.bio}</div>
         <div class="char-profile-tags">
           ${profile.tags.map(t=>`<span class="char-profile-tag">${t}</span>`).join('')}
@@ -43,7 +43,7 @@
         const relChar = STORY.characters[r.to];
         html += `
           <div class="char-profile-relation">
-            <div class="char-profile-relation-name">${relChar?.name || r.to}</div>
+            <div class="char-profile-relation-name">${escapeHtml(window.t(relChar?.name || r.to))}</div>
             <div class="char-profile-relation-hint">${r.hint}</div>
           </div>
         `;
@@ -114,7 +114,7 @@
   // ===== 邀约事件 =====
   engine.on('invitationReceived', ({id, inv})=>{
     const char = STORY.characters[inv.from];
-    if(char) showNotif(inv.from, char.name + '发来邀约');
+    if(char) showNotif(inv.from, window.t('{char}发来邀约', {char: window.t(char.name)}));
   });
   engine.on('invitationResolved', ({id, decision})=>{
     if(decision === 'accepted') toast('已赴约');

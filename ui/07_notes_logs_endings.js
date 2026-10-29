@@ -50,7 +50,7 @@
       div.innerHTML = `
         <div class="call-avatar" style="background:${char?.bg||'#2a2f5a'}">${avatarImg(char)}</div>
         <div class="call-info">
-          <div class="call-name">${escapeHtml(c.name)}</div>
+          <div class="call-name">${escapeHtml(window.t(c.name))}</div>
           <div class="call-meta">${escapeHtml(typeText)} · ${escapeHtml(c.duration)}</div>
         </div>
         <div class="call-type ${escapeHtml(c.type)}">${escapeHtml(c.time)}</div>
@@ -118,5 +118,5 @@
     const opt = STORY.routeChoice.options.find(o=>o.route===route);
     if(!opt) return;
     engine.chooseRoute(route);
-    toast(t('进入{char}线', {char: STORY.characters[route]?.name || '真结局'}));
+    toast(t('进入{char}线', {char: window.t(STORY.characters[route]?.name || '真结局')}));
   }

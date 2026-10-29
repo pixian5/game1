@@ -21,12 +21,12 @@
       const item = document.createElement('div');
       item.className = 'conv-item' + (conv.unread>0?' unread':'');
       item.dataset.conv = id;
-      const preview = last ? (last.from==='me'?'你: ':'') + last.text : '暂无消息';
+      const preview = last ? (last.from==='me'? window.t('你') + ': ' : '') + last.text : '暂无消息';
       item.innerHTML = `
         <div class="conv-avatar" style="background:${char.bg}">${avatarImg(char)}</div>
         <div class="conv-info">
           <div class="conv-top">
-            <span class="conv-name">${char.name}</span>
+            <span class="conv-name">${escapeHtml(window.t(char.name))}</span>
             <span class="conv-time">${last?.time || ''}</span>
           </div>
           <div class="conv-preview">${conv.typing?'<span style="color:var(--accent)">正在输入…</span>':escapeHtml(preview)}</div>
@@ -113,7 +113,7 @@
     if(!char || !conv) return;
     $('chat-avatar').innerHTML = avatarImg(char);
     $('chat-avatar').style.background = char.bg;
-    $('chat-name').textContent = char.name;
+    $('chat-name').textContent = window.t(char.name);
     $('chat-status').textContent = conv.typing ? '正在输入…' : '在线';
     renderChatBody(convId);
     engine.markRead(convId);

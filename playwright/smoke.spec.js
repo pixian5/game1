@@ -361,3 +361,31 @@ test('英文模式序章可玩（F1 英化二期）', async ({page}) => {
   expect(first).toContain('Lin Xia');
   // 回中文清理（localStorage 语言态不影响其他用例——各用例独立 context）
 });
+
+// v0.7.4：角色名 UI 标签英文化——英文模式下名字出口显示拼音（Lin Xia/Shen Yanzhi/…）
+test('英文模式角色名标签为拼音（v0.7.4）', async ({page}) => {
+  await page.goto('/');
+  await page.locator('#lock-screen').click();
+  await page.evaluate(() => { openApp('settings'); });
+  await page.evaluate(() => { document.querySelector('input[name=set-lang][value=en-US]').click(); });
+  await page.evaluate(() => { const e = window.__neonTest.engine; e.newGame(); });
+  await page.waitForTimeout(600);
+  // 消息列表：会话名走拼音
+  await page.evaluate(() => { openApp('messages'); });
+  const convNames = (await page.locator('#conv-list .conv-name').allTextContents()).join(',');
+  expect(convNames).toContain('Su Su');
+  expect(convNames).not.toContain('苏苏');
+  // 通讯录：三位男主 + 闺蜜全部拼音（通讯录/主角档案有 day 门槛，推天数绕过解锁门）
+  await page.evaluate(() => { window.__neonTest.engine.state.day = 5; });
+  await page.evaluate(() => { openApp('contacts'); });
+  const contactNames = (await page.locator('#contacts-list .contact-name').allTextContents()).join(',');
+  expect(contactNames).toContain('Shen Yanzhi');
+  expect(contactNames).toContain('Lu Ci');
+  expect(contactNames).toContain('Jiang Yu');
+  expect(contactNames).toContain('Su Su');
+  expect(contactNames).not.toContain('沈砚之');
+  // 主角档案：默认名/昵称标签（映射内名称走拼音，模板 key 带变量替换）
+  await page.evaluate(() => { openApp('player'); });
+  await expect(page.locator('.player-hero-name')).toHaveText('Lin Xia');
+  await expect(page.locator('.player-hero-nick')).toHaveText('Nickname · Xiaxia');
+});

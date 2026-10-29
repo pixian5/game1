@@ -18,14 +18,14 @@
       const safeMomentId = escapeHtml(m.id);
       // 点赞列表
       const likeNames = m.likes.map(l=>{
-        if(l === 'me') return '我';
+        if(l === 'me') return window.t('我');
         const c = STORY.characters[l];
-        return c ? c.name : l;
+        return c ? window.t(c.name) : window.t(l);
       }).join('、');
       // 评论列表
       const commentsHtml = m.comments.map(c=>{
         const char = STORY.characters[c.from];
-        const name = c.from === 'me' ? '我' : (char ? char.name : c.from);
+        const name = c.from === 'me' ? window.t('我') : (char ? window.t(char.name) : window.t(c.from));
         return `<div class="moment-comment ${c.from==='me'?'me':''} ${c.isReply?'reply':''}">
           <span class="mc-name">${escapeHtml(name)}</span>${escapeHtml(c.text)}
         </div>`;
@@ -40,7 +40,7 @@
       // v0.0.16: 男主朋友圈互动评论 + 回复选项
       const charCommentsHtml = (m.charComments || []).map(cc => {
         const char = STORY.characters[cc.charId];
-        const charName = char ? char.name : cc.charId;
+        const charName = char ? window.t(char.name) : window.t(cc.charId);
         const replyKey = `${m.id}_${cc.charId}`;
         const sentReply = engine.state.momentReplies?.[replyKey];
         const comment = cc.comment;
@@ -66,7 +66,7 @@
         <div class="moment-top">
           <div class="moment-avatar" style="background:${escapeHtml(m.bg)}">${avatarImg(m)}</div>
           <div class="moment-body">
-            <div class="moment-name">${escapeHtml(m.name)}</div>
+            <div class="moment-name">${escapeHtml(window.t(m.name))}</div>
             <div class="moment-text">${nl2brEscaped(m.text)}</div>
             ${m.art ? `<div class="moment-art">${getMomentArt(m.art)}</div>` : ''}
             <div class="moment-meta">

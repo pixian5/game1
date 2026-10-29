@@ -127,7 +127,7 @@
     n.innerHTML = `
       <div class="n-icon" style="background:${char.bg}">${avatarImg(char)}</div>
       <div class="n-content">
-        <div class="n-title">${char.name}</div>
+        <div class="n-title">${escapeHtml(window.t(char.name))}</div>
         <div class="n-text">${escapeHtml(text)}</div>
       </div>
     `;

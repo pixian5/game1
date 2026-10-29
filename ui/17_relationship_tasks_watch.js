@@ -19,7 +19,7 @@
         <div class="rel-card-header">
           <div class="rel-card-avatar" style="background:${char.bg}">${avatarImg(char)}</div>
           <div class="rel-card-info">
-            <div class="rel-card-name">${escapeHtml(char.name)}</div>
+            <div class="rel-card-name">${escapeHtml(window.t(char.name))}</div>
             <div class="rel-card-stage">阶段 ${curStageNum} · ${escapeHtml(r.stage.name)} · ${escapeHtml(r.stage.title)}</div>
             <div class="rel-card-aff">好感度 ${aff}</div>
           </div>
@@ -58,7 +58,7 @@
     if(!char) return;
     const n = document.createElement('div');
     n.className = 'egg-notif';
-    n.textContent = `★ ${char.name} 关系阶段提升：${stage.name} · ${stage.title}`;
+    n.textContent = window.t('★ {char} 关系阶段提升：{stage} · {title}', {char: window.t(char.name), stage: window.t(stage.name), title: window.t(stage.title)});
     document.body.appendChild(n);
     setUiTimeout(()=> n.remove(), 4000);
     if(stage.unlockMsg){
@@ -177,7 +177,7 @@
       const rows = ['shenyan','luci','jiangyu'].map(cid => {
         const c = STORY.characters[cid];
         const d = ad[cid] || {closeness:0, trust:0, tension:0};
-        return `<div class="director-row"><span style="background:${c.bg}">${c.avatar}</span> ${c.name}
+        return `<div class="director-row"><span style="background:${c.bg}">${c.avatar}</span> ${escapeHtml(window.t(c.name))}
           好感 ${aff[cid]||0} · 密 ${d.closeness} / 信 ${d.trust} / 暧 ${d.tension}</div>`;
       }).join('');
       const flags = ['shenyan_resist','luci_confess','jiangyu_hold','solo_independent','group_dinner_hotpot','rain_event_done']

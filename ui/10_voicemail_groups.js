@@ -105,7 +105,7 @@
       <div class="vm-icon">${avatarImg(char)}</div>
       <div class="vm-info">
         <div class="vm-top">
-          <span class="vm-name">${escapeHtml(char.name)}</span>
+          <span class="vm-name">${escapeHtml(VMT(char.name))}</span>
           ${vm.heard ? '' : '<span class="vm-new-dot"></span>'}
           <span class="vm-dur">${escapeHtml(fmtVmTime(meta.durationSec))}</span>
         </div>
@@ -251,7 +251,7 @@
         <div class="vm-sheet-head">
           <div class="vm-sheet-avatar">${avatarImg(char)}</div>
           <div>
-            <div class="vm-sheet-title">${escapeHtml(char.name)}</div>
+            <div class="vm-sheet-title">${escapeHtml(VMT(char.name))}</div>
             <div class="vm-sheet-sub">${escapeHtml(VMT('第 {day} 天', {day: vm.day}))} ${escapeHtml(vm.time)} · ${escapeHtml(fmtVmTime(meta.durationSec))}</div>
           </div>
           <button class="vm-sheet-close" data-vm-close aria-label="${escapeHtml(VMT('关闭'))}">×</button>
@@ -385,12 +385,12 @@
       const item = document.createElement('div');
       item.className = 'conv-item' + (g.unread>0?' unread':'');
       item.dataset.group = id;
-      const preview = last ? (STORY.characters[last.from]?.name || '') + ': ' + last.text : '暂无消息';
+      const preview = last ? VMT(STORY.characters[last.from]?.name || '') + ': ' + last.text : '暂无消息';
       item.innerHTML = `
         <div class="group-avatar">群</div>
         <div class="group-info">
           <div class="conv-top">
-            <span class="conv-name">${escapeHtml(g.name)}</span>
+            <span class="conv-name">${escapeHtml(VMT(g.name))}</span>
             <span class="conv-time">${last?.time || ''}</span>
           </div>
           <div class="group-preview">${g.typing?'<span style="color:var(--accent)">正在输入…</span>':escapeHtml(preview)}</div>
@@ -412,7 +412,7 @@
     currentGroupId = groupId;
     const g = engine.state.groups[groupId];
     if(!g) return;
-    $('group-chat-name').textContent = g.name;
+    $('group-chat-name').textContent = VMT(g.name);
     $('group-chat-members').textContent = g.members.length + ' 位成员';
     renderGroupChatBody(groupId);
     engine.markGroupRead(groupId);
@@ -441,7 +441,7 @@
         const char = STORY.characters[m.from];
         const tag = document.createElement('span');
         tag.className = 'speaker-tag ' + m.from;
-        tag.textContent = char?.name || m.from;
+        tag.textContent = VMT(char?.name || m.from);
         div.appendChild(tag);
         div.appendChild(document.createTextNode(m.text));
       }
@@ -487,7 +487,7 @@
   engine.on('groupMessageReceived', ({groupId, from})=>{
     const char = STORY.characters[from];
     const g = engine.state.groups[groupId];
-    if(char && g) showNotif(from, `在「${g.name}」发了消息`, ()=> openGroupChat(groupId));
+    if(char && g) showNotif(from, VMT('在「{group}」发了消息', {group: VMT(g.name)}), ()=> openGroupChat(groupId));
   });
 
   // 群聊点击委托
