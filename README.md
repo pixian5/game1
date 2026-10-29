@@ -6,7 +6,7 @@
 
 纯前端实现（HTML / CSS / 原生 JS），**运行时零依赖、无构建步骤**。
 
-- 当前版本：**v0.7.4**（版本唯一来源：[VERSION](VERSION)）
+- 当前版本：**v0.7.5**（版本唯一来源：[VERSION](VERSION)）
 - 主角：林夏（策展人）｜路线：沈砚之 / 陆辞 / 江屿 / 独行线（真结局）
 - 内容体量：210 个剧情事件 · 17 个结局（含 4 个隐藏）· 14 件收集品 · 15 个成就 · 3 个谜题 · 16 张塔罗 · 7 套主题（含真实壁纸）· 5 张相册照片 · 4 张角色插画头像 · 3 张氛围壁纸 · 1 张 OG 分享图 · 6 个地点
 
@@ -14,6 +14,7 @@
 
 **在线游玩**（自有服务器，主入口）：https://oh.sbbz.tech:9443/
 备份线（GitHub Pages，push main 自动部署）：https://pixian5.github.io/game1/
+抱脸 Space（Hugging Face，push main 自动部署）：https://xbzsb-neon-heart.static.hf.space/index.html
 镜像仓库：gitee（https://gitee.com/ibjxk/leame.git）· github（https://github.com/pixian5/game1.git）· GitCode（https://gitcode.com/laotongtian/game1.git）
 
 本地游玩：直接双击 `index.html`（无构建、无依赖），或：
@@ -43,6 +44,12 @@ CI（[.github/workflows/test.yml](.github/workflows/test.yml)）在每次 push /
 
 ## 当前开发进度
 
+v0.7.5：**部署到 Hugging Face Space**——新增第三个公开入口
+（`https://xbzsb-neon-heart.static.hf.space/index.html`），
+静态 Space 复用 `tools/build_bundle.mjs` 的 `dist/` 产物（61 脚本合并单 bundle），
+新增 Actions「部署到 Hugging Face Space」push main 自动构建上传；
+用 `deploy/hf-space-README.md` 维护 Space 卡片元信息。
+
 v0.5.5（GLM·阶段E 收官）：**英文化一期**（设置中心双语切换，主线全量双语，切换实时重译）+ **周目系统**（二周目携带收集/图鉴，专属变体事件，真结局尾声）+ **音频二阶**（五层曲式 BGM、剧情曲真实可播、场景 sting）+ **关键 CG×6** + **设置中心**（语言/音量/动效）。
 
 v0.4.7-v0.4.6（GLM）：发布构建（线上 18.4s→3.5s）、安全响应头、CI 自动部署、资源预算门禁。
@@ -57,7 +64,8 @@ v0.4.5 完成：**自有服务器上线**——`deploy.sh` 部署清单补齐 `i
 再上一轮（v0.4.3）：缓存策略——图片按需缓存（D5）。
 
 👉 详细进度：[docs/20261024-1535-当前开发进度-DeepSeek-V4.1-Flash.md](docs/20261024-1535-当前开发进度-DeepSeek-V4.1-Flash.md)
-👉 技术细节：[docs/20261024-1535-v0.4.5-自有服务器部署-DeepSeek-V4.1-Flash.md](docs/20261024-1535-v0.4.5-自有服务器部署-DeepSeek-V4.1-Flash.md)
+👉 本轮技术细节：[docs/20261029-1640-v0.7.5-部署到抱脸Space-DeepSeek-V4.1-Flash.md](docs/20261029-1640-v0.7.5-部署到抱脸Space-DeepSeek-V4.1-Flash.md)
+👉 仓库基建：[docs/20261029-1315-云端仓库关联修复与GitHub补推-DeepSeek-V4.1-Flash.md](docs/20261029-1315-云端仓库关联修复与GitHub补推-DeepSeek-V4.1-Flash.md)
 
 ## 下一步待实现
 

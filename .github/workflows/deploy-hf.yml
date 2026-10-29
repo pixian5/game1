@@ -1,0 +1,47 @@
+name: 部署到 Hugging Face Space
+
+# 背景：静态 Space 只能托管纯前端产物，因此复用 tools/build_bundle.mjs 的 dist/ 构建，
+# 把 61 个源文件合并成单 bundle 后再上传（否则 61 次跨网络请求首载极慢）。
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-hf
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - name: 轻量校验（版本一致性 + 剧情数据，重测试由测试工作流并行执行）
+        run: |
+          npm run check:version
+          npm run validate:story
+
+      - name: 构建 dist 产物
+        run: node tools/build_bundle.mjs
+
+      - name: 注入 Space 元信息（README front matter 决定卡片配色与简介）
+        run: |
+          rm -f dist/.DS_Store
+          cp deploy/hf-space-README.md dist/README.md
+
+      - name: 上传到 Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python3 -m pip install --quiet "huggingface_hub[cli]"
+          hf upload xbzsb/neon-heart dist . \
+            --repo-type space \
+            --commit-message "v$(cat VERSION) 自动部署（${GITHUB_SHA:0:7}）"
