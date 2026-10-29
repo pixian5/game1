@@ -6,7 +6,7 @@
   function renderMap(){
     const cur = engine.state.currentLocation || 'home';
     const curLoc = STORY.locations[cur];
-    $('map-current-name').textContent = curLoc ? (curLoc.icon + ' ' + curLoc.name) : '未知';
+    $('map-current-name').textContent = curLoc ? (curLoc.icon + ' ' + curLoc.name) : window.t('未知');
     $('map-current-hint').textContent = curLoc ? curLoc.hint : '';
     const list = $('map-list');
     list.innerHTML = '';

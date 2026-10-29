@@ -145,7 +145,7 @@
       else if(pending){ status = '待回复 · ' + (inv.schedule || ''); cls = 'inv-active'; }
       else { status = '尚未达成'; cls = 'inv-locked'; }
       html += `<div class="profile-shard ${cls}">
-        <div class="profile-shard-title">${escapeHtml(char.avatar)} ${escapeHtml(char.name)} · ${escapeHtml(inv.schedule||'邀约')}</div>
+        <div class="profile-shard-title">${escapeHtml(char.avatar)} ${escapeHtml(window.t(char.name))} · ${escapeHtml(inv.schedule||'邀约')}</div>
         <div class="profile-shard-meaning">${escapeHtml(inv.text)}</div>
         <div style="margin-top:4px;font-size:11px;color:var(--ink-mute)">状态：${escapeHtml(status)}</div>
       </div>`;

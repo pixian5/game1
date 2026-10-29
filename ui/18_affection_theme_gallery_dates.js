@@ -18,7 +18,7 @@
         <div class="aff-dim-header">
           <div class="aff-dim-avatar" style="background:${char.bg}">${avatarImg(char)}</div>
           <div class="aff-dim-info">
-            <div class="aff-dim-name">${escapeHtml(char.name)}</div>
+            <div class="aff-dim-name">${escapeHtml(window.t(char.name))}</div>
             <div class="aff-dim-total">综合好感 <strong>${aff}</strong> · 三轴合计 ${total}</div>
           </div>
         </div>`;
@@ -181,12 +181,12 @@
     if(curEnding){
       html += `<div class="aff-dim-card" style="border-color:rgba(255,95,168,0.4);">
         <div class="aff-dim-name" style="margin-bottom:6px;">🔮 当前走向预测</div>
-        <div class="ending-card-char">${escapeHtml(curEnding.charId ? (STORY.characters[curEnding.charId]?.name||curEnding.charId) : '独行线')}</div>
+        <div class="ending-card-char">${escapeHtml(window.t(curEnding.charId ? (STORY.characters[curEnding.charId]?.name||curEnding.charId) : '独行线'))}</div>
         <div class="ending-card-name">${escapeHtml(curEnding.name)}</div>
         <div class="ending-card-desc">${escapeHtml(curEnding.desc)}</div>
       </div>`;
     } else if(engine.state.route){
-      html += `<div class="watch-info" style="margin-bottom:12px;">当前路线：<strong>${escapeHtml(STORY.characters[engine.state.route]?.name || engine.state.route)}</strong>，结局尚未达成。</div>`;
+      html += `<div class="watch-info" style="margin-bottom:12px;">当前路线：<strong>${escapeHtml(window.t(STORY.characters[engine.state.route]?.name || engine.state.route))}</strong>，结局尚未达成。</div>`;
     } else {
       html += `<div class="watch-info" style="margin-bottom:12px;">尚未进入任何路线。完成剧情后这里会预测你的结局走向。</div>`;
     }
@@ -198,7 +198,7 @@
       items.forEach(e => {
         html += `<div class="ending-card ${e.seen?'seen':'unseen'}">
           <div class="ending-card-tier ${e.tier}">${e.tier}</div>
-          <div class="ending-card-char">${escapeHtml(e.charName)}</div>
+          <div class="ending-card-char">${escapeHtml(window.t(e.charName))}</div>
           <div class="ending-card-name">${e.seen ? escapeHtml(e.name) : '???'}</div>
           <div class="ending-card-desc">${e.seen ? escapeHtml(e.desc) : escapeHtml(DIRECTOR_HINTS[e.id] || '尚未解锁此结局，继续游戏以发现它。')}</div>
         </div>`;
@@ -224,7 +224,7 @@
         <div class="date-char-header">
           <div class="date-char-avatar" style="background:${char.bg}">${avatarImg(char)}</div>
           <div class="date-char-info">
-            <div class="date-char-name">${escapeHtml(char.name)}</div>
+            <div class="date-char-name">${escapeHtml(window.t(char.name))}</div>
             <div class="date-char-status ${statusClass}">${statusText}</div>
             <div class="date-char-progress">已体验 ${s.doneScenes}/${s.totalScenes}</div>
           </div>

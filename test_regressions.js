@@ -1097,4 +1097,57 @@ test('v0.7.3: 读档重建留言时补出 durationSec（老存档无需迁移）
   assert.equal(vm.heard, false);
 });
 
+// ===== v0.7.4: 角色名 UI 标签英文化（拼音映射 + 模板变量翻译） =====
+
+test('v0.7.4: 角色名映射——en 拼音译名、模板变量过 t、自定义名回退', ()=>{
+  const fs = require('fs'); const pathm = require('path'); const vm = require('vm');
+  const sandbox = { window: {} };
+  vm.createContext(sandbox);
+  for(const f of ['i18n/zh-CN.js','i18n/en-US.js','i18n/index.js']){
+    vm.runInContext(fs.readFileSync(pathm.join(__dirname, f), 'utf8'), sandbox, { filename: f });
+  }
+  const I18N = sandbox.window.I18N;
+  const t = sandbox.window.t;
+  assert.equal(t('林夏'), '林夏', 'zh 模式恒等');
+  I18N.setLang('en-US');
+  assert.equal(t('林夏'), 'Lin Xia');
+  assert.equal(t('沈砚之'), 'Shen Yanzhi');
+  assert.equal(t('陆辞'), 'Lu Ci');
+  assert.equal(t('江屿'), 'Jiang Yu');
+  assert.equal(t('苏苏'), 'Su Su');
+  assert.equal(t('夏夏'), 'Xiaxia');
+  assert.equal(t('小夏'), 'Xiao Xia');
+  assert.equal(t('霓城'), 'Nicheng');
+  assert.equal(t('雾港'), 'Wugang');
+  assert.equal(t('霓城小分队'), 'Nicheng Squad');
+  assert.equal(t('未知'), 'Unknown');
+  assert.equal(t('独行线'), 'Solo Route');
+  assert.equal(t('真结局'), 'True Ending');
+  assert.equal(t('我'), 'Me');
+  assert.equal(t('你'), 'You');
+  // 模板 key：变量值再过 t() 拼出完整译文（translate 先查 key 再替换 {var}）
+  assert.equal(t('{char}发来邀约', {char: t('沈砚之')}), 'Shen Yanzhi sent an invitation');
+  assert.equal(t('进入{char}线', {char: t('陆辞')}), "Entering Lu Ci's route");
+  assert.equal(t('已送出 · {char} 好感 +{gain}', {char: t('苏苏'), gain: 5}), 'Sent to Su Su · Affection +5');
+  assert.equal(t('在「{group}」发了消息', {group: t('霓城小分队')}), 'New message in "Nicheng Squad"');
+  // 关系阶段名不在本轮映射内：变量原样透传（阶段名保持中文）
+  assert.equal(t('★ {char} 关系阶段提升：{stage} · {title}', {char: t('江屿'), stage: t('陌生'), title: t('初见·美术馆')}), '★ Jiang Yu stage up: 陌生 · 初见·美术馆');
+  // 玩家自定义名（映射外）未命中回退原文——显示层不会误翻用户输入
+  assert.equal(t('苏念'), '苏念', '中文自定义名回退原文');
+  assert.equal(t('Alice'), 'Alice', '英文自定义名回退原文');
+  I18N.setLang('zh-CN');
+  assert.equal(t('沈砚之'), '沈砚之', '切回中文恒等');
+});
+
+test('v0.7.4: 存档/日志仍存中文 name 快照（显示层才翻译）', ()=>{
+  const e = engine();
+  e.newGame();
+  e.addCallLog('shenyan', 'incoming', '01:02');
+  assert.equal(e.state.callLog[0].name, '沈砚之', '通话记录 name 快照保持中文');
+  const g = e.getEndingGallery();
+  assert.ok(g.length >= 17, '结局图鉴完整');
+  assert.ok(g.some(x => x.charName === '独行线'), '无线结局派生「独行线」');
+  assert.ok(g.some(x => x.charName === '沈砚之'), '角色结局派生中文名快照');
+});
+
 console.log('全部回归测试通过');

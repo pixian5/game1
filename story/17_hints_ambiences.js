@@ -12,12 +12,14 @@ STORY.optionHints = {
   // 通用规则：根据 effects.affection / flags / personality 自动生成
   generate: function(opt){
     if(!opt.effects) return null;
+    // v0.7.4 角色名显示层翻译：提示串里的角色名过 t()（拼音映射）；无 i18n 环境（Node 测试）回退原文
+    const _tn = (typeof window !== 'undefined' && typeof window.t === 'function') ? window.t : (s)=>s;
     const parts = [];
     if(opt.effects.affection){
       for(const k in opt.effects.affection){
         const v = opt.effects.affection[k];
-        if(v > 0) parts.push(`${STORY.characters[k]?.name||k} +${v}`);
-        else if(v < 0) parts.push(`${STORY.characters[k]?.name||k} ${v}`);
+        if(v > 0) parts.push(`${_tn(STORY.characters[k]?.name||k)} +${v}`);
+        else if(v < 0) parts.push(`${_tn(STORY.characters[k]?.name||k)} ${v}`);
       }
     }
     if(opt.effects.affectionDetail){
@@ -27,7 +29,7 @@ STORY.optionHints = {
         if(ad.closeness) dims.push(`亲密${ad.closeness>0?'+':''}${ad.closeness}`);
         if(ad.trust) dims.push(`信任${ad.trust>0?'+':''}${ad.trust}`);
         if(ad.tension) dims.push(`暧昧${ad.tension>0?'+':''}${ad.tension}`);
-        if(dims.length) parts.push(`${STORY.characters[k]?.name||k}(${dims.join('/')})`);
+        if(dims.length) parts.push(`${_tn(STORY.characters[k]?.name||k)}(${dims.join('/')})`);
       }
     }
     if(opt.effects.flags){

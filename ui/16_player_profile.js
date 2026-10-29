@@ -10,8 +10,8 @@
     const p = engine.getPlayer();
     let html = `<div class="player-hero">
       <div class="player-hero-avatar" style="background:${p.bg || '#5a2a4a'}">${escapeHtml(p.avatar || (p.name ? p.name[0] : '林'))}</div>
-      <div class="player-hero-name">${escapeHtml(p.name || '林夏')}</div>
-      <div class="player-hero-nick">昵称 · ${escapeHtml(p.nickname || '夏夏')}</div>
+      <div class="player-hero-name">${escapeHtml(window.t(p.name || '林夏'))}</div>
+      <div class="player-hero-nick">${escapeHtml(window.t('昵称 · {nick}', {nick: window.t(p.nickname || '夏夏')}))}</div>
       <div class="player-hero-meta">
         <span>${p.age || 24} 岁</span>
         <span>称谓 · ${escapeHtml(p.pronoun || '她')}</span>
@@ -50,7 +50,7 @@
       html += `<div class="player-nick-row">
         <div class="player-nick-char" style="background:${char.bg}">${avatarImg(char)}</div>
         <div class="player-nick-info">
-          <div class="player-nick-call">${escapeHtml(nick.call)}</div>
+          <div class="player-nick-call">${escapeHtml(window.t(nick.call))}</div>
           ${nick.inner ? `<div class="player-nick-inner">"${escapeHtml(nick.inner)}"</div>` : ''}
         </div>
         <div class="player-nick-stage">${hasRelStage ? ('阶段 ' + stageNum) : '闺蜜'}</div>

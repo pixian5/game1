@@ -58,7 +58,7 @@
           return `<div class="shop-item">
             <div class="shop-item-icon">${item?.icon || '🎁'}</div>
             <div class="shop-item-info">
-              <div class="shop-item-name">${char.avatar||''} ${char.name||g.to} · ${escapeHtml(item?.name||'')}</div>
+              <div class="shop-item-name">${char.avatar||''} ${escapeHtml(window.t(char.name||g.to))} · ${escapeHtml(item?.name||'')}</div>
               <div class="shop-item-desc">第${g.day}天送出 · ${multLabel} · 好感 +${g.gain}</div>
             </div>
           </div>`;
@@ -87,7 +87,7 @@
       <div class="gift-send-char">
         ${['shenyan','luci','jiangyu'].map(cid=>{
           const c = STORY.characters[cid];
-          return `<button class="gift-send-char-btn" data-gift-char="${cid}" style="background:${c.bg}" title="${c.name}">${avatarImg(c)}</button>`;
+          return `<button class="gift-send-char-btn" data-gift-char="${cid}" style="background:${c.bg}" title="${escapeHtml(window.t(c.name))}">${avatarImg(c)}</button>`;
         }).join('')}
       </div>
       <div class="gift-pref-hint" id="gift-pref-hint">点击头像查看他对此礼物的喜好</div>
@@ -128,7 +128,7 @@
     closeGiftSendModal();
     if(!r.ok){ toast(r.reason); return; }
     const charName = STORY.characters[giftSendCharId]?.name || '';
-    toast(t('已送出 · {char} 好感 +{gain}', {char: charName, gain: r.gain}));
+    toast(t('已送出 · {char} 好感 +{gain}', {char: window.t(charName), gain: r.gain}));
     renderShop(shopCurrentTab);
   }
   function closeGiftSendModal(){
