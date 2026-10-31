@@ -62,10 +62,11 @@
   // ===== 结局 =====
   // v0.5.2（E5）：结局 → CG 映射（线隐藏/普通结局挂对应男主 CG，真结局/独行隐藏挂专属）
   const ENDING_CG = {
-    shenyan_hidden:'cg_shenyan_confess', shenyan_good:'cg_shenyan_confess', shenyan_normal:'cg_shenyan_confess',
-    luci_hidden:'cg_luci_confess', luci_good:'cg_luci_confess', luci_normal:'cg_luci_confess',
-    jiangyu_hidden:'cg_jiangyu_confess', jiangyu_good:'cg_jiangyu_confess', jiangyu_normal:'cg_jiangyu_confess',
+    shenyan_hidden:'cg_shenyan_confess', shenyan_good:'cg_shenyan_confess', shenyan_normal:'cg_shenyan_confess', shenyan_bad:'cg_shenyan_confess',
+    luci_hidden:'cg_luci_confess', luci_good:'cg_luci_confess', luci_normal:'cg_luci_confess', luci_bad:'cg_luci_confess',
+    jiangyu_hidden:'cg_jiangyu_confess', jiangyu_good:'cg_jiangyu_confess', jiangyu_normal:'cg_jiangyu_confess', jiangyu_bad:'cg_jiangyu_confess',
     true_ending:'cg_true_ending', solo_hidden:'cg_true_ending', solo_good:'cg_rooftop_night',
+    solo_normal:'cg_rooftop_night', solo_bad:'cg_nightmare_stage',
   };
   engine.on('ending', (ending)=>{
     const _t = window.t;  // v0.5.3（E4）

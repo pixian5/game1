@@ -83,7 +83,7 @@
         `).join('')}
       </div>
     `;
-    screens.home.appendChild(modal);
+    document.getElementById('phone').appendChild(modal);
     modal.querySelectorAll('[data-narrator-choice]').forEach(btn=>{
       btn.onclick = (e)=>{
         e.stopPropagation();

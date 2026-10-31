@@ -334,7 +334,19 @@ class PhoneEngine {
       full: `${startDate.getMonth()+1}月${startDate.getDate()}日 星期${dayMap[startDate.getDay()]}`
     };
   }
+  // 时间推进前先派发待处理事件链，避免日常事件插到主线（路线选择等）前面
+  _flushPendingEventDispatches(){
+    const queue = this.state?.pendingEventDispatches;
+    if(!queue || !queue.length) return;
+    const items = queue.splice(0, queue.length);
+    for(const item of items){
+      if(this.state.firedEvents[item.eventId]) continue;
+      if(this._scheduledEvents.has(item.eventId)) continue;
+      this.scheduleEvent(item.eventId);
+    }
+  }
   advanceTime(minutes){
+    this._flushPendingEventDispatches();
     const startHour = Math.floor(this.state.minute / 60);
     const startDay = this.state.day;
     this.state.minute += minutes;
@@ -355,6 +367,7 @@ class PhoneEngine {
   }
   // 跳到次日某个时间
   advanceToNextDay(hour=9){
+    this._flushPendingEventDispatches();
     const prevDay = this.state.day;
     const prevHour = Math.floor(this.state.minute / 60);
     this.state.day++;
