@@ -1,4 +1,4 @@
-import { chromium } from '@playwright/test';
+import { launchBrowser } from './browser.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -26,10 +26,7 @@ const CASES = [
   { id: 'true_ending', route: 'solo', flags: {}, collected: [], affection: {}, achievements: null },
 ];
 
-const browser = await chromium.launch({
-  executablePath: '/root/.cache/ms-playwright/chromium-1243/chrome-linux/chrome',
-  headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'],
-});
+const browser = await launchBrowser();
 const context = await browser.newContext({ viewport: { width: 430, height: 932 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 const page = await context.newPage();
 const errors = [];

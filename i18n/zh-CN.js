@@ -108,6 +108,7 @@
     '进入{char}线': '进入{char}线',
     '已送出 · {char} 好感 +{gain}': '已送出 · {char} 好感 +{gain}',
     '在「{group}」发了消息': '在「{group}」发了消息',
-    '★ {char} 关系阶段提升：{stage} · {title}': '★ {char} 关系阶段提升：{stage} · {title}'
+    '★ {char} 关系阶段提升：{stage} · {title}': '★ {char} 关系阶段提升：{stage} · {title}',
+    '{m}月{d}日': '{m}月{d}日'   // v0.7.7：主屏日期（英文模式 {m}/{d}）
   };
 })();

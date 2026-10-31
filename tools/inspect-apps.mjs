@@ -1,4 +1,4 @@
-import { chromium } from '@playwright/test';
+import { launchBrowser } from './browser.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -11,10 +11,7 @@ const APPS = ['messages', 'moments', 'album', 'calendar', 'music', 'notes', 'pro
   'player', 'relations', 'tasks', 'watch', 'affection', 'themes', 'endings', 'dates',
   'dreams', 'hints', 'saves', 'settings'];
 
-const browser = await chromium.launch({
-  executablePath: '/root/.cache/ms-playwright/chromium-1243/chrome-linux/chrome',
-  headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'],
-});
+const browser = await launchBrowser();
 const context = await browser.newContext({ viewport: { width: 430, height: 932 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 const page = await context.newPage();
 const errors = [];
@@ -27,7 +24,7 @@ await page.waitForFunction(() => window.__neonTest && window.__neonTest.engine);
 await page.evaluate(() => { try { localStorage.clear(); } catch (_) {} });
 await page.click('#lock-screen');
 await page.waitForTimeout(400);
-await page.evaluate(() => {
+await page.evaluate((apps) => {
   const e = window.__neonTest.engine;
   e.state.day = 12;
   e.state.minute = 20 * 60;
@@ -36,8 +33,13 @@ await page.evaluate(() => {
   e.state.photos = Object.keys(window.STORY.photos || {}).map(id => ({ id, ...window.STORY.photos[id], unlocked: true }));
   e.state.achievements = Object.fromEntries(Object.keys(window.STORY.achievements).slice(0, 8).map(k => [k, 1]));
   e.state.moments = Object.keys(window.STORY.moments || {}).slice(0, 4).map(id => ({ id, ...window.STORY.moments[id], likes: [], comments: [] }));
+  // v0.7.7：渐进解锁会拦截 openApp（只 toast 不打开），且拦截器按规则实时计算、不看 appsUnlocked，
+  // 必须补真实解锁条件，否则被拦的 App 会残留上一个 App 的内容造成"OK"假象（groups/endings 实测中招）。
+  e.state.flags = { ...(e.state.flags || {}), group_created_group_neon: true };
+  e.state.endingSeen = { shenyan_normal: { day: 12 } };
+  e.state.appsUnlocked = Object.fromEntries(apps.map(a => [a, true]));
   e.emit('stateChange', e.state);
-});
+}, APPS);
 
 const results = [];
 for (const app of APPS) {
@@ -52,16 +54,20 @@ for (const app of APPS) {
       textLen: scr?.innerText?.trim().length || 0,
       overflowX: scroller ? { tag: scroller.tagName, cls: scroller.className, sw: scroller.scrollWidth, cw: scroller.clientWidth } : null,
       brokenImgs: scr ? [...scr.querySelectorAll('img')].filter(i => i.complete && i.naturalWidth === 0).length : 0,
+      imgTotal: scr ? scr.querySelectorAll('img').length : 0,
       btnCount: scr ? scr.querySelectorAll('button').length : 0,
     };
   });
   const file = path.join(OUT, app + '.png');
   await page.screenshot({ path: file });
-  results.push({ app, ms: Date.now() - before, ...info, shot: file, empty: info.textLen < 10 });
-  console.log(`${info.textLen < 10 ? 'WARN' : 'OK  '} ${app.padEnd(12)} screen=${info.active} text=${info.textLen} overflow=${!!info.overflowX} brokenImg=${info.brokenImgs}`);
+  const expected = app + '-app';
+  const blocked = info.active !== expected;   // v0.7.7：渐进解锁拦截时 active 会残留上一个 App
+  results.push({ app, ms: Date.now() - before, ...info, expected, blocked, shot: file, empty: info.textLen < 10 && info.imgTotal === 0 });
+  const flag = blocked ? 'BLOCK' : (info.textLen < 10 ? 'WARN' : 'OK  ');
+  console.log(`${flag} ${app.padEnd(12)} screen=${info.active}${blocked ? '(期望 ' + expected + ')' : ''} text=${info.textLen} overflow=${!!info.overflowX} brokenImg=${info.brokenImgs}`);
 }
 
-const summary = { total: results.length, empty: results.filter(r => r.empty).map(r => r.app), overflow: results.filter(r => r.overflowX), brokenImgs: results.filter(r => r.brokenImgs > 0), errors: [...new Set(errors)].slice(0, 30), results };
+const summary = { total: results.length, empty: results.filter(r => r.empty).map(r => r.app), blocked: results.filter(r => r.blocked).map(r => r.app), overflow: results.filter(r => r.overflowX), brokenImgs: results.filter(r => r.brokenImgs > 0), errors: [...new Set(errors)].slice(0, 30), results };
 fs.writeFileSync(path.join(OUT, 'summary.json'), JSON.stringify(summary, null, 2));
-console.log(JSON.stringify({ total: summary.total, empty: summary.empty, overflowCount: summary.overflow.length, errors: summary.errors }, null, 2));
+console.log(JSON.stringify({ total: summary.total, empty: summary.empty, blocked: summary.blocked, overflowCount: summary.overflow.length, errors: summary.errors }, null, 2));
 await browser.close();

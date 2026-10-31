@@ -90,6 +90,7 @@
   // v0.5.4（E4）：语言切换后重渲染当前可见文本（已渲染 DOM 不会自动重译）
   window.addEventListener('i18nchange', () => {
     try {
+      updateTimeDisplay();   // v0.7.7：主屏日期走 i18n 模板，语言切换后需重算（widget-date/锁屏日期）
       if(screens.chat && screens.chat.classList.contains('active') && typeof currentConvId === 'string'){
         renderChatBody(currentConvId);
         const conv = engine.state.conversations[currentConvId];

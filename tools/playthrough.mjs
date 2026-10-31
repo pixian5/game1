@@ -1,4 +1,4 @@
-import { chromium } from '@playwright/test';
+import { launchBrowser } from './browser.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -31,9 +31,7 @@ function pickIndex(options, strategy) {
   return 0;
 }
 
-const browser = await chromium.launch({
-  executablePath: '/root/.cache/ms-playwright/chromium-1243/chrome-linux/chrome',
-  headless: true,
+const browser = await launchBrowser({
   args: ['--no-sandbox', '--disable-dev-shm-usage', '--autoplay-policy=no-user-gesture-required'],
 });
 const context = await browser.newContext({ viewport: { width: 430, height: 932 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
