@@ -20,6 +20,14 @@
       }
       grid.appendChild(item);
     });
+    const unlockedCount = allPhotos.filter(pid=>engine.state.photos.find(p=>p.id===pid)).length;
+    if(allPhotos.length > 0 && unlockedCount === 0){
+      const tip = document.createElement('div');
+      tip.className = 'album-empty-hint';
+      tip.style.cssText = 'grid-column:1/-1;color:var(--ink-mute);text-align:center;padding:4px 16px 20px;font-size:12px;line-height:1.8;';
+      tip.textContent = '还没有解锁照片——继续剧情、赴约或拍照后会出现。';
+      grid.appendChild(tip);
+    }
     if(allPhotos.length === 0){
       grid.innerHTML = '<div style="color:var(--ink-mute);text-align:center;padding:40px;grid-column:1/-1;">暂无照片</div>';
     }

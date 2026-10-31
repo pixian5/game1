@@ -163,10 +163,11 @@
         }
         lastUnread = unread;
 
-        // 4) 屏幕卡死：同屏超过 60s 且无任何事件
+        // 4) 屏幕卡死：同屏超过 60s 且无任何事件（主屏/会话等可长时间停留的屏幕豁免）
         const screen = document.querySelector('.screen.active')?.id || '';
+        const calmScreens = ['home-screen', 'chat-screen', 'messages-app', 'group-chat-screen'];
         if(screen !== lastScreen){ lastScreen = screen; lastEventAt = Date.now(); }
-        else if(screen && Date.now() - lastEventAt > 60000 && (e.state.pendingMessages || []).length === 0){
+        else if(screen && !calmScreens.includes(screen) && Date.now() - lastEventAt > 60000 && (e.state.pendingMessages || []).length === 0){
           warn('health', '屏幕「' + screen + '」已停留 60s 且无事件（可能卡死或无内容）');
           lastEventAt = Date.now();
         }
