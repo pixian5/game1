@@ -1166,4 +1166,45 @@ test('v0.7.7: 主屏日期模板——en 包 {m}月{d}日 → {m}/{d} 插值', (
   assert.equal(t('{m}月{d}日', {m:7, d:15}), '7月15日', '中文模式保持原格式');
 });
 
+// ===== v0.7.8: 静态 HTML 英文化（data-i18n + 日期重拼） =====
+test('v0.7.8: index.html 全部 data-i18n key 在 zh 包中有定义（防漏加）', ()=>{
+  const fs = require('fs'); const pathm = require('path'); const vm = require('vm');
+  const sandbox = { window: {} };
+  vm.createContext(sandbox);
+  for(const f of ['i18n/zh-CN.js','i18n/en-US.js','i18n/index.js']){
+    vm.runInContext(fs.readFileSync(pathm.join(__dirname, f), 'utf8'), sandbox, { filename: f });
+  }
+  const zhPack = sandbox.window.I18N_PACKS['zh-CN'];
+  const html = fs.readFileSync(pathm.join(__dirname, 'index.html'), 'utf8');
+  const keys = [...new Set([...html.matchAll(/data-i18n(?:-placeholder)?="([^"]+)"/g)].map(m => m[1]))];
+  assert.ok(keys.length >= 80, `data-i18n key 数量异常：${keys.length}`);
+  const missing = keys.filter(k => !(k in zhPack));
+  assert.deepEqual(missing, [], '全部静态 key 须在 zh 包中定义');
+  // en 包对静态 key 有实际译文（非恒等），抽测代表性条目
+  const enPack = sandbox.window.I18N_PACKS['en-US'];
+  const sample = {'消息':'Messages','礼物商城':'Gift Shop','向上滑动解锁':'Swipe up to unlock','霓城 · 28°C 多云':'Nicheng · 28°C Cloudy','通话记录':'Call Log'};
+  for(const [k, v] of Object.entries(sample)) assert.equal(enPack[k], v, `en 译文：${k}`);
+});
+
+test('v0.7.8: localizeDateLabel——中文快照显示层重拼（en/zh）', ()=>{
+  const fs = require('fs'); const pathm = require('path'); const vm = require('vm');
+  const sandbox = { window: {} };
+  vm.createContext(sandbox);
+  for(const f of ['i18n/zh-CN.js','i18n/en-US.js','i18n/index.js']){
+    vm.runInContext(fs.readFileSync(pathm.join(__dirname, f), 'utf8'), sandbox, { filename: f });
+  }
+  const I18N = sandbox.window.I18N;
+  const localize = I18N.localizeDateLabel;
+  // en 模式：weekday 完整词过 t() 后插入模板
+  I18N.setLang('en-US');
+  assert.equal(localize('7月15日 星期三'), '7/15 Wed', '英文模式带星期');
+  assert.equal(localize('7月16日'), '7/16', '英文模式无星期');
+  assert.equal(localize('星期一'), '星期一', '非标准格式原样返回');
+  assert.equal(localize('第3天'), '第3天', '存档标签不误伤');
+  assert.equal(localize(null), null, 'null 安全');
+  // zh 模式：恒等（源语言）
+  I18N.setLang('zh-CN');
+  assert.equal(localize('7月15日 星期三'), '7月15日 星期三', '中文模式恒等');
+});
+
 console.log('全部回归测试通过');

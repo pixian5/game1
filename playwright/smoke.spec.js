@@ -389,3 +389,37 @@ test('英文模式角色名标签为拼音（v0.7.4）', async ({page}) => {
   await expect(page.locator('.player-hero-name')).toHaveText('Lin Xia');
   await expect(page.locator('.player-hero-nick')).toHaveText('Nickname · Xiaxia');
 });
+
+// v0.7.8：静态 HTML 文本英文化——英文模式下 data-i18n 标注的 App 名/标题/挂件/隐私链接显示英文
+test('英文模式静态文本英文化（v0.7.8）', async ({page}) => {
+  await page.goto('/');
+  await page.locator('#lock-screen').click();
+  await page.evaluate(() => { openApp('settings'); });
+  await page.evaluate(() => { document.querySelector('input[name=set-lang][value=en-US]').click(); });
+  await page.evaluate(() => { const e = window.__neonTest.engine; e.newGame(); });
+  await page.waitForTimeout(600);
+  // 主屏：App 名 + 天气挂件 + 锁屏提示
+  const appNames = (await page.locator('#app-grid .app-name').allTextContents()).join(',');
+  expect(appNames).toContain('Messages');
+  expect(appNames).toContain('Gift Shop');
+  expect(appNames).not.toContain('礼物商城');
+  await expect(page.locator('.widget-weather')).toHaveText('Nicheng · 28°C Cloudy');
+  // App 标题 h1 + tab 文案（含子元素包裹的 span）
+  await page.evaluate(() => { openApp('shop'); });
+  await expect(page.locator('#shop-app h1')).toHaveText('Gift Shop');
+  const shopTabs = (await page.locator('.shop-tab').allTextContents()).join(',');
+  expect(shopTabs).toContain('Store');
+  expect(shopTabs).toContain('Sent');
+  // 收集柜 tab + 隐藏彩蛋标题
+  await page.evaluate(() => { openApp('collection'); });
+  const collTabs = (await page.locator('.collection-tab').allTextContents()).join(',');
+  expect(collTabs).toContain('Postcards');
+  expect(collTabs).toContain('Mementos');
+  // 隐私链接：data-i18n-href 切到英文页 + 文本英化
+  const privacyLink = page.locator('a[data-i18n-href]');
+  await expect(privacyLink).toHaveAttribute('href', 'privacy-en.html');
+  await expect(privacyLink).toHaveText('Privacy & Data');
+  // 日期显示层重拼：锁屏日期「7月15日 星期二」→「7/15 Tue」
+  await expect(page.locator('#lock-date')).toHaveText(/^7\/1[56] (Mon|Tue|Wed|Thu|Fri|Sat|Sun)$/);
+  await expect(page.locator('#widget-date')).toHaveText(/^7\/1[56]$/);
+});

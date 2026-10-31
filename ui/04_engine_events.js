@@ -15,7 +15,7 @@
     if(screens.messages.classList.contains('active')) renderConvList();
     if(currentConvId === id && screens.chat.classList.contains('active')){
       renderChatBody(id);
-      $('chat-status').textContent = conv.typing ? '正在输入…' : '在线';
+      $('chat-status').textContent = conv.typing ? window.t('正在输入…') : window.t('在线');
     }
   });
   engine.on('messageReceived', ({from, text})=>{

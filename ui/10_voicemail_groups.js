@@ -385,15 +385,15 @@
       const item = document.createElement('div');
       item.className = 'conv-item' + (g.unread>0?' unread':'');
       item.dataset.group = id;
-      const preview = last ? VMT(STORY.characters[last.from]?.name || '') + ': ' + last.text : '暂无消息';
+      const preview = last ? VMT(STORY.characters[last.from]?.name || '') + ': ' + last.text : VMT('暂无消息');
       item.innerHTML = `
-        <div class="group-avatar">群</div>
+        <div class="group-avatar">${VMT('群')}</div>
         <div class="group-info">
           <div class="conv-top">
             <span class="conv-name">${escapeHtml(VMT(g.name))}</span>
             <span class="conv-time">${last?.time || ''}</span>
           </div>
-          <div class="group-preview">${g.typing?'<span style="color:var(--accent)">正在输入…</span>':escapeHtml(preview)}</div>
+          <div class="group-preview">${g.typing?`<span style="color:var(--accent)">${VMT('正在输入…')}</span>`:escapeHtml(preview)}</div>
         </div>
         ${g.unread>0?`<span class="conv-unread">${g.unread}</span>`:''}
       `;

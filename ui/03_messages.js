@@ -21,7 +21,7 @@
       const item = document.createElement('div');
       item.className = 'conv-item' + (conv.unread>0?' unread':'');
       item.dataset.conv = id;
-      const preview = last ? (last.from==='me'? window.t('你') + ': ' : '') + last.text : '暂无消息';
+      const preview = last ? (last.from==='me'? window.t('你') + ': ' : '') + last.text : window.t('暂无消息');
       item.innerHTML = `
         <div class="conv-avatar" style="background:${char.bg}">${avatarImg(char)}</div>
         <div class="conv-info">
@@ -29,7 +29,7 @@
             <span class="conv-name">${escapeHtml(window.t(char.name))}</span>
             <span class="conv-time">${last?.time || ''}</span>
           </div>
-          <div class="conv-preview">${conv.typing?'<span style="color:var(--accent)">正在输入…</span>':escapeHtml(preview)}</div>
+          <div class="conv-preview">${conv.typing?`<span style="color:var(--accent)">${window.t('正在输入…')}</span>`:escapeHtml(preview)}</div>
         </div>
         ${conv.unread>0?`<span class="conv-unread">${conv.unread}</span>`:''}
       `;
@@ -114,7 +114,7 @@
     $('chat-avatar').innerHTML = avatarImg(char);
     $('chat-avatar').style.background = char.bg;
     $('chat-name').textContent = window.t(char.name);
-    $('chat-status').textContent = conv.typing ? '正在输入…' : '在线';
+    $('chat-status').textContent = conv.typing ? window.t('正在输入…') : window.t('在线');
     renderChatBody(convId);
     engine.markRead(convId);
     updateBadges();

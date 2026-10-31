@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; object-src 'none'; base-uri 'none'">
-<title>霓虹心事 · 林夏的手机 · v0.7.7</title>
-<meta name="version" content="v0.7.7">
+<title>霓虹心事 · 林夏的手机 · v0.7.8</title>
+<meta name="version" content="v0.7.8">
 <meta name="description" content="「模拟一部手机」的沉浸式多线互动叙事游戏：三位男主同时找你，何时回复、回谁、已读不回都有后果。196 事件 · 17 结局。">
 <meta name="theme-color" content="#0a0612">
 <!-- Open Graph / 社交分享卡片（v0.2.8 起） -->
@@ -27,7 +27,7 @@
 {"@context":"https://schema.org","@type":"VideoGame","name":"霓虹心事 · 林夏的手机","description":"「模拟一部手机」的沉浸式多线互动叙事游戏：三位男主同时找你，何时回复、回谁、已读不回都有后果。","genre":["互动小说","恋爱模拟","剧情"],"gamePlatform":"Web Browser","applicationCategory":"Game","operatingSystem":"Any","inLanguage":"zh-CN","playMode":"SinglePlayer","offers":{"@type":"Offer","price":"0","priceCurrency":"CNY"}}
 </script>
 <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/icon-180.png">
-<link rel="stylesheet" href="style.css?v=0.7.7">
+<link rel="stylesheet" href="style.css?v=0.7.8">
 </head>
 <body>
 <div id="phone-frame">
@@ -49,10 +49,10 @@
         <div class="lock-time" id="lock-time">22:30</div>
         <div class="lock-date" id="lock-date">7月15日 星期三</div>
         <div class="lock-notif" id="lock-notif"></div>
-        <div class="lock-hint">向上滑动解锁</div>
+        <div class="lock-hint" data-i18n="向上滑动解锁">向上滑动解锁</div>
         <div class="lock-actions" id="lock-actions">
-          <button class="lock-action-btn primary" id="lock-continue-btn" data-action="continue-game" hidden>继续游戏</button>
-          <button class="lock-action-btn" data-action="open-saves">存档管理</button>
+          <button class="lock-action-btn primary" id="lock-continue-btn" data-action="continue-game" hidden><span data-i18n="继续游戏">继续游戏</span></button>
+          <button class="lock-action-btn" data-action="open-saves"><span data-i18n="存档管理">存档管理</span></button>
         </div>
       </div>
     </section>
@@ -63,115 +63,115 @@
       <div class="home-widget">
         <div class="widget-time" id="widget-time">22:30</div>
         <div class="widget-date" id="widget-date">7月15日</div>
-        <div class="widget-weather">霓城 · 28°C 多云</div>
+        <div class="widget-weather" data-i18n="霓城 · 28°C 多云">霓城 · 28°C 多云</div>
       </div>
       <div class="app-grid" id="app-grid">
         <button class="app-icon" data-app="messages">
-          <span class="app-emoji">💬</span><span class="app-name">消息</span>
+          <span class="app-emoji">💬</span><span class="app-name" data-i18n="消息">消息</span>
           <span class="app-badge" id="badge-messages" hidden>0</span>
         </button>
         <button class="app-icon" data-app="phone">
-          <span class="app-emoji">📞</span><span class="app-name">电话</span>
+          <span class="app-emoji">📞</span><span class="app-name" data-i18n="电话">电话</span>
           <span class="app-badge" id="badge-phone" hidden>0</span>
         </button>
         <button class="app-icon" data-app="moments">
-          <span class="app-emoji">🌈</span><span class="app-name">朋友圈</span>
+          <span class="app-emoji">🌈</span><span class="app-name" data-i18n="朋友圈">朋友圈</span>
           <span class="app-badge" id="badge-moments" hidden>0</span>
         </button>
         <button class="app-icon" data-app="album">
-          <span class="app-emoji">📷</span><span class="app-name">相册</span>
+          <span class="app-emoji">📷</span><span class="app-name" data-i18n="相册">相册</span>
         </button>
         <button class="app-icon" data-app="calendar">
-          <span class="app-emoji">📅</span><span class="app-name">日历</span>
+          <span class="app-emoji">📅</span><span class="app-name" data-i18n="日历">日历</span>
         </button>
         <button class="app-icon" data-app="music">
-          <span class="app-emoji">🎵</span><span class="app-name">音乐</span>
+          <span class="app-emoji">🎵</span><span class="app-name" data-i18n="音乐">音乐</span>
         </button>
         <button class="app-icon" data-app="notes">
-          <span class="app-emoji">📝</span><span class="app-name">备忘录</span>
+          <span class="app-emoji">📝</span><span class="app-name" data-i18n="备忘录">备忘录</span>
         </button>
         <button class="app-icon" data-app="profile">
-          <span class="app-emoji">🔮</span><span class="app-name">画像</span>
+          <span class="app-emoji">🔮</span><span class="app-name" data-i18n="画像">画像</span>
         </button>
         <button class="app-icon" data-app="map">
-          <span class="app-emoji">🗺️</span><span class="app-name">出行</span>
+          <span class="app-emoji">🗺️</span><span class="app-name" data-i18n="出行">出行</span>
         </button>
         <button class="app-icon" data-app="groups">
-          <span class="app-emoji">👥</span><span class="app-name">群聊</span>
+          <span class="app-emoji">👥</span><span class="app-name" data-i18n="群聊">群聊</span>
           <span class="app-badge" id="badge-groups" hidden>0</span>
         </button>
         <button class="app-icon" data-app="contacts">
-          <span class="app-emoji">📇</span><span class="app-name">通讯录</span>
+          <span class="app-emoji">📇</span><span class="app-name" data-i18n="通讯录">通讯录</span>
         </button>
         <button class="app-icon" data-app="shop">
-          <span class="app-emoji">🎁</span><span class="app-name">礼物商城</span>
+          <span class="app-emoji">🎁</span><span class="app-name" data-i18n="礼物商城">礼物商城</span>
           <span class="app-badge" id="badge-shop" hidden>0</span>
         </button>
         <button class="app-icon" data-app="mood">
-          <span class="app-emoji">🎭</span><span class="app-name">心情</span>
+          <span class="app-emoji">🎭</span><span class="app-name" data-i18n="心情">心情</span>
         </button>
         <button class="app-icon" data-app="tarot">
-          <span class="app-emoji">🔮</span><span class="app-name">塔罗</span>
+          <span class="app-emoji">🔮</span><span class="app-name" data-i18n="塔罗">塔罗</span>
         </button>
         <button class="app-icon" data-app="achievements">
-          <span class="app-emoji">🏆</span><span class="app-name">成就</span>
+          <span class="app-emoji">🏆</span><span class="app-name" data-i18n="成就">成就</span>
           <span class="app-badge" id="badge-achievements" hidden>0</span>
         </button>
         <button class="app-icon" data-app="collection">
-          <span class="app-emoji">🗃️</span><span class="app-name">收集柜</span>
+          <span class="app-emoji">🗃️</span><span class="app-name" data-i18n="收集柜">收集柜</span>
           <span class="app-badge" id="badge-collection" hidden>0</span>
         </button>
         <button class="app-icon" data-app="puzzles">
-          <span class="app-emoji">🔍</span><span class="app-name">线索本</span>
+          <span class="app-emoji">🔍</span><span class="app-name" data-i18n="线索本">线索本</span>
         </button>
         <button class="app-icon" data-app="calendar2">
-          <span class="app-emoji">📅</span><span class="app-name">节日</span>
+          <span class="app-emoji">📅</span><span class="app-name" data-i18n="节日">节日</span>
         </button>
         <button class="app-icon" data-app="perspective">
-          <span class="app-emoji">👁️</span><span class="app-name">男主视角</span>
+          <span class="app-emoji">👁️</span><span class="app-name" data-i18n="男主视角">男主视角</span>
           <span class="app-badge" id="badge-perspective" hidden>0</span>
         </button>
         <button class="app-icon" data-app="player">
-          <span class="app-emoji">🪞</span><span class="app-name">主角</span>
+          <span class="app-emoji">🪞</span><span class="app-name" data-i18n="主角">主角</span>
         </button>
         <button class="app-icon" data-app="relations">
-          <span class="app-emoji">💞</span><span class="app-name">关系</span>
+          <span class="app-emoji">💞</span><span class="app-name" data-i18n="关系">关系</span>
         </button>
         <button class="app-icon" data-app="tasks">
-          <span class="app-emoji">✅</span><span class="app-name">今日</span>
+          <span class="app-emoji">✅</span><span class="app-name" data-i18n="今日">今日</span>
           <span class="app-badge" id="badge-tasks" hidden>0</span>
         </button>
         <button class="app-icon" data-app="watch">
-          <span class="app-emoji">🎬</span><span class="app-name">观赏</span>
+          <span class="app-emoji">🎬</span><span class="app-name" data-i18n="观赏">观赏</span>
         </button>
         <button class="app-icon" data-app="affection">
-          <span class="app-emoji">💖</span><span class="app-name">深度</span>
+          <span class="app-emoji">💖</span><span class="app-name" data-i18n="深度">深度</span>
         </button>
         <button class="app-icon" data-app="themes">
-          <span class="app-emoji">🎨</span><span class="app-name">主题</span>
+          <span class="app-emoji">🎨</span><span class="app-name" data-i18n="主题">主题</span>
         </button>
         <button class="app-icon" data-app="endings">
-          <span class="app-emoji">📖</span><span class="app-name">图鉴</span>
+          <span class="app-emoji">📖</span><span class="app-name" data-i18n="图鉴">图鉴</span>
           <span class="app-badge" id="badge-endings" hidden>0</span>
         </button>
         <button class="app-icon" data-app="dates">
-          <span class="app-emoji">💌</span><span class="app-name">约会</span>
+          <span class="app-emoji">💌</span><span class="app-name" data-i18n="约会">约会</span>
           <span class="app-badge" id="badge-dates" hidden>0</span>
         </button>
         <!-- v0.0.16 新玩法 -->
         <button class="app-icon" data-app="dreams">
-          <span class="app-emoji">🌙</span><span class="app-name">梦魇</span>
+          <span class="app-emoji">🌙</span><span class="app-name" data-i18n="梦魇">梦魇</span>
           <span class="app-badge" id="badge-dreams" hidden>0</span>
         </button>
         <button class="app-icon" data-app="hints">
-          <span class="app-emoji">💡</span><span class="app-name">提示</span>
+          <span class="app-emoji">💡</span><span class="app-name" data-i18n="提示">提示</span>
         </button>
         <button class="app-icon" data-app="saves">
-          <span class="app-emoji">💾</span><span class="app-name">存档</span>
+          <span class="app-emoji">💾</span><span class="app-name" data-i18n="存档">存档</span>
           <span class="app-badge" id="badge-saves" hidden>0</span>
         </button>
         <button class="app-icon" data-app="settings">
-          <span class="app-emoji">⚙️</span><span class="app-name">设置</span>
+          <span class="app-emoji">⚙️</span><span class="app-name" data-i18n="设置">设置</span>
         </button>
       </div>
       <div class="home-dock">
@@ -186,7 +186,7 @@
     <section id="messages-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>消息</h1>
+        <h1 data-i18n="消息">消息</h1>
       </header>
       <div class="conv-list" id="conv-list" role="list" aria-label="会话列表"></div>
     </section>
@@ -212,7 +212,7 @@
         </div>
         <div class="chat-options" id="chat-options"></div>
         <div class="chat-free-input" id="chat-free-input" hidden>
-          <input type="text" id="chat-free-input-field" placeholder="输入你想说的话…" autocomplete="off">
+          <input type="text" id="chat-free-input-field" placeholder="输入你想说的话…" data-i18n-placeholder="输入你想说的话…" autocomplete="off">
           <button id="chat-free-send" data-action="free-send">发送</button>
         </div>
       </div>
@@ -222,18 +222,18 @@
     <section id="phone-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>电话</h1>
+        <h1 data-i18n="电话">电话</h1>
       </header>
       <div class="phone-tabs">
-        <button class="phone-tab active" data-phone-tab="calls">通话记录</button>
-        <button class="phone-tab" data-phone-tab="voicemail">语音信箱<span class="tab-dot" id="phone-vm-dot" hidden></span></button>
+        <button class="phone-tab active" data-phone-tab="calls"><span data-i18n="通话记录">通话记录</span></button>
+        <button class="phone-tab" data-phone-tab="voicemail"><span data-i18n="语音信箱">语音信箱</span><span class="tab-dot" id="phone-vm-dot" hidden></span></button>
       </div>
       <!-- v0.7.3：语音信箱筛选栏（未听条数 + 批量已听），随 voicemail 面板一起显隐 -->
       <div class="vm-filter-bar" id="vm-filter-bar" data-phone-panel="voicemail" hidden>
-        <button class="vm-filter active" data-vm-filter="all">全部</button>
-        <button class="vm-filter" data-vm-filter="unheard">未听</button>
+        <button class="vm-filter active" data-vm-filter="all"><span data-i18n="全部">全部</span></button>
+        <button class="vm-filter" data-vm-filter="unheard"><span data-i18n="未听">未听</span></button>
         <span class="vm-filter-hint" id="vm-filter-hint"></span>
-        <button class="vm-filter-action" id="vm-read-all">全部标为已听</button>
+        <button class="vm-filter-action" id="vm-read-all"><span data-i18n="全部标为已听">全部标为已听</span></button>
       </div>
       <div class="call-list" id="call-list" data-phone-panel="calls"></div>
       <div class="voicemail-list" id="voicemail-list" data-phone-panel="voicemail" hidden></div>
@@ -245,7 +245,7 @@
     <section id="moments-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>朋友圈</h1>
+        <h1 data-i18n="朋友圈">朋友圈</h1>
         <button class="moments-post-btn" id="moments-post-btn" data-action="post-moment">📷</button>
       </header>
       <div class="moments-list" id="moments-list"></div>
@@ -256,10 +256,10 @@
       <div class="call-bg" id="call-bg"></div>
       <div class="call-content">
         <div class="call-name" id="call-name"></div>
-        <div class="call-label" id="call-label">来电…</div>
+        <div class="call-label" id="call-label" data-i18n="来电…">来电…</div>
         <div class="call-actions" id="call-actions">
-          <button class="call-btn decline" data-call="decline">挂断</button>
-          <button class="call-btn accept" data-call="accept">接听</button>
+          <button class="call-btn decline" data-call="decline"><span data-i18n="挂断">挂断</span></button>
+          <button class="call-btn accept" data-call="accept"><span data-i18n="接听">接听</span></button>
         </div>
         <div class="call-timer" id="call-timer" hidden></div>
         <div class="call-script" id="call-script" hidden></div>
@@ -270,7 +270,7 @@
     <section id="album-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>相册</h1>
+        <h1 data-i18n="相册">相册</h1>
       </header>
       <div class="album-grid" id="album-grid"></div>
     </section>
@@ -282,14 +282,14 @@
         <div class="photo-art" id="photo-art"></div>
         <div class="photo-caption" id="photo-caption"></div>
       </div>
-      <button class="back-btn photo-close" data-back="album">关闭</button>
+      <button class="back-btn photo-close" data-back="album"><span data-i18n="关闭">关闭</span></button>
     </section>
 
     <!-- 日历App -->
     <section id="calendar-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>日历</h1>
+        <h1 data-i18n="日历">日历</h1>
       </header>
       <div class="cal-current" id="cal-current"></div>
       <div class="cal-events" id="cal-events"></div>
@@ -299,7 +299,7 @@
     <section id="music-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>音乐</h1>
+        <h1 data-i18n="音乐">音乐</h1>
       </header>
       <div class="music-nowplaying" id="music-nowplaying">
         <div class="np-art" id="np-art">♪</div>
@@ -324,7 +324,7 @@
     <section id="notes-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>备忘录</h1>
+        <h1 data-i18n="备忘录">备忘录</h1>
       </header>
       <div class="notes-list" id="notes-list"></div>
     </section>
@@ -333,7 +333,7 @@
     <section id="profile-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>性格画像</h1>
+        <h1 data-i18n="性格画像">性格画像</h1>
       </header>
       <div class="profile-content" id="profile-content"></div>
     </section>
@@ -343,13 +343,13 @@
     <section id="map-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>出行</h1>
+        <h1 data-i18n="出行">出行</h1>
       </header>
-      <div class="map-tip" role="note">🚶 出行会推进时间，可能遇见某个人、触发新消息</div>
+      <div class="map-tip" role="note" data-i18n="🚶 出行会推进时间，可能遇见某个人、触发新消息">🚶 出行会推进时间，可能遇见某个人、触发新消息</div>
       <div class="map-current" id="map-current">
-        <div class="map-current-label">当前位置</div>
+        <div class="map-current-label" data-i18n="当前位置">当前位置</div>
         <div class="map-current-name" id="map-current-name">家</div>
-        <div class="map-current-hint" id="map-current-hint">选择要去的地方</div>
+        <div class="map-current-hint" id="map-current-hint" data-i18n="选择要去的地方">选择要去的地方</div>
       </div>
       <div class="map-list" id="map-list"></div>
     </section>
@@ -369,7 +369,7 @@
     <section id="groups-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>群聊</h1>
+        <h1 data-i18n="群聊">群聊</h1>
       </header>
       <div class="conv-list" id="group-list"></div>
     </section>
@@ -379,7 +379,7 @@
       <header class="app-header chat-header">
         <button class="back-btn" data-back="groups" aria-label="返回">‹</button>
         <div class="chat-title">
-          <span class="chat-avatar" id="group-chat-avatar" style="background:#3a3a5a">群</span>
+          <span class="chat-avatar" id="group-chat-avatar" style="background:#3a3a5a"><span data-i18n="群">群</span></span>
           <div>
             <div class="chat-name" id="group-chat-name"></div>
             <div class="chat-status" id="group-chat-members"></div>
@@ -397,7 +397,7 @@
     <section id="contacts-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>通讯录</h1>
+        <h1 data-i18n="通讯录">通讯录</h1>
       </header>
       <div class="contacts-list" id="contacts-list"></div>
     </section>
@@ -406,7 +406,7 @@
     <section id="char-profile-screen" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="contacts" aria-label="返回">‹</button>
-        <h1>主页</h1>
+        <h1 data-i18n="主页">主页</h1>
       </header>
       <div class="char-profile-body" id="char-profile-body"></div>
     </section>
@@ -415,13 +415,13 @@
     <section id="shop-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>礼物商城</h1>
+        <h1 data-i18n="礼物商城">礼物商城</h1>
         <div class="shop-coins" id="shop-coins">💰 500</div>
       </header>
       <div class="shop-tabs">
-        <button class="shop-tab active" data-shop-tab="store">商店</button>
-        <button class="shop-tab" data-shop-tab="inventory">背包</button>
-        <button class="shop-tab" data-shop-tab="gifts">已送出</button>
+        <button class="shop-tab active" data-shop-tab="store"><span data-i18n="商店">商店</span></button>
+        <button class="shop-tab" data-shop-tab="inventory"><span data-i18n="背包">背包</span></button>
+        <button class="shop-tab" data-shop-tab="gifts"><span data-i18n="已送出">已送出</span></button>
       </div>
       <div class="shop-content" id="shop-content"></div>
     </section>
@@ -430,7 +430,7 @@
     <section id="mood-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>心情</h1>
+        <h1 data-i18n="心情">心情</h1>
       </header>
       <div class="mood-content" id="mood-content"></div>
     </section>
@@ -439,7 +439,7 @@
     <section id="tarot-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>塔罗占卜</h1>
+        <h1 data-i18n="塔罗占卜">塔罗占卜</h1>
       </header>
       <div class="tarot-content" id="tarot-content"></div>
     </section>
@@ -448,7 +448,7 @@
     <section id="achievements-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>成就</h1>
+        <h1 data-i18n="成就">成就</h1>
       </header>
       <div class="achievements-content" id="achievements-content"></div>
     </section>
@@ -457,21 +457,21 @@
     <section id="collection-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>收集柜</h1>
+        <h1 data-i18n="收集柜">收集柜</h1>
         <div class="shop-coins" id="collection-count">0/0</div>
       </header>
       <div class="collection-tabs" id="collection-tabs">
-        <button class="collection-tab active" data-coll-cat="all">全部</button>
-        <button class="collection-tab" data-coll-cat="postcard">明信片</button>
-        <button class="collection-tab" data-coll-cat="stamp">印章</button>
-        <button class="collection-tab" data-coll-cat="evidence">证据</button>
-        <button class="collection-tab" data-coll-cat="recording">录音</button>
-        <button class="collection-tab" data-coll-cat="ticket">票根</button>
-        <button class="collection-tab" data-coll-cat="memento">信物</button>
+        <button class="collection-tab active" data-coll-cat="all"><span data-i18n="全部">全部</span></button>
+        <button class="collection-tab" data-coll-cat="postcard"><span data-i18n="明信片">明信片</span></button>
+        <button class="collection-tab" data-coll-cat="stamp"><span data-i18n="印章">印章</span></button>
+        <button class="collection-tab" data-coll-cat="evidence"><span data-i18n="证据">证据</span></button>
+        <button class="collection-tab" data-coll-cat="recording"><span data-i18n="录音">录音</span></button>
+        <button class="collection-tab" data-coll-cat="ticket"><span data-i18n="票根">票根</span></button>
+        <button class="collection-tab" data-coll-cat="memento"><span data-i18n="信物">信物</span></button>
       </div>
       <div class="collection-content" id="collection-content"></div>
       <div class="collection-eggs-section">
-        <div class="coll-eggs-title">🌙 隐藏彩蛋</div>
+        <div class="coll-eggs-title" data-i18n="🌙 隐藏彩蛋">🌙 隐藏彩蛋</div>
         <div id="collection-eggs"></div>
       </div>
     </section>
@@ -480,7 +480,7 @@
     <section id="puzzles-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>线索本</h1>
+        <h1 data-i18n="线索本">线索本</h1>
       </header>
       <div class="puzzles-content" id="puzzles-content"></div>
     </section>
@@ -489,7 +489,7 @@
     <section id="puzzle-detail-screen" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="puzzles" aria-label="返回">‹</button>
-        <h1 id="puzzle-detail-title">谜题</h1>
+        <h1 id="puzzle-detail-title" data-i18n="谜题">谜题</h1>
       </header>
       <div class="puzzle-detail-content" id="puzzle-detail-content"></div>
     </section>
@@ -498,7 +498,7 @@
     <section id="calendar2-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>霓城时节</h1>
+        <h1 data-i18n="霓城时节">霓城时节</h1>
       </header>
       <div class="calendar2-content" id="calendar2-content"></div>
     </section>
@@ -507,7 +507,7 @@
     <section id="perspective-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>男主视角</h1>
+        <h1 data-i18n="男主视角">男主视角</h1>
       </header>
       <div class="perspective-content" id="perspective-content"></div>
     </section>
@@ -516,7 +516,7 @@
     <section id="perspective-scene-screen" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="perspective" aria-label="返回">‹</button>
-        <h1 id="pscene-title">视角</h1>
+        <h1 id="pscene-title" data-i18n="视角">视角</h1>
       </header>
       <div class="pscene-content" id="pscene-content"></div>
     </section>
@@ -525,9 +525,9 @@
     <section id="truth-ending-screen" class="screen overlay-screen">
       <div class="truth-bg"></div>
       <div class="truth-content">
-        <div class="truth-title" id="truth-title">真相</div>
+        <div class="truth-title" id="truth-title" data-i18n="真相">真相</div>
         <div class="truth-text" id="truth-text"></div>
-        <button class="truth-close-btn" data-back="perspective">合上这页</button>
+        <button class="truth-close-btn" data-back="perspective"><span data-i18n="合上这页">合上这页</span></button>
       </div>
     </section>
 
@@ -535,7 +535,7 @@
     <section id="flashback-screen" class="screen overlay-screen">
       <div class="flashback-bg"></div>
       <div class="flashback-content">
-        <div class="flashback-label" id="flashback-label">闪回</div>
+        <div class="flashback-label" id="flashback-label" data-i18n="闪回">闪回</div>
         <div class="flashback-title" id="flashback-title"></div>
         <div class="flashback-scenes" id="flashback-scenes"></div>
         <div class="flashback-options" id="flashback-options"></div>
@@ -555,7 +555,7 @@
     <section id="player-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>主角档案</h1>
+        <h1 data-i18n="主角档案">主角档案</h1>
         <button class="moments-post-btn" id="player-edit-btn" data-action="edit-player">✎</button>
       </header>
       <div class="player-content" id="player-content"></div>
@@ -570,7 +570,7 @@
     <section id="relations-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>关系阶段</h1>
+        <h1 data-i18n="关系阶段">关系阶段</h1>
       </header>
       <div class="relations-content" id="relations-content"></div>
     </section>
@@ -579,7 +579,7 @@
     <section id="tasks-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>今日任务</h1>
+        <h1 data-i18n="今日任务">今日任务</h1>
         <div class="shop-coins" id="tasks-streak">🔥 0</div>
       </header>
       <div class="tasks-content" id="tasks-content"></div>
@@ -589,7 +589,7 @@
     <section id="watch-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>观赏模式</h1>
+        <h1 data-i18n="观赏模式">观赏模式</h1>
       </header>
       <div class="watch-content" id="watch-content"></div>
     </section>
@@ -598,7 +598,7 @@
     <section id="affection-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>好感度深度</h1>
+        <h1 data-i18n="好感度深度">好感度深度</h1>
       </header>
       <div class="affection-content" id="affection-content"></div>
     </section>
@@ -607,7 +607,7 @@
     <section id="themes-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>主题壁纸</h1>
+        <h1 data-i18n="主题壁纸">主题壁纸</h1>
       </header>
       <div class="themes-content" id="themes-content"></div>
     </section>
@@ -616,7 +616,7 @@
     <section id="endings-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>结局图鉴</h1>
+        <h1 data-i18n="结局图鉴">结局图鉴</h1>
         <div class="shop-coins" id="endings-counter">0/0</div>
       </header>
       <div class="endings-content" id="endings-content"></div>
@@ -626,7 +626,7 @@
     <section id="dates-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>每日约会</h1>
+        <h1 data-i18n="每日约会">每日约会</h1>
       </header>
       <div class="dates-content" id="dates-content"></div>
     </section>
@@ -640,7 +640,7 @@
     <section id="dreams-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>梦魇录</h1>
+        <h1 data-i18n="梦魇录">梦魇录</h1>
         <div class="shop-coins" id="dreams-counter">0/0</div>
       </header>
       <div class="dreams-content" id="dreams-content"></div>
@@ -650,12 +650,12 @@
     <section id="hints-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>智能提示</h1>
+        <h1 data-i18n="智能提示">智能提示</h1>
       </header>
       <div class="hints-content" id="hints-content"></div>
       <!-- v0.3.7 隐私与数据说明入口（PWA / 合规） -->
       <div class="app-footer-links" style="padding:10px 16px 18px;text-align:center;">
-        <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--ink-mute);font-size:12px;">隐私与数据说明</a>
+        <a href="privacy.html" target="_blank" rel="noopener" data-i18n-href="privacy.html|privacy-en.html" style="color:var(--ink-mute);font-size:12px;"><span data-i18n="隐私与数据说明">隐私与数据说明</span></a>
       </div>
     </section>
 
@@ -668,13 +668,13 @@
     <section id="post-moment-screen" class="screen overlay-screen">
       <div class="post-moment-content">
         <div class="post-moment-header">
-          <button class="back-btn" data-back="moments">取消</button>
-          <h1>发动态</h1>
-          <button class="post-moment-publish" id="post-moment-publish" data-action="publish-moment">发表</button>
+          <button class="back-btn" data-back="moments"><span data-i18n="取消">取消</span></button>
+          <h1 data-i18n="发动态">发动态</h1>
+          <button class="post-moment-publish" id="post-moment-publish" data-action="publish-moment"><span data-i18n="发表">发表</span></button>
         </div>
-        <textarea class="post-moment-text" id="post-moment-text" placeholder="这一刻的想法…" rows="4" maxlength="280"></textarea>
+        <textarea class="post-moment-text" id="post-moment-text" placeholder="这一刻的想法…" data-i18n-placeholder="这一刻的想法…" rows="4" maxlength="280"></textarea>
         <div class="post-moment-art">
-          <span class="pm-art-label">配图：</span>
+          <span class="pm-art-label" data-i18n="配图：">配图：</span>
           <button class="pm-art-opt" data-moment-art="city">🌃</button>
           <button class="pm-art-opt" data-moment-art="rooftop">🌃</button>
           <button class="pm-art-opt" data-moment-art="">🚫</button>
@@ -687,7 +687,7 @@
     <section id="settings-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home">‹</button>
-        <h1>设置</h1>
+        <h1 data-i18n="设置">设置</h1>
       </header>
       <div class="settings-body" id="settings-body"></div>
     </section>
@@ -695,7 +695,7 @@
     <section id="saves-app" class="screen app-screen">
       <header class="app-header">
         <button class="back-btn" data-back="home" aria-label="返回">‹</button>
-        <h1>存档管理</h1>
+        <h1 data-i18n="存档管理">存档管理</h1>
         <div class="shop-coins" id="saves-counter">0/4</div>
       </header>
       <div class="saves-content" id="saves-content"></div>
@@ -710,8 +710,8 @@
         <h2 class="ending-title" id="ending-title"></h2>
         <img id="ending-cg" class="ending-cg" alt="" hidden>
         <p class="ending-text" id="ending-text"></p>
-        <button class="menu-btn" data-action="restart">重新开始</button>
-        <button class="menu-btn" id="btn-ngplus" style="margin-top:10px">再来一次 · 二周目</button>
+        <button class="menu-btn" data-action="restart"><span data-i18n="重新开始">重新开始</span></button>
+        <button class="menu-btn" id="btn-ngplus" style="margin-top:10px"><span data-i18n="再来一次 · 二周目">再来一次 · 二周目</span></button>
       </div>
     </section>
 
@@ -732,66 +732,66 @@
   </div>
 </div>
 
-<script src="i18n/zh-CN.js?v=0.7.7"></script>
-<script src="i18n/en-US.js?v=0.7.7"></script>
-<script src="i18n/story-en-translations.js?v=0.7.7"></script>
-<script src="i18n/story-en-translations-2.js?v=0.7.7"></script>
-<script src="i18n/story-en-translations-3.js?v=0.7.7"></script>
-<script src="i18n/story-en-translations-4.js?v=0.7.7"></script>
-<script src="i18n/index.js?v=0.7.7"></script>
-<script src="story/00_core.js?v=0.7.7"></script>
-<script src="story/01_events.js?v=0.7.7"></script>
-<script src="story/02_moments_dreams.js?v=0.7.7"></script>
-<script src="story/03_assets.js?v=0.7.7"></script>
-<script src="story/04_route_ending.js?v=0.7.7"></script>
-<script src="story/05_locations.js?v=0.7.7"></script>
-<script src="story/06_intel_invitations.js?v=0.7.7"></script>
-<script src="story/07_groups_profiles.js?v=0.7.7"></script>
-<script src="story/08_flashbacks.js?v=0.7.7"></script>
-<script src="story/09_shop_moods.js?v=0.7.7"></script>
-<script src="story/10_tarot_achievements.js?v=0.7.7"></script>
-<script src="story/11_collectibles_puzzles.js?v=0.7.7"></script>
-<script src="story/12_seasons_perspectives.js?v=0.7.7"></script>
-<script src="story/13_player_relationship.js?v=0.7.7"></script>
-<script src="story/14_critical_daily.js?v=0.7.7"></script>
-<script src="story/15_affection_themes.js?v=0.7.7"></script>
-<script src="story/16_dates_nightmares.js?v=0.7.7"></script>
-<script src="story/17_hints_ambiences.js?v=0.7.7"></script>
-<script src="interaction_queue.js?v=0.7.7"></script>
-<script src="save_migrations.js?v=0.7.7"></script>
-<script src="engine_domains.js?v=0.7.7"></script>
-<script src="engine.js?v=0.7.7"></script>
-<script src="engine_content.js?v=0.7.7"></script>
-<script src="engine_progress.js?v=0.7.7"></script>
-<script src="engine_save.js?v=0.7.7"></script>
-<script src="audio.js?v=0.7.7"></script>
-<script src="debug.js?v=0.7.7"></script>
-<script src="engine_social.js?v=0.7.7"></script>
-<script src="ui/00_shell.js?v=0.7.7"></script>
-<script src="ui/01_input_delegate.js?v=0.7.7"></script>
-<script src="ui/02_map_encounters.js?v=0.7.7"></script>
-<script src="ui/03_messages.js?v=0.7.7"></script>
-<script src="ui/04_engine_events.js?v=0.7.7"></script>
-<script src="ui/05_calls.js?v=0.7.7"></script>
-<script src="ui/06_album_calendar_music.js?v=0.7.7"></script>
-<script src="ui/07_notes_logs_endings.js?v=0.7.7"></script>
-<script src="ui/08_moments.js?v=0.7.7"></script>
-<script src="ui/09_dreams_memories_intel.js?v=0.7.7"></script>
-<script src="ui/10_voicemail_groups.js?v=0.7.7"></script>
-<script src="ui/11_contacts_flashbacks.js?v=0.7.7"></script>
-<script src="ui/12_shop_mood.js?v=0.7.7"></script>
-<script src="ui/13_tarot_achievements.js?v=0.7.7"></script>
-<script src="ui/14_collection_puzzles.js?v=0.7.7"></script>
-<script src="ui/15_holiday_perspective.js?v=0.7.7"></script>
-<script src="ui/16_player_profile.js?v=0.7.7"></script>
-<script src="ui/17_relationship_tasks_watch.js?v=0.7.7"></script>
-<script src="ui/18_affection_theme_gallery_dates.js?v=0.7.7"></script>
-<script src="ui/19_listeners_nightmares.js?v=0.7.7"></script>
-<script src="ui/20_saves.js?v=0.7.7"></script>
-<script src="ui/22_settings.js?v=0.7.7"></script>
-<script src="ui/23_idle_hint.js?v=0.7.7"></script>
-<script src="ui/24_app_unlock.js?v=0.7.7"></script>
-<script src="ui/21_init.js?v=0.7.7"></script>
-<script src="pwa.js?v=0.7.7"></script>
+<script src="i18n/zh-CN.js?v=0.7.8"></script>
+<script src="i18n/en-US.js?v=0.7.8"></script>
+<script src="i18n/story-en-translations.js?v=0.7.8"></script>
+<script src="i18n/story-en-translations-2.js?v=0.7.8"></script>
+<script src="i18n/story-en-translations-3.js?v=0.7.8"></script>
+<script src="i18n/story-en-translations-4.js?v=0.7.8"></script>
+<script src="i18n/index.js?v=0.7.8"></script>
+<script src="story/00_core.js?v=0.7.8"></script>
+<script src="story/01_events.js?v=0.7.8"></script>
+<script src="story/02_moments_dreams.js?v=0.7.8"></script>
+<script src="story/03_assets.js?v=0.7.8"></script>
+<script src="story/04_route_ending.js?v=0.7.8"></script>
+<script src="story/05_locations.js?v=0.7.8"></script>
+<script src="story/06_intel_invitations.js?v=0.7.8"></script>
+<script src="story/07_groups_profiles.js?v=0.7.8"></script>
+<script src="story/08_flashbacks.js?v=0.7.8"></script>
+<script src="story/09_shop_moods.js?v=0.7.8"></script>
+<script src="story/10_tarot_achievements.js?v=0.7.8"></script>
+<script src="story/11_collectibles_puzzles.js?v=0.7.8"></script>
+<script src="story/12_seasons_perspectives.js?v=0.7.8"></script>
+<script src="story/13_player_relationship.js?v=0.7.8"></script>
+<script src="story/14_critical_daily.js?v=0.7.8"></script>
+<script src="story/15_affection_themes.js?v=0.7.8"></script>
+<script src="story/16_dates_nightmares.js?v=0.7.8"></script>
+<script src="story/17_hints_ambiences.js?v=0.7.8"></script>
+<script src="interaction_queue.js?v=0.7.8"></script>
+<script src="save_migrations.js?v=0.7.8"></script>
+<script src="engine_domains.js?v=0.7.8"></script>
+<script src="engine.js?v=0.7.8"></script>
+<script src="engine_content.js?v=0.7.8"></script>
+<script src="engine_progress.js?v=0.7.8"></script>
+<script src="engine_save.js?v=0.7.8"></script>
+<script src="audio.js?v=0.7.8"></script>
+<script src="debug.js?v=0.7.8"></script>
+<script src="engine_social.js?v=0.7.8"></script>
+<script src="ui/00_shell.js?v=0.7.8"></script>
+<script src="ui/01_input_delegate.js?v=0.7.8"></script>
+<script src="ui/02_map_encounters.js?v=0.7.8"></script>
+<script src="ui/03_messages.js?v=0.7.8"></script>
+<script src="ui/04_engine_events.js?v=0.7.8"></script>
+<script src="ui/05_calls.js?v=0.7.8"></script>
+<script src="ui/06_album_calendar_music.js?v=0.7.8"></script>
+<script src="ui/07_notes_logs_endings.js?v=0.7.8"></script>
+<script src="ui/08_moments.js?v=0.7.8"></script>
+<script src="ui/09_dreams_memories_intel.js?v=0.7.8"></script>
+<script src="ui/10_voicemail_groups.js?v=0.7.8"></script>
+<script src="ui/11_contacts_flashbacks.js?v=0.7.8"></script>
+<script src="ui/12_shop_mood.js?v=0.7.8"></script>
+<script src="ui/13_tarot_achievements.js?v=0.7.8"></script>
+<script src="ui/14_collection_puzzles.js?v=0.7.8"></script>
+<script src="ui/15_holiday_perspective.js?v=0.7.8"></script>
+<script src="ui/16_player_profile.js?v=0.7.8"></script>
+<script src="ui/17_relationship_tasks_watch.js?v=0.7.8"></script>
+<script src="ui/18_affection_theme_gallery_dates.js?v=0.7.8"></script>
+<script src="ui/19_listeners_nightmares.js?v=0.7.8"></script>
+<script src="ui/20_saves.js?v=0.7.8"></script>
+<script src="ui/22_settings.js?v=0.7.8"></script>
+<script src="ui/23_idle_hint.js?v=0.7.8"></script>
+<script src="ui/24_app_unlock.js?v=0.7.8"></script>
+<script src="ui/21_init.js?v=0.7.8"></script>
+<script src="pwa.js?v=0.7.8"></script>
 </body>
 </html>

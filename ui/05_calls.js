@@ -8,7 +8,7 @@
     const char = STORY.characters[from];
     $('call-name').textContent = window.t(name || char?.name || '');
     $('call-bg').style.background = `radial-gradient(ellipse at center, ${char?.bg || '#2a2f5a'}, #000)`;
-    $('call-label').textContent = '来电…';
+    $('call-label').textContent = window.t('来电…');
     $('call-actions').hidden = false;
     $('call-timer').hidden = true;
     $('call-script').hidden = true;
@@ -25,7 +25,7 @@
     if(action === 'accept'){
       engine.answerCall(call.eventId);
       $('call-actions').hidden = true;
-      $('call-label').textContent = '通话中';
+      $('call-label').textContent = window.t('通话中');
       $('call-timer').hidden = false;
       $('call-script').hidden = false;
       engine.addCallLog(call.from, 'incoming', '03:24');
@@ -45,7 +45,7 @@
     function nextStep(){
       if(call.step >= call.script.length){
         // 通话结束：触发后续事件（通过 engine 的 afterEvent 链）
-        $('call-label').textContent = '通话结束';
+        $('call-label').textContent = window.t('通话结束');
         const evt = engine.story.events[call.eventId];
         setUiTimeout(()=>{
           showScreen('home');

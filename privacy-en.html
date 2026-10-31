@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy & Data · Neon Heart</title>
+<style>
+  :root{ --bg:#0a0612; --ink:#e8e0f0; --mute:#a99bc4; --pink:#ff5fa8; --purple:#7a5cff; }
+  html,body{ margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; line-height:1.75; }
+  .wrap{ max-width:640px; margin:0 auto; padding:32px 20px 64px; }
+  h1{ font-size:20px; background:linear-gradient(90deg,var(--pink),var(--purple));
+    -webkit-background-clip:text; background-clip:text; color:transparent; }
+  h2{ font-size:15px; color:var(--pink); margin-top:26px; }
+  p,li{ font-size:14px; }
+  ul{ padding-left:20px; }
+  .mute{ color:var(--mute); font-size:12px; }
+  a{ color:var(--pink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Privacy &amp; Data</h1>
+  <p class="mute">Neon Heart · Lin Xia's Phone · Last updated 2026-10-24</p>
+
+  <h2>1. Your game data</h2>
+  <p>All saves (progress, affection, collection, settings, etc.) are stored in your device's
+  <b>browser storage (localStorage)</b> and are never uploaded to any server. You can export them
+  as a JSON file for backup within the game, or delete them at any time by clearing your browser data.</p>
+
+  <h2>2. Error reporting</h2>
+  <p>When a script error occurs, the game sends a brief summary to <b>our own server</b>
+  (error message + location + current version), used solely for troubleshooting. This reporting:</p>
+  <ul>
+    <li>contains only the summary above — <b>no</b> game saves, chat content, personal information, or device identifiers;</li>
+    <li>goes to this project's own server and never passes through any third party;</li>
+    <li>is throttled to once every 30 seconds and fails silently, so it never interrupts gameplay.</li>
+  </ul>
+
+  <h2>3. What we don't do</h2>
+  <ul>
+    <li>No account system; we do not collect your identity information;</li>
+    <li>No third-party tracking scripts, ads, or analytics SDKs;</li>
+    <li>We never sell or share your data with any third party.</li>
+  </ul>
+
+  <h2>4. Offline &amp; caching</h2>
+  <p>This game is a PWA that uses a Service Worker to cache its own files for offline play;
+  the cache contains game files only and none of your personal data.</p>
+
+  <p style="margin-top:32px;"><a href="./index.html">← Back to game</a></p>
+</div>
+</body>
+</html>
