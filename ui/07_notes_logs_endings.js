@@ -16,7 +16,7 @@
         div.innerHTML = `
           <div class="ni-title">${escapeHtml(n.title)}</div>
           <div class="ni-preview">${nl2brEscaped(n.preview)}</div>
-          <div class="ni-date">${escapeHtml(n.time)}</div>
+          <div class="ni-date">${escapeHtml(window.localizeDateLabel(n.time))}</div>
         `;
         list.appendChild(div);
       });
@@ -27,7 +27,7 @@
         div.innerHTML = `
           <div class="ni-title">${escapeHtml(n.title)}</div>
           <div class="ni-preview">${nl2brEscaped(n.preview||'')}</div>
-          <div class="ni-date">${escapeHtml(n.time)}</div>
+          <div class="ni-date">${escapeHtml(window.localizeDateLabel(n.time))}</div>
         `;
         list.appendChild(div);
       });

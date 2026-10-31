@@ -29,10 +29,12 @@ compile('sw.js', fs.readFileSync(path.join(root, 'sw.js'), 'utf8'));
 
 // 2) index.html 引用的本地资源存在性
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const refs = [...html.matchAll(/(?:src|href)="([^"#?]+)(?:\?[^"]*)?"/g)].map(m => m[1]);
-const missing = refs.filter(f => !/^https?:/.test(f) && !fs.existsSync(path.join(root, f)));
+// v0.7.8：负向断言排除 data-i18n-href（其值形如 "privacy.html|privacy-en.html"，按管道拆分后单独校验）
+const refs = [...html.matchAll(/(?<!data-i18n-)(?:src|href)="([^"#?]+)(?:\?[^"]*)?"/g)].map(m => m[1]);
+const i18nHrefs = [...html.matchAll(/data-i18n-href="([^"]+)"/g)].flatMap(m => m[1].split('|'));
+const missing = [...refs, ...i18nHrefs].filter(f => !/^https?:/.test(f) && !fs.existsSync(path.join(root, f)));
 if(missing.length) failures.push('✗ index.html 引用了不存在的文件: ' + missing.join(', '));
-else ok(`index.html 引用 ${refs.length} 个本地资源全部存在`);
+else ok(`index.html 引用 ${refs.length + i18nHrefs.length} 个本地资源全部存在`);
 
 // 3) sw.js PRECACHE 清单存在性 + 覆盖 index.html 的本地脚本
 const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');

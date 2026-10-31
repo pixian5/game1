@@ -146,7 +146,7 @@
     const d = engine.getDateLabel();
     $('sb-time').textContent = t.time;
     $('lock-time').textContent = t.time;
-    $('lock-date').textContent = d.full;
+    $('lock-date').textContent = window.localizeDateLabel(d.full);   // v0.7.8：中文快照显示层重拼（英文模式 7/15 Wed）
     $('widget-time').textContent = t.time;
     $('widget-date').textContent = window.t('{m}月{d}日', {m: d.month, d: d.date});   // v0.7.7：日期走 i18n 模板（英文模式显示 7/15）
   }

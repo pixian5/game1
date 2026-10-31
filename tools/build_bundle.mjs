@@ -53,7 +53,16 @@ if (i1 < 0 || i2 <= i1) throw new Error('script 标签定位失败');
 const distHtml = html.slice(0, i1)
   + `<script src="bundle.js?v=${VERSION}"></script>`
   + html.slice(i2);
-fs.writeFileSync(path.join(OUT, 'index.html'), distHtml);
+// v0.7.8：HF Space 分享卡片元信息重写（index.html 的 og:image/og:url 指向自有服务器，
+// 在 HF 上下文分享时依赖外部域名且 og:url 与页面实际地址不一致；静态 Space 无构建期
+// 环境变量，直接替换为 Space 规范域名，社交平台抓取会跟随重定向）
+const HF_ORIGIN = 'https://xbzsb-neon-heart.hf.space';
+const distHtmlMeta = distHtml
+  .replace(/(<meta property="og:image" content=")[^"]*(")/, `$1${HF_ORIGIN}/assets/og-cover.jpg$2`)
+  .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${HF_ORIGIN}/$2`)
+  .replace(/(<meta name="twitter:image" content=")[^"]*(")/, `$1${HF_ORIGIN}/assets/og-cover.jpg$2`);
+if (distHtmlMeta === distHtml) throw new Error('HF OG 元信息重写失败（未匹配到 og:image/og:url/twitter:image）');
+fs.writeFileSync(path.join(OUT, 'index.html'), distHtmlMeta);
 
 // 3) sw.js：预缓存 JS 清单换为 bundle + i18n（语言包单独保留，便于独立翻译）
 const sw = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
@@ -76,7 +85,7 @@ function cp(src, dest) {
     for (const n of fs.readdirSync(s)) cp(path.join(src, n), path.join(dest || src, n));
   } else fs.copyFileSync(s, d);
 }
-for (const f of ['style.css', 'manifest.json', 'privacy.html', 'robots.txt', 'sitemap.xml']) {
+for (const f of ['style.css', 'manifest.json', 'privacy.html', 'privacy-en.html', 'robots.txt', 'sitemap.xml']) {
   if (fs.existsSync(path.join(ROOT, f))) cp(f);
 }
 for (const d of ['i18n', 'assets']) cp(d);

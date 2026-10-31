@@ -70,7 +70,7 @@
             <div class="moment-text">${nl2brEscaped(m.text)}</div>
             ${m.art ? `<div class="moment-art">${getMomentArt(m.art)}</div>` : ''}
             <div class="moment-meta">
-              <span>${escapeHtml(m.dateLabel)} ${escapeHtml(m.time)}</span>
+              <span>${escapeHtml(window.localizeDateLabel(m.dateLabel))} ${escapeHtml(m.time)}</span>
               <div class="moment-actions">
                 <button class="moment-act-btn ${inter.liked?'liked':''}" data-moment-like="${safeMomentId}" ${inter.liked?'disabled':''}>
                   ${inter.liked?'♥':'♡'} ${m.likes.length}
