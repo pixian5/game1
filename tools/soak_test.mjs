@@ -4,12 +4,12 @@
  * 运行：node tools/soak_test.mjs [秒数]
  */
 // v0.7.3：改为按包名解析——原写法硬编码维护者本机绝对路径，换机器/CI 一律 ERR_MODULE_NOT_FOUND
-import { chromium } from '@playwright/test';
+import { launchBrowser } from './browser.mjs';
 
 const DURATION = Number(process.argv[2] || 90);
 const BASE = process.env.FLOW_BASE || 'http://127.0.0.1:4187';
 
-const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const browser = await launchBrowser();
 const page = await browser.newPage({ viewport: { width: 420, height: 780 } });
 const errs = [];
 page.on('pageerror', e => errs.push('pageerror: ' + String(e).slice(0, 160)));

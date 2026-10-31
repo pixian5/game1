@@ -1,11 +1,8 @@
-import { chromium } from '@playwright/test';
+import { launchBrowser } from './browser.mjs';
 import fs from 'node:fs';
 
 const BASE = process.env.BASE || 'http://127.0.0.1:4187';
-const browser = await chromium.launch({
-  executablePath: '/root/.cache/ms-playwright/chromium-1243/chrome-linux/chrome',
-  headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'],
-});
+const browser = await launchBrowser();
 const context = await browser.newContext({ viewport: { width: 430, height: 932 } });
 const page = await context.newPage();
 const errors = [];

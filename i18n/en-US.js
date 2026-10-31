@@ -118,6 +118,7 @@
     '进入{char}线': "Entering {char}'s route",
     '已送出 · {char} 好感 +{gain}': 'Sent to {char} · Affection +{gain}',
     '在「{group}」发了消息': 'New message in "{group}"',
-    '★ {char} 关系阶段提升：{stage} · {title}': '★ {char} stage up: {stage} · {title}'
+    '★ {char} 关系阶段提升：{stage} · {title}': '★ {char} stage up: {stage} · {title}',
+    '{m}月{d}日': '{m}/{d}'   // v0.7.7：主屏日期
   };
 })();

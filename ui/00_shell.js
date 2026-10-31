@@ -148,7 +148,7 @@
     $('lock-time').textContent = t.time;
     $('lock-date').textContent = d.full;
     $('widget-time').textContent = t.time;
-    $('widget-date').textContent = `${d.month}月${d.date}日`;
+    $('widget-date').textContent = window.t('{m}月{d}日', {m: d.month, d: d.date});   // v0.7.7：日期走 i18n 模板（英文模式显示 7/15）
   }
 
   // ===== 锁屏 =====

@@ -4,10 +4,10 @@
  * 运行：node tools/flow_test.mjs   （需本地 test_server 已启动于 4187）
  */
 // v0.7.3：改为按包名解析——原写法硬编码维护者本机绝对路径，换机器/CI 一律 ERR_MODULE_NOT_FOUND
-import { chromium } from '@playwright/test';
+import { launchBrowser } from './browser.mjs';
 
 const BASE = process.env.FLOW_BASE || 'http://127.0.0.1:4187';
-const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const browser = await launchBrowser();
 const page = await browser.newPage({ viewport: { width: 420, height: 780 } });
 const consoleErrors = [];
 page.on('pageerror', e => consoleErrors.push('pageerror: ' + String(e).slice(0, 200)));

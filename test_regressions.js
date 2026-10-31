@@ -1150,4 +1150,20 @@ test('v0.7.4: 存档/日志仍存中文 name 快照（显示层才翻译）', ()
   assert.ok(g.some(x => x.charName === '沈砚之'), '角色结局派生中文名快照');
 });
 
+// ===== v0.7.7: 主屏日期 i18n 模板 =====
+test('v0.7.7: 主屏日期模板——en 包 {m}月{d}日 → {m}/{d} 插值', ()=>{
+  const fs = require('fs'); const pathm = require('path'); const vm = require('vm');
+  const sandbox = { window: {} };
+  vm.createContext(sandbox);
+  for(const f of ['i18n/zh-CN.js','i18n/en-US.js','i18n/index.js']){
+    vm.runInContext(fs.readFileSync(pathm.join(__dirname, f), 'utf8'), sandbox, { filename: f });
+  }
+  const I18N = sandbox.window.I18N;
+  const t = sandbox.window.t;
+  I18N.setLang('en-US');
+  assert.equal(t('{m}月{d}日', {m:7, d:15}), '7/15', '英文模式日期为 7/15');
+  I18N.setLang('zh-CN');
+  assert.equal(t('{m}月{d}日', {m:7, d:15}), '7月15日', '中文模式保持原格式');
+});
+
 console.log('全部回归测试通过');
