@@ -1,0 +1,83 @@
+diff --git a/.github/workflows/deploy-hf.yml b/.github/workflows/deploy-hf.yml
+index 3d8483e..c05f469 100644
+--- a/.github/workflows/deploy-hf.yml
++++ b/.github/workflows/deploy-hf.yml
+@@ -12,7 +12,12 @@ concurrency:
+   cancel-in-progress: true
+ 
+ jobs:
++  # v0.7.8：公共校验（npm ci + check:version + validate:story）抽为 reusable workflow
++  verify:
++    uses: ./.github/workflows/reusable-verify.yml
++
+   deploy:
++    needs: verify
+     runs-on: ubuntu-latest
+     timeout-minutes: 10
+     steps:
+@@ -23,12 +28,7 @@ jobs:
+           node-version: 20
+           cache: npm
+ 
+-      - run: npm ci
+-      - name: 轻量校验（版本一致性 + 剧情数据，重测试由测试工作流并行执行）
+-        run: |
+-          npm run check:version
+-          npm run validate:story
+-
++      # build_bundle.mjs 仅用 node 内置模块，无需 npm ci（依赖安装已在 verify job 完成）
+       - name: 构建 dist 产物
+         run: node tools/build_bundle.mjs
+ 
+diff --git a/.github/workflows/deploy-server.yml b/.github/workflows/deploy-server.yml
+index cf51766..07f12e2 100644
+--- a/.github/workflows/deploy-server.yml
++++ b/.github/workflows/deploy-server.yml
+@@ -10,16 +10,16 @@ concurrency:
+   cancel-in-progress: true
+ 
+ jobs:
++  # v0.7.8：公共校验（npm ci + check:version + validate:story）抽为 reusable workflow
++  verify:
++    uses: ./.github/workflows/reusable-verify.yml
++
+   deploy:
++    needs: verify
+     runs-on: ubuntu-latest
+     timeout-minutes: 10
+     steps:
+       - uses: actions/checkout@v4
+-      - name: 轻量校验（版本一致性 + 剧情数据，重测试由测试工作流并行执行）
+-        run: |
+-          npm ci
+-          npm run check:version
+-          npm run validate:story
+       - name: 配置部署密钥
+         run: |
+           mkdir -p ~/.ssh
+diff --git a/.github/workflows/reusable-verify.yml b/.github/workflows/reusable-verify.yml
+new file mode 100644
+index 0000000..66f9f42
+--- /dev/null
++++ b/.github/workflows/reusable-verify.yml
+@@ -0,0 +1,20 @@
++name: 轻量校验（可复用）
++
++# v0.7.8：从 deploy-server / deploy-hf 抽出的公共校验步骤（npm ci + 版本一致性 + 剧情数据）。
++# 重测试（lint/回归/覆盖率/E2E）由测试工作流并行执行，部署工作流只做发布门禁。
++on:
++  workflow_call:
++
++jobs:
++  verify:
++    runs-on: ubuntu-latest
++    timeout-minutes: 10
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: 20
++          cache: npm
++      - run: npm ci
++      - run: npm run check:version
++      - run: npm run validate:story
