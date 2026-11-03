@@ -22,6 +22,8 @@ screenshot*.jpeg
 *.log
 tmp/
 .cache/
+.trae-html-share-packages/
+.screenshots/.tmp/
 coverage/
 test-results/
 .nyc_output/
