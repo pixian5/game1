@@ -24,6 +24,8 @@
   if(typeof window === 'undefined') return;
 
   const params = new URLSearchParams(location.search);
+  const __origConsoleError = console.error.bind(console);
+  const __origConsoleWarn = console.warn.bind(console);
   const qs = params.get('debug');
   let enabled = false;
   try {
@@ -53,7 +55,7 @@
       issues.push(entry);
       if(issues.length > 200) issues.shift();
       updateBadge();
-      const fn = level === 'error' ? console.error : console.warn;
+      const fn = level === 'error' ? __origConsoleError : __origConsoleWarn;
       fn('[NeonDebug]', entry.at, tag, msg, extra === undefined ? '' : extra);
     } else if(enabled && params.get('verbose') === '1'){
       console.log('[NeonDebug]', entry.at, tag, msg, extra === undefined ? '' : extra);
