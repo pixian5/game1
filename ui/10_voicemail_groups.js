@@ -461,6 +461,10 @@
   }
   function showGroupChoice(groupId, choice){
     const bar = $('group-chat-input-bar');
+    if(!choice || !Array.isArray(choice.options) || choice.options.length === 0){
+      if(bar) bar.hidden = true;
+      return;
+    }
     bar.hidden = false;
     $('group-chat-prompt').textContent = choice.prompt;
     const opts = $('group-chat-options');
