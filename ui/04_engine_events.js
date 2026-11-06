@@ -97,6 +97,10 @@
 
   function showChatChoice(convId, choice){
     const bar = $('chat-input-bar');
+    if(!choice || !Array.isArray(choice.options) || choice.options.length === 0){
+      if(bar) bar.hidden = true;
+      return;
+    }
     $('chat-prompt').textContent = _t(choice.prompt);
     const opts = $('chat-options');
     const timeoutBar = $('chat-timeout-bar');

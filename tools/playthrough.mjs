@@ -43,14 +43,17 @@ page.on('pageerror', e => errors.push('pageerror: ' + String(e).slice(0, 300)));
 page.on('requestfailed', r => failed.push(r.url() + ' :: ' + (r.failure() && r.failure().errorText)));
 page.on('response', r => { if (r.status() >= 400) failed.push(r.status() + ' ' + r.url()); });
 
-await page.addInitScript(() => {
-  const orig = window.setTimeout;
-  window.setTimeout = (fn, d, ...a) => {
-    const ms = Number(d) || 0;
-    return orig(fn, ms > 3000 ? ms : Math.min(ms, 15), ...a);
-  };
-  try { localStorage.clear(); } catch (_) {}
-});
+const NATURAL = process.env.NATURAL === '1';
+if (!NATURAL) {
+  await page.addInitScript(() => {
+    const orig = window.setTimeout;
+    window.setTimeout = (fn, d, ...a) => {
+      const ms = Number(d) || 0;
+      return orig(fn, ms > 3000 ? ms : Math.min(ms, 15), ...a);
+    };
+  });
+}
+await page.addInitScript(() => { try { localStorage.clear(); } catch (_) {} });
 
 await page.goto(BASE + '/?debug=1', { waitUntil: 'load', timeout: 60000 });
 await page.waitForFunction(() => window.__neonTest && window.__neonTest.engine, null, { timeout: 20000 });
@@ -314,8 +317,8 @@ while (Date.now() - t0 < MAX_MS) {
     continue;
   }
 
-  if (Date.now() - lastChange > 1800) {
-    await page.evaluate(() => { try { window.__neonTest.engine.advanceTime(240); } catch (_) {} });
+  if (Date.now() - lastChange > (NATURAL ? 10000 : 1800)) {
+    await page.evaluate(step => { try { window.__neonTest.engine.advanceTime(step); } catch (_) {} }, NATURAL ? 60 : 240);
     lastChange = Date.now();
   }
   await sleep(100);
