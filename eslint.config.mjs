@@ -30,7 +30,7 @@ export default [
   
   { files: ['tools/**/*.mjs'], languageOptions: { ecmaVersion: 2024, sourceType: 'module', globals: { ...node, ...browser } }, rules: { ...rules, 'no-redeclare': 'error' } },
   // 浏览器内联脚本（page.evaluate 的字符串代码）无法静态解析其全局，关闭 no-undef
-  { files: ['tools/flow_test.mjs', 'tools/soak_test.mjs'], rules: { ...rules, 'no-redeclare': 'error', 'no-undef': 'off' } },
+  { files: ['tools/flow_test.mjs', 'tools/soak_test.mjs', 'tools/real_player_test.mjs', 'tools/simple_player.mjs'], rules: { ...rules, 'no-redeclare': 'error', 'no-undef': 'off' } },
   { files: ['tools/*.js'], languageOptions: { ecmaVersion: 2024, sourceType: 'script', globals: { ...node } }, rules: { ...rules, 'no-redeclare': 'error' } },
   { files: ['eslint.config.mjs'], languageOptions: { ecmaVersion: 2024, sourceType: 'module', globals: { ...node } }, rules: { ...rules, 'no-redeclare': 'error' } },
 ];
