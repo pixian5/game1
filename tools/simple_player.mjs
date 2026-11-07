@@ -2,12 +2,11 @@
  * 每 2 秒：找并点击一个可见 .chat-opt / 选项按钮 / 来电按钮。
  * 没有复杂逻辑，只有「看到就点」。
  */
-import pw from '/Users/x/code/game1/node_modules/@playwright/test/index.js';
-const { chromium } = pw;
+import { launchBrowser } from './browser.mjs';
 
-const BASE = 'https://xbzsb-neon-heart.static.hf.space/index.html';
+const BASE = process.env.BASE || 'https://xbzsb-neon-heart.static.hf.space/index.html';
 const DURATION_SEC = Number(process.argv[2] || 300);
-const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const browser = await launchBrowser({ headless: true });
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
 const errs = [];
 page.on('pageerror', e => errs.push('pageerror: ' + String(e).slice(0, 150)));

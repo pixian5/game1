@@ -3,19 +3,22 @@
  * - 聊天气泡数量、选择按钮是否出现、通知、当前屏幕
  * 策略循环：点通知 → 进会话 → 答选项 → 出行推进 → 巡览 → 直到结局屏出现
  */
-import pw from '/Users/x/code/game1/node_modules/@playwright/test/index.js';
-const { chromium } = pw;
+import path from 'node:path';
+import fs from 'node:fs';
+import { launchBrowser } from './browser.mjs';
 
-const BASE = 'https://xbzsb-neon-heart.static.hf.space/index.html';
+const BASE = process.env.BASE || 'https://xbzsb-neon-heart.static.hf.space/index.html';
+const OUT_DIR = process.env.OUT || path.join(process.cwd(), 'qa-shots', 'real-player');
+fs.mkdirSync(OUT_DIR, { recursive: true });
 const TIMEOUT_MIN = Number(process.argv[2] || 10);
-const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const browser = await launchBrowser({ headless: true });
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
 const errs = [];
 page.on('pageerror', e => errs.push('pageerror: ' + String(e).slice(0, 150)));
 
 const log = [];
 const note = (msg) => { log.push(msg); console.log('  ' + msg); };
-const shot = async (name) => { try { await page.screenshot({ path: `/tmp/ux_audit/rp2-${name}.png` }); } catch (_) {} };
+const shot = async (name) => { try { await page.screenshot({ path: path.join(OUT_DIR, `rp2-${name}.png`) }); } catch (_) {} };
 
 // --- 纯 DOM 信号 ---
 
@@ -224,9 +227,8 @@ console.log('\n=== 结论 ===');
 if (endingReached) console.log('✅ 完整游玩到结局: ' + endingReached);
 else console.log('⏱ 超时（' + TIMEOUT_MIN + ' 分钟）| 最终屏幕: ' + finalScreen + ' | 气泡: ' + finalBubbles);
 
-const fs = await import('node:fs');
 const dump = await page.evaluate(() => window.NeonDebug?.dump() || '');
-fs.writeFileSync('/tmp/neon-real-v2.log', dump);
+fs.writeFileSync(path.join(OUT_DIR, 'neon-real-v2.log'), dump);
 
 await browser.close();
 process.exit(0);
