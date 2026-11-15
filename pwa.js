@@ -4,9 +4,12 @@
  */
 (function(){
   // v0.2.0: 前端错误上报（自有服务器 /collect-error，nginx 记入 neon-errors.log）
+  // v0.8.1: 仅自有服务器启用；HF Space / GitHub Pages / 本地无该端点，避免制造 404
   // 只上报摘要（消息+位置+当前版本），节流 30s 一条，静默失败不影响游玩
   let lastReportAt = 0;
+  const REPORT_ENABLED = location.hostname === 'oh.sbbz.tech' || location.port === '9443';
   const report = msg => {
+    if(!REPORT_ENABLED) return;
     const now = Date.now();
     if(now - lastReportAt < 30000) return;
     lastReportAt = now;
