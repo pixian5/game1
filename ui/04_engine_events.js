@@ -65,6 +65,7 @@
   });
 
   function showNarratorChoice(choice){
+    if(!choice || !Array.isArray(choice.options) || choice.options.length === 0) return;
     let modal = document.getElementById('narrator-choice-modal');
     if(modal) modal.remove();
     modal = document.createElement('div');
@@ -106,10 +107,12 @@
     const timeoutBar = $('chat-timeout-bar');
     const freeInput = $('chat-free-input');
     opts.innerHTML = '';
-    // 清除之前的计时器
-    if(timeoutTimer){ clearTimeout(timeoutTimer); timeoutTimer = null; }
+    // v0.8.1: 只清理当前会话的旧计时器；截止时间固定，切会话/重开只重建视图
+    clearChatTimeout(convId);
+    if(choice.timeout && !(choice.dueAt > 0)) choice.dueAt = Date.now() + choice.timeout * 1000;
     timeoutBar.hidden = true;
     freeInput.hidden = true;
+    const expired = choice.timeout && choice.dueAt <= Date.now();
 
     // 自由输入模式
     if(choice.freeInput){
@@ -124,7 +127,8 @@
       $('chat-free-input-field').dataset.defaultEffect = JSON.stringify(choice.freeInput.defaultEffect || {});
       // 限时
       if(choice.timeout){
-        startTimeout(choice.timeout, ()=> handleFreeSend(true));
+        if(expired){ setUiTimeout(()=> handleFreeSend(true), 0); return; }
+        startTimeout(convId, choice.dueAt, choice.timeout * 1000, ()=> handleFreeSend(true));
       }
       return;
     }
@@ -141,7 +145,7 @@
       btn.innerHTML = escapeHtml(opt.text) + hintHtml + smartHintHtml;
       btn.onclick = (e)=>{
         e.stopPropagation();
-        if(timeoutTimer){ clearTimeout(timeoutTimer); timeoutTimer = null; }
+        clearChatTimeout(convId);
         const conv = engine.state.conversations[convId];
         if(conv) conv.pendingChoice = null;
         engine.sendMessage(convId, opt.text, mergeOptionEffects(opt));
@@ -153,7 +157,7 @@
 
     // 限时回复
     if(choice.timeout){
-      startTimeout(choice.timeout, ()=>{
+      const applyDefault = ()=>{
         // 超时自动选择默认项（最后一个或标记为 default 的）
         const defaultIdx = choice.options.findIndex(o=>o.default) !== -1
           ? choice.options.findIndex(o=>o.default)
@@ -164,31 +168,35 @@
         engine.sendMessage(convId, opt.text, mergeOptionEffects(opt));
         bar.hidden = true;
         toast('（沉默）');
-      });
+      };
+      if(expired){ setUiTimeout(applyDefault, 0); return; }
+      startTimeout(convId, choice.dueAt, choice.timeout * 1000, applyDefault);
     }
   }
 
-  function startTimeout(seconds, onTimeout){
+  function startTimeout(convId, dueAt, totalMs, onTimeout){
     const bar = $('chat-timeout-bar');
     const fill = $('chat-timeout-fill');
     const text = $('chat-timeout-text');
     bar.hidden = false;
     bar.classList.remove('urgent');
-    const total = seconds * 1000;
-    const start = Date.now();
+    clearChatTimeout(convId);
+    const item = {handle:null, dueAt, totalMs, onTimeout};
+    chatTimeouts.set(convId, item);
     function tick(){
-      const elapsed = Date.now() - start;
-      const remain = Math.max(0, total - elapsed);
-      const pct = (remain / total) * 100;
+      const remain = Math.max(0, dueAt - Date.now());
+      const pct = Math.min(100, (remain / Math.max(1, totalMs)) * 100);
       fill.style.width = pct + '%';
       text.textContent = Math.ceil(remain / 1000) + 's';
-      if(remain < seconds * 1000 * 0.3) bar.classList.add('urgent');
+      if(remain < totalMs * 0.3) bar.classList.add('urgent');
       if(remain <= 0){
-        timeoutTimer = null;
+        chatTimeouts.delete(convId);
+        if(timeoutTimer){ clearTimeout(timeoutTimer); timeoutTimer = null; }
         onTimeout();
         return;
       }
-      timeoutTimer = setUiTimeout(tick, 100);
+      item.handle = setUiTimeout(tick, 100);
+      timeoutTimer = item.handle;
     }
     tick();
   }
@@ -204,7 +212,7 @@
     const keywords = safeJSON(field.dataset.keywords || '[]', []);
     const defaultEffect = safeJSON(field.dataset.defaultEffect || '{}', {});
     const bar = $('chat-input-bar');
-    if(timeoutTimer){ clearTimeout(timeoutTimer); timeoutTimer = null; }
+    clearChatTimeout(convId);
     const conv = engine.state.conversations[convId];
     if(conv) conv.pendingChoice = null;
     // 关键词匹配

@@ -138,7 +138,27 @@ Object.assign(PhoneEngine.prototype, {
         if(o.route && ['shenyan','luci','jiangyu','solo'].includes(o.route)) outOpt.route = o.route;
         return outOpt;
       });
-      return {prompt:asText(c.prompt, 1000), options, isInvitation:asBool(c.isInvitation)};
+      const out = {prompt:asText(c.prompt, 1000), options, isInvitation:asBool(c.isInvitation)};
+      const timeout = asInt(c.timeout, 0, 0, 3600);
+      if(timeout > 0) out.timeout = timeout;
+      const dueAt = asInt(c.dueAt, 0, 0, 9999999999999);
+      if(dueAt > 0) out.dueAt = dueAt;
+      if(c.freeInput && typeof c.freeInput === 'object' && !Array.isArray(c.freeInput)){
+        const fi = c.freeInput;
+        out.freeInput = {
+          placeholder: asText(fi.placeholder, 200),
+          keywords: Array.isArray(fi.keywords) ? fi.keywords.slice(0, 10).map(k=>{
+            const o = object(k);
+            return {
+              words: Array.isArray(o.words) ? o.words.slice(0, 10).map(w=>asText(w, 50)).filter(Boolean) : [],
+              effects: sanitizeEffects(o.effects),
+              reply: asText(o.reply, 200)
+            };
+          }).filter(k=>k.words.length) : [],
+          defaultEffect: sanitizeEffects(fi.defaultEffect)
+        };
+      }
+      return out;
     };
     const sanitizePendingInteraction = value => {
       const p = object(value);

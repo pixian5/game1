@@ -43,6 +43,17 @@
   let currentConvId = null;
   let currentGroupId = null;
   let timeoutTimer = null;
+  // v0.8.1: 限时回复按会话管理，切换会话只重建视图、不重置截止时间
+  const chatTimeouts = new Map();
+  function clearChatTimeout(convId){
+    const item = chatTimeouts.get(convId);
+    if(item){ window.clearTimeout(item.handle); chatTimeouts.delete(convId); }
+  }
+  function clearAllChatTimeouts(){
+    chatTimeouts.forEach(item=>window.clearTimeout(item.handle));
+    chatTimeouts.clear();
+    if(timeoutTimer){ window.clearTimeout(timeoutTimer); timeoutTimer = null; }
+  }
   let selectedMomentArt = '';
   const uiTimers = new Set();
 
@@ -57,7 +68,7 @@
   function resetTransientUi(){
     uiTimers.forEach(id=>window.clearTimeout(id));
     uiTimers.clear();
-    if(timeoutTimer){ window.clearTimeout(timeoutTimer); timeoutTimer = null; }
+    clearAllChatTimeouts();
     currentConvId = null;
     currentGroupId = null;
     currentEncounter = null;

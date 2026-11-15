@@ -644,10 +644,16 @@ class PhoneEngine {
   _schedulePendingMessage(item){
     this._setTimeout(()=> this._deliverPendingMessage(item.id), Math.max(0, item.dueAt - Date.now()));
   }
+  _stampChoiceDeadline(choice){
+    if(!choice || typeof choice !== 'object') return choice;
+    if(!choice.timeout || choice.dueAt > 0) return choice;
+    return {...choice, dueAt: Date.now() + choice.timeout * 1000};
+  }
   _deliverPendingMessage(id){
     const idx = this.state.pendingMessages.findIndex(p=>p.id === id);
     if(idx < 0) return;
     const [msg] = this.state.pendingMessages.splice(idx, 1);
+    if(msg.choice) msg.choice = this._stampChoiceDeadline(msg.choice);
     if(msg.groupId){
       const group = this.state.groups[msg.groupId];
       if(!group) return;
