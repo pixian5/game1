@@ -62,7 +62,7 @@
     const content = $('puzzles-content');
     const puzzles = engine.getAllPuzzles();
     if(puzzles.length === 0){
-      content.innerHTML = '<div class="shop-empty">暂无线索</div>';
+      content.innerHTML = '<div class="shop-empty">' + window.t('暂无线索') + '</div>';
       return;
     }
     content.innerHTML = puzzles.map(p=>{

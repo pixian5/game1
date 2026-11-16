@@ -7,7 +7,7 @@
     const list = $('moments-list');
     list.innerHTML = '';
     if(engine.state.moments.length === 0){
-      list.innerHTML = '<div class="moments-empty">还没有动态<br>点击右上角 📷 发一条</div>';
+      list.innerHTML = '<div class="moments-empty">' + window.t('还没有动态') + '<br>' + window.t('点击右上角') + ' 📷 ' + window.t('发一条') + '</div>';
       return;
     }
     engine.state.moments.forEach(m=>{

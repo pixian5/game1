@@ -39,7 +39,7 @@
     const list = $('call-list');
     list.innerHTML = '';
     if(engine.state.callLog.length === 0){
-      list.innerHTML = '<div style="color:var(--ink-mute);text-align:center;padding:40px;">暂无通话记录</div>';
+      list.innerHTML = '<div style="color:var(--ink-mute);text-align:center;padding:40px;">' + window.t('暂无通话记录') + '</div>';
       return;
     }
     engine.state.callLog.forEach(c=>{

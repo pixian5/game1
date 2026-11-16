@@ -377,7 +377,7 @@
     const groups = engine.state.groups;
     const entries = Object.entries(groups);
     if(entries.length === 0){
-      list.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--ink-mute);font-size:13px;">还没有群聊</div>';
+      list.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--ink-mute);font-size:13px;">' + window.t('还没有群聊') + '</div>';
       return;
     }
     entries.forEach(([id, g])=>{

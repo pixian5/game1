@@ -102,6 +102,7 @@
       if(bar) bar.hidden = true;
       return;
     }
+    if(bar) delete bar.dataset.answered;   // v0.8.6：新选择重置防重复标记
     $('chat-prompt').textContent = _t(choice.prompt);
     const opts = $('chat-options');
     const timeoutBar = $('chat-timeout-bar');
@@ -145,11 +146,17 @@
       btn.innerHTML = escapeHtml(opt.text) + hintHtml + smartHintHtml;
       btn.onclick = (e)=>{
         e.stopPropagation();
+        // v0.8.6：防重复——点击后立即禁用全部选项按钮并清空容器，
+        // 防止快速连点导致同一选择被发送多次（商业级测试发现的真 bug）
+        if(bar.dataset.answered === '1') return;
+        bar.dataset.answered = '1';
+        [...bar.querySelectorAll('.chat-opt')].forEach(b => b.disabled = true);
         clearChatTimeout(convId);
         const conv = engine.state.conversations[convId];
         if(conv) conv.pendingChoice = null;
         engine.sendMessage(convId, opt.text, mergeOptionEffects(opt));
         bar.hidden = true;
+        opts.innerHTML = '';
       };
       opts.appendChild(btn);
     });
