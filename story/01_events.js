@@ -1019,6 +1019,173 @@ Object.assign(STORY, {
       ]
     },
 
+    // ===== v0.8.5（H4）：三线 day7-14 日常纵深——每线 6 条专属日常消息 =====
+    // -- 沈砚之线 --
+    'sy_d7_late': {
+      type:'message_batch', delay:0, trigger:{day:7, hour:22},
+      messages:[
+        {from:'shenyan', text:'还在整理展签？', choice:{
+          prompt:'深夜的展厅只剩你一人。',
+          options:[
+            {text:'马上就走', effects:{affection:{shenyan:1}, personality:{independent:1}}},
+            {text:'再等五分钟', effects:{affection:{shenyan:2}, personality:{passive:1}}}
+          ]
+        }}
+      ]
+    },
+    'sy_d8_coffee': {
+      type:'message_batch', delay:0, trigger:{day:8, hour:14},
+      messages:[
+        {from:'shenyan', text:'你桌上的咖啡凉了。我替你换了一杯。'},
+        {from:'shenyan', text:'不用谢。路过。'}
+      ]
+    },
+    'sy_d9_rain': {
+      type:'message_batch', delay:0, trigger:{day:9, hour:18},
+      messages:[
+        {from:'shenyan', text:'下雨了。你带伞了吗。', choice:{
+          prompt:'他的语气像在陈述一个事实。',
+          options:[
+            {text:'没带，正在等雨停', effects:{affection:{shenyan:2}, thenEvent:'sy_d9_rain_pick'}},
+            {text:'带了，谢谢关心', effects:{affection:{shenyan:1}, personality:{rational:1}}}
+          ]
+        }}
+      ]
+    },
+    'sy_d9_rain_pick': {
+      type:'message_batch', delay:2,
+      messages:[{from:'shenyan', text:'展厅门口。等你。'}]
+    },
+    'sy_d11_sketch': {
+      type:'message_batch', delay:0, trigger:{day:11, hour:20},
+      messages:[
+        {from:'shenyan', text:'今天画的速写，模特是自己。', choice:{
+          prompt:'他很少主动提起自己的画。',
+          options:[
+            {text:'能看看吗？', effects:{affection:{shenyan:2}, personality:{emotional:1}}},
+            {text:'画得像你本人吗？', effects:{affection:{shenyan:1}, personality:{active:1}}}
+          ]
+        }}
+      ]
+    },
+    'sy_d13_archive': {
+      type:'message_batch', delay:0, trigger:{day:13, hour:16},
+      messages:[
+        {from:'shenyan', text:'档案室整理完了。比预想的快。'},
+        {from:'shenyan', text:'……你不在的时候，安静得有点过分。'}
+      ]
+    },
+    // -- 陆辞线 --
+    'lc_d7_film': {
+      type:'message_batch', delay:0, trigger:{day:7, hour:13},
+      messages:[
+        {from:'luci', text:'[图片] 今天扫街拍的。猜猜这是哪条路。', choice:{
+          prompt:'照片里的路被夕阳染成橘色。',
+          options:[
+            {text:'城南那条梧桐路？', effects:{affection:{luci:2}, personality:{rational:1}}},
+            {text:'不知道，带我去看看？', effects:{affection:{luci:2}, personality:{dependent:1}}}
+          ]
+        }}
+      ]
+    },
+    'lc_d8_song': {
+      type:'message_batch', delay:0, trigger:{day:8, hour:21},
+      messages:[
+        {from:'luci', text:'刚才路过一家琴行，有人在弹《卡农》。'},
+        {from:'luci', text:'我站在门口听完了整首。路人以为我在等人。'},
+        {from:'luci', text:'其实我在想，九年前的你会不会也路过那里。'}
+      ]
+    },
+    'lc_d10_darkroom': {
+      type:'message_batch', delay:0, trigger:{day:10, hour:19},
+      messages:[
+        {from:'luci', text:'暗房的灯坏了，红灯还在。', choice:{
+          prompt:'他说他在黑暗里待了一下午。',
+          options:[
+            {text:'别在暗房待太久，对眼睛不好', effects:{affection:{luci:2}, personality:{emotional:1}}},
+            {text:'洗出来的照片给我看看', effects:{affection:{luci:2}, personality:{active:1}}}
+          ]
+        }}
+      ]
+    },
+    'lc_d11_ginkgo': {
+      type:'message_batch', delay:0, trigger:{day:11, hour:15},
+      messages:[
+        {from:'luci', text:'操场边的银杏开始黄了。'},
+        {from:'luci', text:'我记得你说过喜欢银杏。'}
+      ]
+    },
+    'lc_d13_old': {
+      type:'message_batch', delay:0, trigger:{day:13, hour:22},
+      messages:[
+        {from:'luci', text:'翻到高中时的校牌。你的是蓝色的，我的是红色的。', choice:{
+          prompt:'他很少主动聊高中的事。',
+          options:[
+            {text:'你还留着那些？', effects:{affection:{luci:2}, personality:{emotional:1}}},
+            {text:'明天带给我看', effects:{affection:{luci:2}, personality:{active:1}}}
+          ]
+        }}
+      ]
+    },
+    'lc_d14_walk': {
+      type:'message_batch', delay:0, trigger:{day:14, hour:17},
+      messages:[
+        {from:'luci', text:'下班走回来的时候，发现霓城有一条路我从没走过。'},
+        {from:'luci', text:'等你哪天有空，带你去走一遍。'}
+      ]
+    },
+    // -- 江屿线 --
+    'jy_d7_hangover': {
+      type:'message_batch', delay:0, trigger:{day:7, hour:11},
+      messages:[
+        {from:'jiangyu', text:'昨晚喝多了。'}, {from:'jiangyu', text:'……说了什么吗。', choice:{
+          prompt:'他在确认自己有没有失言。',
+          options:[
+            {text:'你说了一首歌的名字', effects:{affection:{jiangyu:2}, personality:{rational:1}}},
+            {text:'你什么都没说，只是沉默', effects:{affection:{jiangyu:1}, personality:{emotional:1}}}
+          ]
+        }}
+      ]
+    },
+    'jy_d8_ramen': {
+      type:'message_batch', delay:0, trigger:{day:8, hour:13},
+      messages:[{from:'jiangyu', text:'今天的员工餐是拉面。老板娘多给了一个蛋。她说看我瘦。'}]
+    },
+    'jy_d9_demo': {
+      type:'message_batch', delay:0, trigger:{day:9, hour:23},
+      messages:[
+        {from:'jiangyu', text:'[语音 8"]'}, {from:'jiangyu', text:'demo。副歌还差两个字。', choice:{
+          prompt:'他想让你听。',
+          options:[
+            {text:'很好听，别急', effects:{affection:{jiangyu:2}, personality:{emotional:1}}},
+            {text:'差的那两个字是什么？', effects:{affection:{jiangyu:2}, personality:{rational:1}}}
+          ]
+        }}
+      ]
+    },
+    'jy_d11_smoke': {
+      type:'message_batch', delay:0, trigger:{day:11, hour:20},
+      messages:[{from:'jiangyu', text:'酒吧今天来了个唱歌的女孩。唱得不错。但不是那首歌。'}]
+    },
+    'jy_d12_sea': {
+      type:'message_batch', delay:0, trigger:{day:12, hour:18},
+      messages:[
+        {from:'jiangyu', text:'下班骑车去了海边。风很大。', choice:{
+          prompt:'他说海边的风把他的话吹散了。',
+          options:[
+            {text:'什么话？', effects:{affection:{jiangyu:2}}},
+            {text:'下次带我一起去', effects:{affection:{jiangyu:2}, personality:{dependent:1}}}
+          ]
+        }}
+      ]
+    },
+    'jy_d14_stage': {
+      type:'message_batch', delay:0, trigger:{day:14, hour:21},
+      messages:[
+        {from:'jiangyu', text:'雾港的舞台今晚没人用。'}, {from:'jiangyu', text:'我上去站了一会。追光没开，但我知道它在那。'}
+      ]
+    },
+
     // ===== v0.6.1（G1 电话之夜）：三男主各 2 通电话——「模拟手机」的核心形式补全 =====
     // 沈砚之 ①：深夜"工作电话"说到一半变成私事（day12 晚）
     'shenyan_call_labels': {
