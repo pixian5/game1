@@ -5,7 +5,7 @@ import path from 'node:path';
 const ROUTE = process.env.ROUTE || 'shenyan';
 const TARGET = process.env.TARGET || '';
 const STRATEGY = process.env.STRATEGY || 'first';
-const OUT = process.env.OUT || '/workspace/neon-runs/' + ROUTE + (TARGET ? '-' + TARGET : '');
+const OUT = process.env.OUT || path.join(process.cwd(), 'qa-shots', 'playthrough', ROUTE + (TARGET ? '-' + TARGET : ''));
 const BASE = process.env.BASE || 'http://127.0.0.1:4187';
 const MAX_MS = Number(process.env.MAX_MS || 480000);
 

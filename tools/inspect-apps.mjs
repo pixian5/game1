@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const BASE = process.env.BASE || 'http://127.0.0.1:4187';
-const OUT = process.env.OUT || '/workspace/neon-verify/apps';
+const OUT = process.env.OUT || path.join(process.cwd(), 'qa-shots', 'apps');
 fs.mkdirSync(OUT, { recursive: true });
 
 const APPS = ['messages', 'moments', 'album', 'calendar', 'music', 'notes', 'profile', 'map',
