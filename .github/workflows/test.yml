@@ -31,3 +31,11 @@ jobs:
             playwright-${{ runner.os }}-
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser
+      - name: 17 结局与 App 巡览
+        run: |
+          node test_server.js &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          sleep 2
+          node tools/verify-endings.mjs
+          node tools/inspect-apps.mjs
