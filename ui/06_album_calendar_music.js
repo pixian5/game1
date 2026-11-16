@@ -90,8 +90,8 @@
   // v0.1.7: 音效/环境音开关（设置持久化在 localStorage，由 audio.js 管理）
   function refreshSoundSettings(){
     const soundBtn = $('ss-sound'), bgmBtn = $('ss-bgm');
-    if(soundBtn) soundBtn.textContent = AudioSys.isEnabled() ? '🔊 音效：开' : '🔇 音效：关';
-    if(bgmBtn) bgmBtn.textContent = AudioSys.isBgmEnabled() ? '🎵 环境音：开' : '🎵 环境音：关';
+    if(soundBtn) soundBtn.textContent = AudioSys.isEnabled() ? '🔊 ' + window.t('音效：开') : '🔇 ' + window.t('音效：关');
+    if(bgmBtn) bgmBtn.textContent = AudioSys.isBgmEnabled() ? '🎵 ' + window.t('环境音：开') : '🎵 ' + window.t('环境音：关');
   }
   function toggleSoundSetting(){
     AudioSys.setSound(!AudioSys.isEnabled());

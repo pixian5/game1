@@ -7,13 +7,13 @@
     const cur = engine.state.currentLocation || 'home';
     const curLoc = STORY.locations[cur];
     $('map-current-name').textContent = curLoc ? (curLoc.icon + ' ' + curLoc.name) : window.t('未知');
-    $('map-current-hint').textContent = curLoc ? curLoc.hint : '';
+    $('map-current-hint').textContent = curLoc ? window.t(curLoc.hint) : '';
     const list = $('map-list');
     list.innerHTML = '';
     // v0.8.4：等到明天——一键推进到次日早上，解决空窗期反复点同地点的枯燥
     const skipBtn = document.createElement('button');
     skipBtn.className = 'map-skip-day';
-    skipBtn.innerHTML = '⏩ 等到明天 <span class="map-skip-hint">推进到次日早上 8:00</span>';
+    skipBtn.innerHTML = '⏩ ' + window.t('等到明天') + ' <span class="map-skip-hint">' + window.t('推进到次日早上 8:00') + '</span>';
     skipBtn.onclick = ()=>{
       skipBtn.disabled = true;
       showTimeAdvanceOverlay('一夜过去…');
@@ -41,8 +41,8 @@
         item.innerHTML = `
           <div class="map-item-icon">${loc.icon}</div>
           <div class="map-item-info">
-            <div class="map-item-name">${escapeHtml(loc.name)}</div>
-            <div class="map-item-hint">${loc.hint}</div>
+            <div class="map-item-name">${escapeHtml(window.t(loc.name))}</div>
+            <div class="map-item-hint">${window.t(loc.hint)}</div>
           </div>
           ${id===cur ? '<div class="map-item-tag">当前</div>' : '<div class="map-item-go">出发</div>'}
         `;

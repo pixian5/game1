@@ -16,7 +16,7 @@
         <div class="contact-avatar" style="background:${char.bg}">${avatarImg(char)}</div>
         <div class="contact-info">
           <div class="contact-name">${escapeHtml(window.t(char.name))}</div>
-          <div class="contact-desc">${profile?.bio || char.desc || ''}</div>
+          <div class="contact-desc">${window.t(profile?.bio || char.desc || '')}</div>
         </div>
       `;
       list.appendChild(item);
@@ -31,7 +31,7 @@
       <div class="char-profile-header">
         <div class="char-profile-avatar" style="background:${char.bg}">${avatarImg(char)}</div>
         <div class="char-profile-name">${escapeHtml(window.t(char.name))}</div>
-        <div class="char-profile-bio">${profile.bio}</div>
+        <div class="char-profile-bio">${window.t(profile.bio)}</div>
         <div class="char-profile-tags">
           ${profile.tags.map(t=>`<span class="char-profile-tag">${t}</span>`).join('')}
         </div>

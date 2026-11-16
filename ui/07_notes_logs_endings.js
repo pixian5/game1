@@ -8,7 +8,7 @@
     list.innerHTML = '';
     if(engine.state.notes.length === 0){
       const notes = [
-        {title:'入职第一天', preview:'1. 9点前到美术馆\n2. 找人事办手续\n3. 沈砚之——主理人，据说难搞', time:'7月16日'}
+        {title:window.t('入职第一天'), preview:window.t('1. 9点前到美术馆\n2. 找人事办手续\n3. 沈砚之——主理人，据说难搞'), time:'7月16日'}
       ];
       notes.forEach(n=>{
         const div = document.createElement('div');

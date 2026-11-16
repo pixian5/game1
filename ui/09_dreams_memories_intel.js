@@ -73,7 +73,7 @@
     const p = engine.state.personality;
     if(profile.shards === 0 && p.active + p.passive + p.emotional + p.rational === 0){
       const invHtml = renderInvitationsList();
-      content.innerHTML = '<div class="profile-empty">梦境尚未开始<br>你的画像正在形成中…</div>' + (invHtml || '');
+      content.innerHTML = '<div class="profile-empty">' + window.t('梦境尚未开始') + '<br>' + window.t('你的画像正在形成中…') + '</div>' + (invHtml || '');
       return;
     }
     let html = '<div class="profile-hero"><div class="profile-hero-title">林夏</div><div class="profile-hero-sub">已收集 ' + profile.shards + ' 个记忆碎片</div></div>';
@@ -142,7 +142,7 @@
       if(resolved === 'accepted'){ status = '已赴约'; cls = 'inv-accepted'; }
       else if(resolved === 'declined'){ status = '已拒绝'; cls = 'inv-declined'; }
       else if(resolved === 'missed'){ status = '已错过'; cls = 'inv-missed'; }
-      else if(pending){ status = '待回复 · ' + (inv.schedule || ''); cls = 'inv-active'; }
+      else if(pending){ status = window.t('待回复') + ' · ' + window.t(inv.schedule || ''); cls = 'inv-active'; }
       else { status = '尚未达成'; cls = 'inv-locked'; }
       html += `<div class="profile-shard ${cls}">
         <div class="profile-shard-title">${escapeHtml(char.avatar)} ${escapeHtml(window.t(char.name))} · ${escapeHtml(inv.schedule||'邀约')}</div>
