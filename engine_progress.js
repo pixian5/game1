@@ -660,6 +660,41 @@ Object.assign(PhoneEngine.prototype, {
 
   // v0.1.10: 暧昧度分项——深夜（23 点后）心动独白
   // tension≥10 的男主发来一条独白消息（每角色一次，flag 去重）；呼应「心跳加速的瞬间累积」
+  // v0.8.4: 朋友圈自动日常动态——每天随机一个角色发一条（day2 起）
+  checkAutoMoments(){
+    if(this.state.ended) return;
+    if(this.state.day < 2) return;
+    const flagKey = 'auto_moment_day' + this.state.day;
+    if(this.state.flags[flagKey]) return;
+    const pool = [
+      {author:'susu', text:'今日份霓城天气播报☀️ 记得吃早饭！', art:null},
+      {author:'susu', text:'有没有人告诉我，这家店的拿铁为什么这么好喝🥤', art:null},
+      {author:'luci', text:'扫街随手拍。霓城的早高峰，人人都很赶，但光不赶。', art:'street'},
+      {author:'luci', text:'今天的光线很适合拍照。可惜好照片都是等出来的。', art:null},
+      {author:'jiangyu', text:'深夜写歌的人，不需要听众。但如果你在听，那就更好了。', art:null},
+      {author:'jiangyu', text:'今晚雾港的客人点了三首老歌。第三首我没唱。有些歌要留着。', art:null},
+      {author:'shenyan', text:'闭馆后的展厅，回声都是干净的。', art:'gallery'},
+      {author:'shenyan', text:'今天的展签改了三遍。有些话说多了不如放着一幅画。', art:null},
+    ];
+    const usedTexts = new Set(this.state.moments.map(m=>m.text));
+    const available = pool.filter(p=>!usedTexts.has(p.text));
+    if(available.length === 0) return;
+    const pick = available[Math.floor(Math.random() * available.length)];
+    this.state.flags[flagKey] = true;
+    const char = this.story.characters[pick.author];
+    if(char){
+      this.state.moments.unshift({
+        id: 'auto_moment_' + this.state.day,
+        author: pick.author, name: char.name, avatar: char.avatar,
+        avatarImg: char.avatarImg || '', bg: char.bg,
+        text: pick.text, art: pick.art, ts: Date.now(), day: this.state.day,
+        likes: [], comments: []
+      });
+      this.emit('momentPosted', {moment: this.state.moments[0]});
+      this.emit('stateChange', this.state);
+    }
+  },
+
   checkTensionWhispers(){
     if(this.state.ended) return;
     const hour = Math.floor(this.state.minute / 60);

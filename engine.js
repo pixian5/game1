@@ -401,7 +401,8 @@ class PhoneEngine {
     this.checkHoliday();
     this.checkEasterEggs();
     this.checkDailyTasks();
-    this.checkTensionWhispers();  // v0.1.10: 暧昧度深夜独白
+    this.checkTensionWhispers();
+    this.checkAutoMoments();       // v0.8.4: 朋友圈日常动态  // v0.1.10: 暧昧度深夜独白
     this.checkGroupDinner();      // v0.2.0: 群聊聚餐后续（按投票 flag 分歧）
     this.checkRainEvents();       // v0.2.0: 雨天限定剧情
     this.checkTrueEndingEpilogue();  // v0.5.0: 真结局二周目尾声
