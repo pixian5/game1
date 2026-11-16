@@ -25,11 +25,11 @@
       const tip = document.createElement('div');
       tip.className = 'album-empty-hint';
       tip.style.cssText = 'grid-column:1/-1;color:var(--ink-mute);text-align:center;padding:4px 16px 20px;font-size:12px;line-height:1.8;';
-      tip.textContent = '还没有解锁照片——继续剧情、赴约或拍照后会出现。';
+      tip.textContent = window.t('还没有解锁照片——继续剧情、赴约或拍照后会出现。');
       grid.appendChild(tip);
     }
     if(allPhotos.length === 0){
-      grid.innerHTML = '<div style="color:var(--ink-mute);text-align:center;padding:40px;grid-column:1/-1;">暂无照片</div>';
+      grid.innerHTML = '<div style="color:var(--ink-mute);text-align:center;padding:40px;grid-column:1/-1;">' + window.t('暂无照片') + '</div>';
     }
   }
   function viewPhoto(pid){
@@ -59,7 +59,7 @@
     $('cal-current').innerHTML = `
       <div class="cc-day">${d.date}</div>
       <div class="cc-month">${d.month}月</div>
-      <div class="cc-weekday">星期${d.weekday}</div>
+      <div class="cc-weekday">${escapeHtml(window.t('星期' + d.weekday))}</div>
     `;
     const events = $('cal-events');
     events.innerHTML = '';
@@ -71,7 +71,7 @@
     ];
     const visible = defaultEvents.filter(e=>e.day <= t.day);
     if(visible.length === 0){
-      events.innerHTML = '<div style="color:var(--ink-mute);text-align:center;padding:40px;">今日暂无日程</div>';
+      events.innerHTML = '<div style="color:var(--ink-mute);text-align:center;padding:40px;">' + window.t('今日暂无日程') + '</div>';
       return;
     }
     visible.forEach(e=>{
@@ -79,8 +79,8 @@
       div.className = 'cal-event' + (e.day < t.day ? ' past':'');
       div.innerHTML = `
         <div class="ce-time">${escapeHtml(e.time)}</div>
-        <div class="ce-title">${escapeHtml(e.title)}</div>
-        <div class="ce-loc">${escapeHtml(e.loc)}</div>
+        <div class="ce-title">${escapeHtml(window.t(e.title))}</div>
+        <div class="ce-loc">${escapeHtml(window.t(e.loc))}</div>
       `;
       events.appendChild(div);
     });
@@ -127,7 +127,7 @@
       $('np-art').classList.add('playing');
       $('np-art').textContent = '♪';
     } else {
-      $('np-title').textContent = '未播放';
+      $('np-title').textContent = window.t('未播放');
       $('np-artist').textContent = '—';
       $('np-art').classList.remove('playing');
     }

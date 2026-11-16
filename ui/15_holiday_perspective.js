@@ -62,7 +62,7 @@
     const content = $('perspective-content');
     const perspectives = engine.getAllPerspectives();
     if(perspectives.length === 0){
-      content.innerHTML = '<div class="shop-empty">暂无视角</div>';
+      content.innerHTML = '<div class="shop-empty">' + window.t('暂无视角') + '</div>';
       return;
     }
     content.innerHTML = perspectives.map(p=>{

@@ -193,7 +193,7 @@ Object.assign(PhoneEngine.prototype, {
       return null;
     };
     const out = def;
-    out.day = asInt(source.day, def.day, 1, 9999);
+    out.day = asInt(source.day, def.day, 1, 999);   // v0.8.6：收紧上限（商业级）
     out.minute = asInt(source.minute, def.minute, 0, 1439);
     out.ended = asBool(source.ended);
     out.route = ['shenyan','luci','jiangyu','solo'].includes(source.route) ? source.route : null;
@@ -228,13 +228,13 @@ Object.assign(PhoneEngine.prototype, {
       };
     });
     out.affection = {...def.affection};
-    Object.keys(out.affection).forEach(cid=> out.affection[cid] = asInt(object(source.affection)[cid], 0, 0, 9999));
+    Object.keys(out.affection).forEach(cid=> out.affection[cid] = asInt(object(source.affection)[cid], 0, 0, 999));   // v0.8.6
     out.personality = {...def.personality};
     Object.keys(out.personality).forEach(key=> out.personality[key] = asInt(object(source.personality)[key], 0, 0, 9999));
     out.affectionDetail = {...def.affectionDetail};
     Object.keys(out.affectionDetail).forEach(cid=>{
       const saved = object(object(source.affectionDetail)[cid]);
-      out.affectionDetail[cid] = {closeness:asInt(saved.closeness, 0, 0, 9999), trust:asInt(saved.trust, 0, 0, 9999), tension:asInt(saved.tension, 0, 0, 9999)};
+      out.affectionDetail[cid] = {closeness:asInt(saved.closeness, 0, 0, 999), trust:asInt(saved.trust, 0, 0, 999), tension:asInt(saved.tension, 0, 0, 999)};
     });
     out.photos = array(source.photos, 200, item=>{
       const id = typeof object(item).id === 'string' ? object(item).id : '';
