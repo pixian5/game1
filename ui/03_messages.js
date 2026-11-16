@@ -21,7 +21,7 @@
       const item = document.createElement('div');
       item.className = 'conv-item' + (conv.unread>0?' unread':'');
       item.dataset.conv = id;
-      const preview = last ? (last.from==='me'? window.t('你') + ': ' : '') + last.text : window.t('暂无消息');
+      const preview = last ? (last.from==='me'? window.t('你') + ': ' : '') + window.t(last.text) : window.t('暂无消息');
       item.innerHTML = `
         <div class="conv-avatar" style="background:${char.bg}">${avatarImg(char)}</div>
         <div class="conv-info">
