@@ -21,8 +21,9 @@
     const hasPendingChoice = Object.values(e.conversations).some(c => c.pendingChoice);
     const hasPendingMsgs = (e.pendingMessages || []).length > 0;
     const hasPendingQueue = engine.getPendingInteractions?.().length > 0;
-    const hasActiveDream = !!e.activeDream || !!e.activeNightmare;
-    return !hasUnread && !hasPendingChoice && !hasPendingMsgs && !hasPendingQueue && !hasActiveDream;
+    // v0.7.3：忽略 activeDream（梦境屏是全屏覆盖层有强制选择，不会真正卡住玩家）
+    const hasActiveNightmare = !!e.activeNightmare;
+    return !hasUnread && !hasPendingChoice && !hasPendingMsgs && !hasPendingQueue && !hasActiveNightmare;
   }
 
   const IDLE_MESSAGES = [
