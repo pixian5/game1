@@ -10,6 +10,17 @@
     $('map-current-hint').textContent = curLoc ? curLoc.hint : '';
     const list = $('map-list');
     list.innerHTML = '';
+    // v0.8.4：等到明天——一键推进到次日早上，解决空窗期反复点同地点的枯燥
+    const skipBtn = document.createElement('button');
+    skipBtn.className = 'map-skip-day';
+    skipBtn.innerHTML = '⏩ 等到明天 <span class="map-skip-hint">推进到次日早上 8:00</span>';
+    skipBtn.onclick = ()=>{
+      skipBtn.disabled = true;
+      showTimeAdvanceOverlay('一夜过去…');
+      engine.advanceToNextDay(8);
+      setUiTimeout(()=>{ skipBtn.disabled = false; renderMap(); }, 800);
+    };
+    list.appendChild(skipBtn);
     Object.entries(STORY.locations).forEach(([id, loc])=>{
       const item = document.createElement('button');
       item.className = 'map-item' + (id===cur ? ' current' : '');
@@ -33,7 +44,7 @@
             <div class="map-item-name">${escapeHtml(loc.name)}</div>
             <div class="map-item-hint">${loc.hint}</div>
           </div>
-          ${id===cur ? '<div class="map-item-tag">当前</div>' : '<div class="map-item-go">前往</div>'}
+          ${id===cur ? '<div class="map-item-tag">当前</div>' : '<div class="map-item-go">出发</div>'}
         `;
       }
       list.appendChild(item);
