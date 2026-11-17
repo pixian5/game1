@@ -68,3 +68,6 @@ dist/
 # 测试截图与本机浏览器配置
 qa-shots/
 playwright.local.config.js
+
+# 交接密钥（本地保存，禁止提交）
+.handoff/
