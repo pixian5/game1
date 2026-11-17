@@ -1,0 +1,24 @@
+name: 部署 Hugging Face Space
+# 构建后上传 dist/ 到 HF Space（xbzsb/neon-heart）
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy-hf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci --ignore-scripts
+      - run: node tools/build_bundle.mjs
+      - name: 上传到 HF Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          pip install --quiet "huggingface_hub[cli]"
+          huggingface-cli upload xbzsb/neon-heart dist/ . --repo-type=space --token "$HF_TOKEN"
