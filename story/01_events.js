@@ -1019,6 +1019,131 @@ Object.assign(STORY, {
       ]
     },
 
+    // ===== v0.8.9（J1）：day4-6 路线空窗期填补——路线选择后到日常事件开始前的过渡 =====
+    // 通用：苏苏日常关心
+    'gap_d4_susu': {
+      type:'message_batch', delay:0, trigger:{day:4, hour:12},
+      messages:[
+        {from:'susu', text:'夏夏！第一天上班感觉怎么样？', choice:{
+          prompt:'苏苏在等你汇报。',
+          options:[
+            {text:'还不错，就是有点忙', effects:{affection:{}, personality:{rational:1}}},
+            {text:'沈砚之好凶……', effects:{affection:{}, personality:{emotional:1}}}
+          ]
+        }}
+      ]
+    },
+    // 沈砚之 day4：展签初稿
+    'gap_d4_sy_label': {
+      type:'message_batch', delay:0, trigger:{day:4, hour:16},
+      messages:[
+        {from:'shenyan', text:'展签初稿好了。发你邮箱。'},
+        {from:'shenyan', text:'不用急着回复。看完再说。'}
+      ]
+    },
+    // 沈砚之 day5：加班夜
+    'gap_d5_sy_late': {
+      type:'message_batch', delay:0, trigger:{day:5, hour:22},
+      messages:[
+        {from:'shenyan', text:'还在展厅。', then:'gap_d5_sy_late2'}
+      ]
+    },
+    'gap_d5_sy_late2': {
+      type:'message_batch', delay:2,
+      messages:[
+        {from:'shenyan', text:'……灯全关了之后，那些画看起来不一样。', choice:{
+          prompt:'深夜的美术馆，只有他一个人。',
+          options:[
+            {text:'早点回去休息', effects:{affection:{shenyan:1}, personality:{emotional:1}}},
+            {text:'我也想看看', effects:{affection:{shenyan:2}, thenEvent:'gap_d5_sy_invite'}},
+          ]
+        }}
+      ]
+    },
+    'gap_d5_sy_invite': {
+      type:'message_batch', delay:2,
+      messages:[{from:'shenyan', text:'改天。展厅不开夜场。……我说的是改天。'}]
+    },
+    // 沈砚之 day6：简短的问候
+    'gap_d6_sy_am': {
+      type:'message_batch', delay:0, trigger:{day:6, hour:9},
+      messages:[
+        {from:'shenyan', text:'九点了。'}
+      ]
+    },
+    // 陆辞 day4：分享照片
+    'gap_d4_lc_photo': {
+      type:'message_batch', delay:0, trigger:{day:4, hour:14},
+      messages:[
+        {from:'luci', text:'[图片] 今天扫街拍的。这条巷子的光，只在这个时间有。'},
+        {from:'luci', text:'改天带你去。'}
+      ]
+    },
+    // 陆辞 day5：旧事重提
+    'gap_d5_lc_old': {
+      type:'message_batch', delay:0, trigger:{day:5, hour:19},
+      messages:[
+        {from:'luci', text:'刚才路过一家文具店，橱窗里的橡皮和你高一用的同款。', choice:{
+          prompt:'他还记得这么细。',
+          options:[
+            {text:'你还记得啊', effects:{affection:{luci:2}, personality:{emotional:1}}},
+            {text:'都过去九年了', effects:{affection:{luci:1}, personality:{rational:1}}}
+          ]
+        }}
+      ]
+    },
+    // 陆辞 day6：约你出来
+    'gap_d6_lc_out': {
+      type:'message_batch', delay:0, trigger:{day:6, hour:17},
+      messages:[
+        {from:'luci', text:'下班了吗？今天的晚霞特别好看。', then:'gap_d6_lc_out2'}
+      ]
+    },
+    'gap_d6_lc_out2': {
+      type:'message_batch', delay:2,
+      messages:[
+        {from:'luci', text:'不出来的话，我就拍下来发你。', choice:{
+          prompt:'他在等你。',
+          options:[
+            {text:'等我十分钟', effects:{affection:{luci:2}}},
+            {text:'今天太累了', effects:{affection:{luci:1}, personality:{passive:1}}}
+          ]
+        }}
+      ]
+    },
+    // 江屿 day4：第一杯之后的问候
+    'gap_d4_jy_check': {
+      type:'message_batch', delay:0, trigger:{day:4, hour:11},
+      messages:[{from:'jiangyu', text:'昨晚的电话……没吵到你吧。'}]
+    },
+    // 江屿 day5：写歌中
+    'gap_d5_jy_song': {
+      type:'message_batch', delay:0, trigger:{day:5, hour:23},
+      messages:[
+        {from:'jiangyu', text:'在写歌。', then:'gap_d5_jy_song2'}
+      ]
+    },
+    'gap_d5_jy_song2': {
+      type:'message_batch', delay:2,
+      messages:[
+        {from:'jiangyu', text:'副歌的最后一句，怎么都写不对。', choice:{
+          prompt:'深夜写歌的人。',
+          options:[
+            {text:'别急，慢慢来', effects:{affection:{jiangyu:2}, personality:{emotional:1}}},
+            {text:'写好了让我第一个听', effects:{affection:{jiangyu:2}, personality:{active:1}}}
+          ]
+        }}
+      ]
+    },
+    // 江屿 day6：酒吧日常
+    'gap_d6_jy_bar': {
+      type:'message_batch', delay:0, trigger:{day:6, hour:21},
+      messages:[
+        {from:'jiangyu', text:'今晚客人点了一首《挪威的森林》。'},
+        {from:'jiangyu', text:'我放了原曲。有些歌不需要翻唱。'}
+      ]
+    },
+
     // ===== v0.8.5（H4）：三线 day7-14 日常纵深——每线 6 条专属日常消息 =====
     // -- 沈砚之线 --
     'sy_d7_late': {
