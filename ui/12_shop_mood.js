@@ -18,7 +18,7 @@
         return `<div class="shop-item">
           <div class="shop-item-icon">${item.icon}</div>
           <div class="shop-item-info">
-            <div class="shop-item-name">${escapeHtml(window.t(item.name))} <span style="font-size:10px;color:var(--ink-mute)">·${item.cat}</span></div>
+            <div class="shop-item-name">${escapeHtml(window.t(item.name))} <span style="font-size:10px;color:var(--ink-mute)">·${window.t(item.cat)}</span></div>
             <div class="shop-item-desc">${escapeHtml(window.t(item.desc))}</div>
             <div class="shop-item-price">💰 ${item.price}</div>
           </div>
@@ -39,7 +39,7 @@
           return `<div class="shop-item">
             <div class="shop-item-icon">${item.icon}</div>
             <div class="shop-item-info">
-              <div class="shop-item-name">${escapeHtml(window.t(item.name))} ×${count}</div>
+              <div class="shop-item-name">${escapeHtml(item.name)} ×${count}</div>
               <div class="shop-item-desc">${escapeHtml(window.t(item.desc))}</div>
             </div>
             <button class="shop-buy-btn" data-send-gift="${itemId}" style="background:var(--accent2)">送出</button>
@@ -83,7 +83,7 @@
     modal.className = 'gift-send-modal';
     modal.id = 'gift-send-modal';
     modal.innerHTML = `<div class="gift-send-content">
-      <div class="gift-send-title">把「${escapeHtml(window.t(item.name))}」送给谁？</div>
+      <div class="gift-send-title">把「${escapeHtml(item.name)}」送给谁？</div>
       <div class="gift-send-char">
         ${['shenyan','luci','jiangyu'].map(cid=>{
           const c = STORY.characters[cid];
@@ -148,7 +148,7 @@
     const cur = STORY.moods[engine.state.mood] || STORY.moods.calm;
     let html = `<div class="mood-current">
       <div class="mood-current-icon">${cur.icon}</div>
-      <div class="mood-current-label">${window.t(cur.label)}</div>
+      <div class="mood-current-label">${escapeHtml(window.t(cur.label))}</div>
       <div class="mood-current-hint">"${escapeHtml(window.t(cur.hint))}"</div>
     </div>`;
     html += '<div class="mood-section-title">' + window.t('切换心情') + '</div>';
@@ -156,15 +156,15 @@
     Object.values(STORY.moods).forEach(m=>{
       html += `<div class="mood-opt ${m.id===engine.state.mood?'selected':''}" data-mood-opt="${m.id}">
         <div class="mood-opt-icon">${m.icon}</div>
-        <div class="mood-opt-label">${window.t(m.label)}</div>
+        <div class="mood-opt-label">${m.label}</div>
       </div>`;
     });
     html += '</div>';
     // 内心独白
     html += '<div class="mood-diary-section">';
-    html += '<div class="mood-section-title">内心独白</div>';
-    html += `<textarea class="mood-diary-input" id="mood-diary-text" placeholder="今天发生了什么？把心里的话写下来…"></textarea>`;
-    html += '<button class="mood-diary-submit" data-action="submit-diary">记下这一刻</button>';
+    html += '<div class="mood-section-title">' + window.t('内心独白') + '</div>';
+    html += `<textarea class="mood-diary-input" id="mood-diary-text" placeholder="${escapeHtml(window.t('今天发生了什么？把心里的话写下来…'))}"></textarea>`;
+    html += '<button class="mood-diary-submit" data-action="submit-diary">' + window.t('记下这一刻') + '</button>';
     // 历史日记
     if(engine.state.diary.length > 0){
       html += '<div class="mood-diary-list">';

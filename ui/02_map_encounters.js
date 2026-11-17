@@ -6,7 +6,7 @@
   function renderMap(){
     const cur = engine.state.currentLocation || 'home';
     const curLoc = STORY.locations[cur];
-    $('map-current-name').textContent = curLoc ? (curLoc.icon + ' ' + curLoc.name) : window.t('未知');
+    $('map-current-name').textContent = curLoc ? (curLoc.icon + ' ' + window.t(curLoc.name)) : window.t('未知');
     $('map-current-hint').textContent = curLoc ? window.t(curLoc.hint) : '';
     const list = $('map-list');
     list.innerHTML = '';
@@ -16,7 +16,7 @@
     skipBtn.innerHTML = '⏩ ' + window.t('等到明天') + ' <span class="map-skip-hint">' + window.t('推进到次日早上 8:00') + '</span>';
     skipBtn.onclick = ()=>{
       skipBtn.disabled = true;
-      showTimeAdvanceOverlay('一夜过去…');
+      showTimeAdvanceOverlay(window.t('一夜过去…'));
       engine.advanceToNextDay(8);
       setUiTimeout(()=>{ skipBtn.disabled = false; renderMap(); }, 800);
     };
@@ -34,7 +34,7 @@
           <div class="map-item-icon">🔒</div>
           <div class="map-item-info">
             <div class="map-item-name">？？？</div>
-            <div class="map-item-hint">还没来过这里——继续剧情，路会自己出现</div>
+            <div class="map-item-hint">${escapeHtml(window.t('还没来过这里——继续剧情，路会自己出现'))}</div>
           </div>
         `;
       } else {
@@ -42,9 +42,9 @@
           <div class="map-item-icon">${loc.icon}</div>
           <div class="map-item-info">
             <div class="map-item-name">${escapeHtml(window.t(loc.name))}</div>
-            <div class="map-item-hint">${window.t(loc.hint)}</div>
+            <div class="map-item-hint">${escapeHtml(window.t(loc.hint))}</div>
           </div>
-          ${id===cur ? '<div class="map-item-tag">当前</div>' : '<div class="map-item-go">出发</div>'}
+          ${id===cur ? '<div class="map-item-tag">' + window.t('当前') + '</div>' : '<div class="map-item-go">' + window.t('出发') + '</div>'}
         `;
       }
       list.appendChild(item);

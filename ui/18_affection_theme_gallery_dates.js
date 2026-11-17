@@ -218,7 +218,7 @@
     stats.forEach(s => {
       const char = STORY.characters[s.charId];
       if(!char) return;
-      const statusText = s.canDate ? (s.availableScenes.length > 0 ? '可约会' : '本周场景已体验完') : `冷却中 · 剩${s.remainingDays}天`;
+      const statusText = s.canDate ? (s.availableScenes.length > 0 ? window.t('可约会') : window.t('本周场景已体验完')) : window.t('冷却中') + ' · ' + s.remainingDays + window.t('天');
       const statusClass = s.canDate && s.availableScenes.length > 0 ? 'available' : 'cooldown';
       html += `<div class="date-char-card">
         <div class="date-char-header">
@@ -226,7 +226,7 @@
           <div class="date-char-info">
             <div class="date-char-name">${escapeHtml(window.t(char.name))}</div>
             <div class="date-char-status ${statusClass}">${statusText}</div>
-            <div class="date-char-progress">已体验 ${s.doneScenes}/${s.totalScenes}</div>
+            <div class="date-char-progress">${window.t('已体验')} ${s.doneScenes}/${s.totalScenes}</div>
           </div>
         </div>
         <div class="date-scenes-list">`;
@@ -237,13 +237,13 @@
         const cls = isDone ? 'done' : (canPick ? '' : 'locked');
         // v0.6.6（P2-5）：未就绪时说明原因而非空白（此前只在角色级显示冷却，场景级一片空白）
         let statusHtml;
-        if(isDone) statusHtml = '<span class="date-scene-status done">已体验</span>';
-        else if(canPick) statusHtml = '<span class="date-scene-status available">可约会</span>';
-        else if(!s.canDate) statusHtml = `<span class="date-scene-status locked">冷却中 · 剩${s.remainingDays}天</span>`;
-        else statusHtml = '<span class="date-scene-status locked">本周已约过</span>';
+        if(isDone) statusHtml = '<span class="date-scene-status done">' + window.t('已体验') + '</span>';
+        else if(canPick) statusHtml = '<span class="date-scene-status available">' + window.t('可约会') + '</span>';
+        else if(!s.canDate) statusHtml = '<span class="date-scene-status locked">' + window.t('冷却中') + ' · ' + s.remainingDays + window.t('天') + '</span>';
+        else statusHtml = '<span class="date-scene-status locked">' + window.t('本周已约过') + '</span>';
         html += `<div class="date-scene-item ${cls}" ${canPick?`data-date="${escapeHtml(sc.id)}"`:''}>
-          <div class="date-scene-name">${escapeHtml(sc.name)}${statusHtml}</div>
-          <div class="date-scene-desc">${escapeHtml(sc.desc)}</div>
+          <div class="date-scene-name">${escapeHtml(window.t(sc.name))}${statusHtml}</div>
+          <div class="date-scene-desc">${escapeHtml(window.t(sc.desc))}</div>
         </div>`;
       });
       if(allScenes.length === 0){
@@ -252,7 +252,7 @@
       html += `</div></div>`;
     });
     html += `<div class="watch-info" style="margin-top:6px;">
-      💡 每位男主每周（游戏内7天）可约会1次。完成约会会提升三轴好感，部分场景会解锁独家照片。
+      💡 ${escapeHtml(window.t('每位男主每周（游戏内7天）可约会1次。完成约会会提升三轴好感，部分场景会解锁独家照片。'))}
     </div>`;
     content.innerHTML = html;
     updateDatesBadge();

@@ -13,34 +13,34 @@
     const watch = !!engine.state.watchMode?.enabled;
     body.innerHTML = `
       <div class="set-group">
-        <div class="set-title">语言 Language</div>
+        <div class="set-title">${window.t('语言 Language')}</div>
         <div class="set-row">
-          <label><input type="radio" name="set-lang" value="zh-CN" ${lang==='zh-CN'?'checked':''}> 中文</label>
+          <label><input type="radio" name="set-lang" value="zh-CN" ${lang==='zh-CN'?'checked':''}> ${window.t('中文')}</label>
           <label><input type="radio" name="set-lang" value="en-US" ${lang==='en-US'?'checked':''}> English</label>
         </div>
-        <div class="set-note">剧情文本将随语言逐步补全，未翻译处回退中文。</div>
+        <div class="set-note">${window.t('剧情文本将随语言逐步补全，未翻译处回退中文。')}</div>
       </div>
       <div class="set-group">
-        <div class="set-title">声音</div>
-        <div class="set-row set-slider"><span>总音量</span><input type="range" min="0" max="100" value="${Math.round(vols.master*100)}" data-vol="master"></div>
-        <div class="set-row set-slider"><span>音乐</span><input type="range" min="0" max="100" value="${Math.round(vols.music*100)}" data-vol="music"></div>
-        <div class="set-row set-slider"><span>音效</span><input type="range" min="0" max="100" value="${Math.round(vols.sfx*100)}" data-vol="sfx"></div>
+        <div class="set-title">${window.t('声音')}</div>
+        <div class="set-row set-slider"><span>${window.t('总音量')}</span><input type="range" min="0" max="100" value="${Math.round(vols.master*100)}" data-vol="master"></div>
+        <div class="set-row set-slider"><span>${window.t('音乐')}</span><input type="range" min="0" max="100" value="${Math.round(vols.music*100)}" data-vol="music"></div>
+        <div class="set-row set-slider"><span>${window.t('音效')}</span><input type="range" min="0" max="100" value="${Math.round(vols.sfx*100)}" data-vol="sfx"></div>
         <div class="set-row">
-          <label><input type="checkbox" id="set-sound" ${AudioSys.isEnabled()?'checked':''}> 提示音效</label>
-          <label><input type="checkbox" id="set-bgm" ${AudioSys.isBgmEnabled()?'checked':''}> 环境音乐</label>
+          <label><input type="checkbox" id="set-sound" ${AudioSys.isEnabled()?'checked':''}> ${window.t('提示音效')}</label>
+          <label><input type="checkbox" id="set-bgm" ${AudioSys.isBgmEnabled()?'checked':''}> ${window.t('环境音乐')}</label>
         </div>
       </div>
       <div class="set-group">
-        <div class="set-title">画面与辅助</div>
+        <div class="set-title">${window.t('画面与辅助')}</div>
         <div class="set-row">
-          <label><input type="checkbox" id="set-reduce" ${reduce?'checked':''}> 减弱动效</label>
+          <label><input type="checkbox" id="set-reduce" ${reduce?'checked':''}> ${window.t('减弱动效')}</label>
         </div>
         <div class="set-row">
-          <label><input type="checkbox" id="set-hints" ${hints?'checked':''}> 选项提示</label>
-          <label><input type="checkbox" id="set-watch" ${watch?'checked':''}> 观赏模式</label>
+          <label><input type="checkbox" id="set-hints" ${hints?'checked':''}> ${window.t('选项提示')}</label>
+          <label><input type="checkbox" id="set-watch" ${watch?'checked':''}> ${window.t('观赏模式')}</label>
         </div>
       </div>
-      <div class="set-note">设置即时生效并自动保存。</div>
+      <div class="set-note">${window.t('设置即时生效并自动保存。')}</div>
     `;
     bindSettings();
   }
