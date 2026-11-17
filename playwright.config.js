@@ -8,9 +8,28 @@ module.exports = defineConfig({
     port: 4187,
     reuseExistingServer: true
   },
-  use: {
-    baseURL: 'http://127.0.0.1:4187',
-    headless: true,
-    channel: 'chrome'
-  }
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        baseURL: 'http://127.0.0.1:4187',
+        headless: true,
+        channel: 'chrome'
+      }
+    },
+    {
+      name: 'firefox',
+      use: {
+        baseURL: 'http://127.0.0.1:4187',
+        headless: true
+      }
+    },
+    {
+      name: 'webkit',
+      use: {
+        baseURL: 'http://127.0.0.1:4187',
+        headless: true
+      }
+    }
+  ]
 });
