@@ -8,14 +8,14 @@
     list.innerHTML = '';
     if(engine.state.notes.length === 0){
       const notes = [
-        {title:window.t('入职第一天'), preview:window.t('1. 9点前到美术馆\n2. 找人事办手续\n3. 沈砚之——主理人，据说难搞'), time:'7月16日'}
+        {title:'入职第一天', preview:'1. 9点前到美术馆\n2. 找人事办手续\n3. 沈砚之——主理人，据说难搞', time:'7月16日'}
       ];
       notes.forEach(n=>{
         const div = document.createElement('div');
         div.className = 'note-item';
         div.innerHTML = `
-          <div class="ni-title">${escapeHtml(n.title)}</div>
-          <div class="ni-preview">${nl2brEscaped(n.preview)}</div>
+          <div class="ni-title">${escapeHtml(window.t(n.title))}</div>
+          <div class="ni-preview">${nl2brEscaped(window.t(n.preview))}</div>
           <div class="ni-date">${escapeHtml(window.localizeDateLabel(n.time))}</div>
         `;
         list.appendChild(div);
@@ -25,7 +25,7 @@
         const div = document.createElement('div');
         div.className = 'note-item';
         div.innerHTML = `
-          <div class="ni-title">${escapeHtml(n.title)}</div>
+          <div class="ni-title">${escapeHtml(window.t(n.title))}</div>
           <div class="ni-preview">${nl2brEscaped(n.preview||'')}</div>
           <div class="ni-date">${escapeHtml(window.localizeDateLabel(n.time))}</div>
         `;

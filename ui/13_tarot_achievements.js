@@ -17,14 +17,14 @@
         <div class="tarot-text">${escapeHtml(fortune.text)}</div>
         <div class="tarot-hint">第${fortune.day}天的牌阵 · ${fortune.reversed?'逆位':'正位'}</div>
       </div>`;
-      html += `<button class="tarot-draw-btn" disabled>${window.t('今日已抽过')}</button>`;
+      html += `<button class="tarot-draw-btn" disabled>${escapeHtml(window.t('今日已抽过'))}</button>`;
     } else {
       html += `<div class="tarot-empty">
         <div class="tarot-empty-icon">🔮</div>
-        <div>${window.t('今日尚未抽牌')}</div>
-        <div style="font-size:11px;margin-top:6px;">${window.t('每日一抽，揭示霓城的运势')}</div>
+        <div>${escapeHtml(window.t('今日尚未抽牌'))}</div>
+        <div style="font-size:11px;margin-top:6px;">${escapeHtml(window.t('每日一抽，揭示霓城的运势'))}</div>
       </div>`;
-      html += `<button class="tarot-draw-btn" data-action="draw-tarot">${window.t('抽取今日塔罗')}</button>`;
+      html += `<button class="tarot-draw-btn" data-action="draw-tarot">${escapeHtml(window.t('抽取今日塔罗'))}</button>`;
     }
     // 历史
     if(engine.state.tarotHistory.length > 0){

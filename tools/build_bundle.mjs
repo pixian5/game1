@@ -90,6 +90,9 @@ for (const f of ['style.css', 'manifest.json', 'privacy.html', 'privacy-en.html'
 }
 for (const d of ['i18n', 'assets']) cp(d);
 
+// GitHub Pages 需要 .nojekyll，避免下划线开头的资源被 Jekyll 忽略
+fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
+
 // 5) 产物报告
 const size = p => (fs.statSync(path.join(OUT, p)).size / 1024).toFixed(0);
 console.log(`✓ dist/bundle.js ${size('bundle.js')}KB（${srcs.length} 源文件合并）`);

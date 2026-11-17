@@ -133,20 +133,20 @@
     if(!STORY.invitations) return '';
     const entries = Object.entries(STORY.invitations);
     if(entries.length === 0) return '';
-    let html = '<div class="profile-shards"><div class="profile-shards-title">邀约记录</div>';
+    let html = '<div class="profile-shards"><div class="profile-shards-title">' + window.t('邀约记录') + '</div>';
     entries.forEach(([id, inv])=>{
       const char = STORY.characters[inv.from] || {name:'?'};
       const resolved = engine.state.resolvedInvitations[id];
       const pending = engine.state.invitations.find(p=>p.id===id && p.status==='pending');
-      let status = '未触发', cls = 'inv-pending';
-      if(resolved === 'accepted'){ status = '已赴约'; cls = 'inv-accepted'; }
-      else if(resolved === 'declined'){ status = '已拒绝'; cls = 'inv-declined'; }
-      else if(resolved === 'missed'){ status = '已错过'; cls = 'inv-missed'; }
-      else if(pending){ status = window.t('待回复') + ' · ' + window.t(inv.schedule || ''); cls = 'inv-active'; }
-      else { status = '尚未达成'; cls = 'inv-locked'; }
+      let status = window.t('未触发'), cls = 'inv-pending';
+      if(resolved === 'accepted'){ status = window.t('已赴约'); cls = 'inv-accepted'; }
+      else if(resolved === 'declined'){ status = window.t('已拒绝'); cls = 'inv-declined'; }
+      else if(resolved === 'missed'){ status = window.t('已错过'); cls = 'inv-missed'; }
+      else if(pending){ status = window.t('待回复') + ' · ' + (inv.schedule || ''); cls = 'inv-active'; }
+      else { status = window.t('尚未达成'); cls = 'inv-locked'; }
       html += `<div class="profile-shard ${cls}">
-        <div class="profile-shard-title">${escapeHtml(char.avatar)} ${escapeHtml(window.t(char.name))} · ${escapeHtml(inv.schedule||'邀约')}</div>
-        <div class="profile-shard-meaning">${escapeHtml(inv.text)}</div>
+        <div class="profile-shard-title">${escapeHtml(char.avatar)} ${escapeHtml(window.t(char.name))} · ${escapeHtml(window.t(inv.schedule||'邀约'))}</div>
+        <div class="profile-shard-meaning">${escapeHtml(window.t(inv.text))}</div>
         <div style="margin-top:4px;font-size:11px;color:var(--ink-mute)">状态：${escapeHtml(status)}</div>
       </div>`;
     });

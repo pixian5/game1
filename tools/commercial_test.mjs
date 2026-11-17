@@ -3,8 +3,7 @@
  * 每个维度独立报告，最终汇总为一份完整报告。
  * 运行：node tools/commercial_test.mjs [BASE_URL]
  */
-import pw from '/Users/x/code/game1/node_modules/@playwright/test/index.js';
-const { chromium } = pw;
+import { launchBrowser } from './browser.mjs';
 
 const BASE = process.argv[2] || 'http://127.0.0.1:4187';
 const results = { pass: 0, fail: 0, warn: 0, details: [] };
@@ -61,7 +60,7 @@ async function newGame(page) {
   await page.waitForTimeout(1500);
 }
 
-const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const browser = await launchBrowser({ headless: true });
 
 // ================================================================
 // A. 功能测试：全流程通关 + 17 结局

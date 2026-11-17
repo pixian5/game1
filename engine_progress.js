@@ -690,7 +690,7 @@ Object.assign(PhoneEngine.prototype, {
         text: pick.text, art: pick.art, ts: Date.now(), day: this.state.day,
         likes: [], comments: []
       });
-      this.emit('momentPosted', {moment: this.state.moments[0]});
+      this.emit('momentPosted', this.state.moments[0]);
       this.emit('stateChange', this.state);
     }
   },

@@ -7,6 +7,8 @@
   if(typeof window === 'undefined') return;
   window.I18N_PACKS = window.I18N_PACKS || {};
   window.I18N_PACKS['zh-CN'] = {
+    '🔊 音效：开': '🔊 音效：开',
+    '🎵 环境音：关': '🎵 环境音：关',
     '在线': '在线',
     '正在输入…': '正在输入…',
     // 商城/心情

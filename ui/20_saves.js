@@ -15,10 +15,10 @@
     }
   }
   function slotDisplayName(slot){
-    if(slot === 'auto') return '自动存档';
-    if(slot === 'slot1') return '手动槽位 1';
-    if(slot === 'slot2') return '手动槽位 2';
-    if(slot === 'slot3') return '手动槽位 3';
+    if(slot === 'auto') return window.t('自动存档');
+    if(slot === 'slot1') return window.t('手动槽位 1');
+    if(slot === 'slot2') return window.t('手动槽位 2');
+    if(slot === 'slot3') return window.t('手动槽位 3');
     return slot;
   }
   function updateSavesBadge(){
@@ -56,14 +56,14 @@
     const content = $('saves-content');
     if(!content || !engine.listSaveSlots) return;
     const slots = engine.listSaveSlots();
-    let html = `<div class="saves-intro">自动存档会在关键进度变化时写入。手动槽位可长期保留；支持导出/导入 JSON。</div>`;
+    let html = `<div class="saves-intro">${escapeHtml(window.t('自动存档会在关键进度变化时写入。手动槽位可长期保留；支持导出/导入 JSON。'))}</div>`;
     slots.forEach(s => {
       const summary = s.summary || {};
       const title = slotDisplayName(s.slot);
       const tag = s.isAuto ? 'AUTO' : 'MANUAL';
       const meta = s.empty
-        ? '空槽位 · 可写入当前进度'
-        : `${escapeHtml(s.label || '')}<br>${escapeHtml(window.t(summary.playerName || '林夏'))} · ${escapeHtml(window.t(summary.routeLabel || '未选线'))}<br>${escapeHtml(formatSaveTime(s.time))}${s.note ? ' · ' + escapeHtml(s.note) : ''}`;
+        ? window.t('空槽位 · 可写入当前进度')
+        : `${escapeHtml(s.label || '')}<br>${escapeHtml(window.t(summary.playerName || '林夏'))} · ${escapeHtml(window.t(summary.routeLabel || '未选线'))}<br>${escapeHtml(formatSaveTime(s.time))}${s.note ? ' · ' + escapeHtml(window.t(s.note)) : ''}`;
       html += `<div class="save-slot ${s.empty?'empty':''}">
         <div class="save-slot-top">
           <div class="save-slot-title">${escapeHtml(title)}</div>
@@ -71,15 +71,15 @@
         </div>
         <div class="save-slot-meta">${meta}</div>
         <div class="save-slot-actions">
-          <button class="save-btn primary" data-save-action="write" data-slot="${escapeHtml(s.slot)}">${s.empty?'写入':'覆盖写入'}</button>
-          ${s.empty ? '' : `<button class="save-btn primary" data-save-action="load" data-slot="${escapeHtml(s.slot)}">读取</button>
-          <button class="save-btn" data-save-action="export" data-slot="${escapeHtml(s.slot)}">导出</button>
-          <button class="save-btn danger" data-save-action="delete" data-slot="${escapeHtml(s.slot)}">删除</button>`}
-          <button class="save-btn" data-save-action="import" data-slot="${escapeHtml(s.slot)}">导入到此</button>
+          <button class="save-btn primary" data-save-action="write" data-slot="${escapeHtml(s.slot)}">${s.empty?window.t('写入'):window.t('覆盖写入')}</button>
+          ${s.empty ? '' : `<button class="save-btn primary" data-save-action="load" data-slot="${escapeHtml(s.slot)}">${window.t('读取')}</button>
+          <button class="save-btn" data-save-action="export" data-slot="${escapeHtml(s.slot)}">${window.t('导出')}</button>
+          <button class="save-btn danger" data-save-action="delete" data-slot="${escapeHtml(s.slot)}">${window.t('删除')}</button>`}
+          <button class="save-btn" data-save-action="import" data-slot="${escapeHtml(s.slot)}">${window.t('导入到此')}</button>
         </div>
       </div>`;
     });
-    html += `<div class="saves-intro" style="margin-top:8px;">提示：删除仅影响本地浏览器存档，不会回滚剧情文件。</div>`;
+    html += `<div class="saves-intro" style="margin-top:8px;">${escapeHtml(window.t('提示：删除仅影响本地浏览器存档，不会回滚剧情文件。'))}</div>`;
     content.innerHTML = html;
     updateSavesBadge();
   }

@@ -159,9 +159,11 @@
     showScreen('moments');
   }
   // 朋友圈事件
-  engine.on('momentPosted', (moment)=>{
+  engine.on('momentPosted', (payload)=>{
+    const moment = payload && payload.moment ? payload.moment : payload;
+    if(!moment) return;
     if(moment.author !== 'me'){
-      showNotif(moment.author, '发了新动态：' + moment.text.slice(0,20) + '…');
+      showNotif(moment.author, '发了新动态：' + String(moment.text || '').slice(0,20) + '…');
     }
     updateMomentsBadge();
   });
