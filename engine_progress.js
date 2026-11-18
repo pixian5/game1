@@ -332,8 +332,8 @@ Object.assign(PhoneEngine.prototype, {
   replacePlayerTokens(text){
     if(!text) return text;
     const p = this.getPlayer();
-    return text.replace(/\$PLAYER\$/g, p.name)
-               .replace(/\$NICK\$/g, p.nickname);
+    return text.replace(/\$PLAYER\$/g, () => p.name)
+               .replace(/\$NICK\$/g, () => p.nickname);
   },
 
   getRelationshipStage(charId){

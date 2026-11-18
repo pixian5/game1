@@ -71,3 +71,14 @@ playwright.local.config.js
 
 # 交接密钥（本地保存，禁止提交）
 .handoff/
+
+# 私钥与凭据文件
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+credentials*.json
+.env.secret
+docs/deploy-handoff-prompt.md
