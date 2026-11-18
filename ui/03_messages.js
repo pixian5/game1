@@ -165,3 +165,14 @@
     div.appendChild(time);
     body.appendChild(div);
   }
+
+// v0.9.6：一键已读（缓解消息过载）
+(function(){
+  const btn = document.getElementById('mark-all-read');
+  if(!btn) return;
+  btn.addEventListener('click', ()=>{
+    const n = engine.markAllRead();
+    if(typeof renderConversations === 'function') renderConversations();
+    if(typeof toast === 'function') toast(n ? window.t('已全部标为已读') : window.t('没有未读消息'));
+  });
+})();

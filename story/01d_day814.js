@@ -5,13 +5,13 @@
 // ===== 沈砚之线 =====
 STORY.events['day9_shenyan_preview'] = {
   type:'message_batch', delay:1,
-  trigger:{ deferWhenBusy:true, day:9, hour:20, route:'shenyan' },
+  trigger:{ deferWhenBusy:true, day:7, hour:18, route:'shenyan' },
   messages:[
     {from:'shenyan', text:'预展今晚只开给内部。你要不要来？灯还没调完。', choice:{
       auto:true,
       prompt:'展厅的灯只亮了一半。',
       options:[
-        {text:'留下来看', effects:{affection:{shenyan:2}, personality:{emotional:1}, thenEvent:'day9_shenyan_preview_yes'}, reply:'（空展厅里只有你们两个人。他关掉最后一排灯。）'},
+        {text:'留下来看', effects:{affection:{shenyan:1}, personality:{emotional:1}, thenEvent:'day9_shenyan_preview_yes'}, reply:'（空展厅里只有你们两个人。他关掉最后一排灯。）'},
         {text:'先回家', effects:{affection:{shenyan:1}, personality:{rational:1}, thenEvent:'day9_shenyan_preview_no'}, reply:'（你走到地铁口。他发来一张照片：展厅只剩一盏灯。）'}
       ]
     }}
@@ -27,13 +27,13 @@ STORY.events['day9_shenyan_preview_no'] = {
 };
 STORY.events['day11_shenyan_critic'] = {
   type:'message_batch', delay:1,
-  trigger:{ deferWhenBusy:true, day:11, hour:15, route:'shenyan' },
+  trigger:{ deferWhenBusy:true, day:7, hour:20, route:'shenyan' },
   messages:[
     {from:'shenyan', text:'评论家提前到了。我本来打算一个人应付——你如果在，站在我旁边就好。', choice:{
       auto:true,
       prompt:'会客室的门开着。',
       options:[
-        {text:'站他旁边', effects:{affection:{shenyan:2}, personality:{active:1}, thenEvent:'day11_shenyan_critic_yes'}, reply:'（他介绍你时，语气比平时慢。评论家看了你一眼。）'},
+        {text:'站他旁边', effects:{affection:{shenyan:1}, personality:{active:1}, thenEvent:'day11_shenyan_critic_yes'}, reply:'（他介绍你时，语气比平时慢。评论家看了你一眼。）'},
         {text:'让他处理', effects:{affection:{shenyan:1}, personality:{independent:1}, thenEvent:'day11_shenyan_critic_no'}, reply:'（你留在办公室。半小时后他回来说：谈成了。）'}
       ]
     }}
@@ -51,13 +51,13 @@ STORY.events['day11_shenyan_critic_no'] = {
 // ===== 陆辞线 =====
 STORY.events['day9_luci_negative'] = {
   type:'message_batch', delay:1,
-  trigger:{ deferWhenBusy:true, day:9, hour:18, route:'luci' },
+  trigger:{ deferWhenBusy:true, day:9, hour:10, route:'luci' },
   messages:[
     {from:'luci', text:'有卷底片划伤了。可能是那天赶时间。我想重拍一次，你还愿意当模特吗？', choice:{
       auto:true,
       prompt:'暗房的红灯亮着。',
       options:[
-        {text:'陪他重拍', effects:{affection:{luci:2}, personality:{emotional:1}, thenEvent:'day9_luci_negative_yes'}, reply:'（你们拍到天完全黑。他说：这次比上次好。）'},
+        {text:'陪他重拍', effects:{affection:{luci:1}, personality:{emotional:1}, thenEvent:'day9_luci_negative_yes'}, reply:'（你们拍到天完全黑。他说：这次比上次好。）'},
         {text:'改天吧', effects:{affection:{luci:1}, personality:{rational:1}, thenEvent:'day9_luci_negative_no'}, reply:'（他把相机收进包里。划伤的那张，他说留着。）'}
       ]
     }}
@@ -73,13 +73,13 @@ STORY.events['day9_luci_negative_no'] = {
 };
 STORY.events['day11_luci_exhibit'] = {
   type:'message_batch', delay:1,
-  trigger:{ deferWhenBusy:true, day:11, hour:19, route:'luci' },
+  trigger:{ deferWhenBusy:true, day:9, hour:15, route:'luci' },
   messages:[
     {from:'luci', text:'摄影展下周开幕。我留了一张票给你——不是工作票，是私人票。', choice:{
       auto:true,
       prompt:'一张票压在相机包上。',
       options:[
-        {text:'去', effects:{affection:{luci:2}, personality:{emotional:1}, thenEvent:'day11_luci_exhibit_yes'}, reply:'（展厅最里面那张，标签上写着你的名字。）'},
+        {text:'去', effects:{affection:{luci:1}, personality:{emotional:1}, thenEvent:'day11_luci_exhibit_yes'}, reply:'（展厅最里面那张，标签上写着你的名字。）'},
         {text:'不去', effects:{affection:{luci:1}, personality:{independent:1}, thenEvent:'day11_luci_exhibit_no'}, reply:'（他说没关系。后来你收到一本展册，扉页有字。）'}
       ]
     }}
@@ -97,13 +97,13 @@ STORY.events['day11_luci_exhibit_no'] = {
 // ===== 江屿线 =====
 STORY.events['day9_jiangyu_lyric'] = {
   type:'message_batch', delay:1,
-  trigger:{ deferWhenBusy:true, day:9, hour:22, route:'jiangyu' },
+  trigger:{ deferWhenBusy:true, day:9, hour:20, route:'jiangyu' },
   messages:[
     {from:'jiangyu', text:'歌词卡在第二段。写不下去。你要不要来听听，顺便告诉我它缺什么？', choice:{
       auto:true,
       prompt:'排练室的窗开着，风把谱子吹起一角。',
       options:[
-        {text:'去听', effects:{affection:{jiangyu:2}, personality:{emotional:1}, thenEvent:'day9_jiangyu_lyric_yes'}, reply:'（他唱到卡住的地方停下。你说：缺一句真话。他笑了。）'},
+        {text:'去听', effects:{affection:{jiangyu:1}, personality:{emotional:1}, thenEvent:'day9_jiangyu_lyric_yes'}, reply:'（他唱到卡住的地方停下。你说：缺一句真话。他笑了。）'},
         {text:'给点建议', effects:{affection:{jiangyu:1}, personality:{rational:1}, thenEvent:'day9_jiangyu_lyric_no'}, reply:'（你发了三行字。他回：这句我留着。）'}
       ]
     }}
@@ -119,13 +119,13 @@ STORY.events['day9_jiangyu_lyric_no'] = {
 };
 STORY.events['day11_jiangyu_stage'] = {
   type:'message_batch', delay:1,
-  trigger:{ deferWhenBusy:true, day:11, hour:20, route:'jiangyu' },
+  trigger:{ deferWhenBusy:true, day:9, hour:21, route:'jiangyu' },
   messages:[
     {from:'jiangyu', text:'周五有个小场，唱三首。票不多，给你留了一张。', choice:{
       auto:true,
       prompt:'手机里躺着一张电子票。',
       options:[
-        {text:'去', effects:{affection:{jiangyu:2}, personality:{active:1}, thenEvent:'day11_jiangyu_stage_yes'}, reply:'（台下很挤。他唱到第二首时，看向你这边。）'},
+        {text:'去', effects:{affection:{jiangyu:1}, personality:{active:1}, thenEvent:'day11_jiangyu_stage_yes'}, reply:'（台下很挤。他唱到第二首时，看向你这边。）'},
         {text:'不去', effects:{affection:{jiangyu:1}, personality:{independent:1}, thenEvent:'day11_jiangyu_stage_no'}, reply:'（演出结束后他发来一段录音：第三首，留给没来的人。）'}
       ]
     }}

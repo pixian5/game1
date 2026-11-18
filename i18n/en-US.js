@@ -7,6 +7,9 @@
   if(typeof window === 'undefined') return;
   window.I18N_PACKS = window.I18N_PACKS || {};
   window.I18N_PACKS['en-US'] = {
+    '全部已读': 'Mark All Read',
+    '已全部标为已读': 'All marked as read',
+    '没有未读消息': 'No unread messages',
     '在线': 'Online',
     '正在输入…': 'Typing…',
     // 商城/心情

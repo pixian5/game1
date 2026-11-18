@@ -50,6 +50,8 @@
     "（台下很挤。他唱到第二首时，看向你这边。）": "(The crowd is packed. Halfway through the second song, he looks your way.)",
     "（演出结束后他发来一段录音：第三首，留给没来的人。）": "(After the show he sends a recording: the third song, for the one who didn't come.)",
     "第二首是《夏》的旧版本。唱到一半我才发现，我在看你。": "The second was an old version of \"Summer\". Halfway through I realized I was looking at you.",
-    "第三首没唱。留着，等你在的时候。": "I didn't sing the third. It's saved for when you're there."
+    "第三首没唱。留着，等你在的时候。": "I didn't sing the third. It's saved for when you're there.",
+    "（第八天的夜。你给自己买了一束花，插在窗台的玻璃瓶里。）": "(Night of day eight. You buy yourself flowers and put them in a glass bottle on the windowsill.)",
+    "最近怎么样？别老一个人待着。周末要不要出来走走？": "How have you been? Don't stay alone all the time. Want to go out this weekend?"
   });
 })();

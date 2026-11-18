@@ -31,13 +31,13 @@ STORY.events['day4_rain_run'] = {
 // ===== day4：沈砚之线 =====
 STORY.events['day4_shenyan_gallery_note'] = {
   type:'message_batch', delay:1,
-  trigger:{ deferWhenBusy:true, day:4, hour:14, route:'shenyan' },
+  trigger:{ deferWhenBusy:true, day:7, hour:9, route:'shenyan' },
   messages:[
     {from:'shenyan', text:'展签初稿写完了。第三段空着——那句"画中人的名字"，我想由你来写。', choice:{
       auto:true,
       prompt:'展签上留着一行空白。',
       options:[
-        {text:'写我的名字', effects:{affection:{shenyan:2}, personality:{emotional:1}, thenEvent:'day4_shenyan_note_yes'}, reply:'（你写下自己的名字。笔尖停了一秒才离开纸面。）'},
+        {text:'写我的名字', effects:{affection:{shenyan:1}, personality:{emotional:1}, thenEvent:'day4_shenyan_note_yes'}, reply:'（你写下自己的名字。笔尖停了一秒才离开纸面。）'},
         {text:'还是留白吧', effects:{affection:{shenyan:-1}, personality:{independent:1}, thenEvent:'day4_shenyan_note_no'}, reply:'（你把笔放下。有些答案，先不写反而更完整。）'}
       ]
     }}
@@ -55,13 +55,13 @@ STORY.events['day4_shenyan_note_no'] = {
 // ===== day4：陆辞线 =====
 STORY.events['day4_luci_street_photo'] = {
   type:'message_batch', delay:1,
-  trigger:{ deferWhenBusy:true, day:4, hour:16, route:'luci' },
+  trigger:{ deferWhenBusy:true, day:7, hour:10, route:'luci' },
   messages:[
     {from:'luci', text:'雨后的光最好看。我在梧桐路，你要不要来当一次模特？只拍一张。', choice:{
       auto:true,
       prompt:'窗外的天色刚放晴。',
       options:[
-        {text:'我现在过去', effects:{affection:{luci:2}, personality:{emotional:1}, thenEvent:'day4_luci_photo_yes'}, reply:'（你抓起外套。他在楼下等你，相机已经举起来了。）'},
+        {text:'我现在过去', effects:{affection:{luci:1}, personality:{emotional:1}, thenEvent:'day4_luci_photo_yes'}, reply:'（你抓起外套。他在楼下等你，相机已经举起来了。）'},
         {text:'下次吧，今天有点累', effects:{affection:{luci:1}, personality:{rational:1}, thenEvent:'day4_luci_photo_no'}, reply:'（你回绝得很轻。他没有追问，只回了一个"好"。）'}
       ]
     }}
@@ -79,13 +79,13 @@ STORY.events['day4_luci_photo_no'] = {
 // ===== day4：江屿线 =====
 STORY.events['day4_jiangyu_rehearsal'] = {
   type:'message_batch', delay:1,
-  trigger:{ deferWhenBusy:true, day:4, hour:20, route:'jiangyu' },
+  trigger:{ deferWhenBusy:true, day:7, hour:20, route:'jiangyu' },
   messages:[
     {from:'jiangyu', text:'排练室空着。你要是没地方去，可以来听一段没写完的。', choice:{
       auto:true,
       prompt:'手机屏幕亮着，外面已经入夜。',
       options:[
-        {text:'我去听', effects:{affection:{jiangyu:2}, personality:{emotional:1}, thenEvent:'day4_jiangyu_rehearsal_yes'}, reply:'（排练室的门虚掩着。你推门时，他正好按下第一个和弦。）'},
+        {text:'我去听', effects:{affection:{jiangyu:1}, personality:{emotional:1}, thenEvent:'day4_jiangyu_rehearsal_yes'}, reply:'（排练室的门虚掩着。你推门时，他正好按下第一个和弦。）'},
         {text:'不打扰你了', effects:{affection:{jiangyu:1}, personality:{independent:1}, thenEvent:'day4_jiangyu_rehearsal_no'}, reply:'（你把手机扣在桌上。那首歌，今晚只属于他自己。）'}
       ]
     }}
@@ -127,7 +127,7 @@ STORY.events['day5_susu_lunch_no'] = {
 // ===== day5：独行线 =====
 STORY.events['day5_solo_window'] = {
   type:'message_batch', delay:0,
-  trigger:{ deferWhenBusy:true, day:5, hour:19, route:'solo' },
+  trigger:{ deferWhenBusy:true, day:7, hour:19, route:'solo' },
   messages:[
     {from:'narrator', text:'（第五天的傍晚。窗外是霓城不眠的灯，屋里只有你。）', choice:{
       auto:true,
@@ -150,13 +150,13 @@ STORY.events['day5_solo_photo'] = {
 // ===== day5：沈砚之线 =====
 STORY.events['day5_shenyan_afterhours'] = {
   type:'message_batch', delay:1,
-  trigger:{ deferWhenBusy:true, day:5, hour:15, route:'shenyan' },
+  trigger:{ deferWhenBusy:true, day:7, hour:14, route:'shenyan' },
   messages:[
     {from:'shenyan', text:'闭馆了，展厅只剩换灯的活儿。你要是不赶时间——留一盏灯给我就好。', choice:{
       auto:true,
       prompt:'展厅的灯已经灭了一半。',
       options:[
-        {text:'留下，帮他扶梯子', effects:{affection:{shenyan:2}, personality:{active:1}, thenEvent:'day5_shenyan_after_yes'}, reply:'（梯子晃了一下。他扶住你的手腕，说："站稳。"）'},
+        {text:'留下，帮他扶梯子', effects:{affection:{shenyan:1}, personality:{active:1}, thenEvent:'day5_shenyan_after_yes'}, reply:'（梯子晃了一下。他扶住你的手腕，说："站稳。"）'},
         {text:'先回去，明天见', effects:{affection:{shenyan:1}, personality:{independent:1}, thenEvent:'day5_shenyan_after_no'}, reply:'（你走到门口回头。他自己把最后一盏灯换完了。）'}
       ]
     }}
@@ -174,13 +174,13 @@ STORY.events['day5_shenyan_after_no'] = {
 // ===== day5：陆辞线 =====
 STORY.events['day5_luci_darkroom'] = {
   type:'message_batch', delay:1,
-  trigger:{ deferWhenBusy:true, day:5, hour:18, route:'luci' },
+  trigger:{ deferWhenBusy:true, day:7, hour:15, route:'luci' },
   messages:[
     {from:'luci', text:'暗房今天只开一盏红灯。你要不要进来，看一张照片慢慢显影？', choice:{
       auto:true,
       prompt:'暗房的门缝里透出一点红光。',
       options:[
-        {text:'进去看', effects:{affection:{luci:2}, personality:{emotional:1}, thenEvent:'day5_luci_dark_yes'}, reply:'（红灯下，照片里的人一点点浮出来——是你。）'},
+        {text:'进去看', effects:{affection:{luci:1}, personality:{emotional:1}, thenEvent:'day5_luci_dark_yes'}, reply:'（红灯下，照片里的人一点点浮出来——是你。）'},
         {text:'在门口等你', effects:{affection:{luci:1}, personality:{rational:1}, thenEvent:'day5_luci_dark_no'}, reply:'（门再开时，他递出一张还湿着的照片："拍的是门口的光。"）'}
       ]
     }}
@@ -198,13 +198,13 @@ STORY.events['day5_luci_dark_no'] = {
 // ===== day5：江屿线 =====
 STORY.events['day5_jiangyu_market'] = {
   type:'message_batch', delay:1,
-  trigger:{ deferWhenBusy:true, day:5, hour:21, route:'jiangyu' },
+  trigger:{ deferWhenBusy:true, day:7, hour:21, route:'jiangyu' },
   messages:[
     {from:'jiangyu', text:'今晚凌晨有鱼市。我要去买条鱼，顺便找点歌里的声音。你来吗？', choice:{
       auto:true,
       prompt:'手机屏幕的光映在天花板上。',
       options:[
-        {text:'陪他去', effects:{affection:{jiangyu:2}, personality:{active:1}, thenEvent:'day5_jiangyu_market_yes'}, reply:'（凌晨的鱼市亮着白灯。他挑鱼的动作很熟练，像在调弦。）'},
+        {text:'陪他去', effects:{affection:{jiangyu:1}, personality:{active:1}, thenEvent:'day5_jiangyu_market_yes'}, reply:'（凌晨的鱼市亮着白灯。他挑鱼的动作很熟练，像在调弦。）'},
         {text:'下次吧', effects:{affection:{jiangyu:1}, personality:{independent:1}, thenEvent:'day5_jiangyu_market_no'}, reply:'（你把闹钟关掉。凌晨三点，手机震了一下。）'}
       ]
     }}
@@ -217,4 +217,15 @@ STORY.events['day5_jiangyu_market_yes'] = {
 STORY.events['day5_jiangyu_market_no'] = {
   type:'message_batch', delay:2,
   messages:[{from:'jiangyu', text:'（语音 20"）：鱼市的潮声。你说下次，那就下次。'}]
+};
+
+STORY.events['day8_solo_market'] = {
+  type:'message_batch', delay:0,
+  trigger:{ day:8, hour:19, route:'solo' },
+  messages:[{from:'narrator', text:'（第八天的夜。你给自己买了一束花，插在窗台的玻璃瓶里。）'}]
+};
+STORY.events['day9_solo_call'] = {
+  type:'message_batch', delay:0,
+  trigger:{ day:9, hour:19, route:'solo' },
+  messages:[{from:'susu', text:'最近怎么样？别老一个人待着。周末要不要出来走走？'}]
 };

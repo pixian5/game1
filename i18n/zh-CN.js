@@ -7,6 +7,9 @@
   if(typeof window === 'undefined') return;
   window.I18N_PACKS = window.I18N_PACKS || {};
   window.I18N_PACKS['zh-CN'] = {
+    '没有未读消息': '没有未读消息',
+    '已全部标为已读': '已全部标为已读',
+    '全部已读': '全部已读',
     '🔊 音效：开': '🔊 音效：开',
     '🎵 环境音：关': '🎵 环境音：关',
     '在线': '在线',

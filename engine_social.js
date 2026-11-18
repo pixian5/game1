@@ -110,6 +110,19 @@ Object.assign(PhoneEngine.prototype, {
     this.emit('stateChange', this.state);
   },
 
+  // v0.9.6：一键已读——清理所有会话与群聊未读，缓解消息过载
+  markAllRead(){
+    let changed = 0;
+    Object.values(this.state.conversations || {}).forEach(c=>{
+      if(c && c.unread){ c.unread = 0; changed++; }
+    });
+    Object.values(this.state.groups || {}).forEach(g=>{
+      if(g && g.unread){ g.unread = 0; changed++; }
+    });
+    if(changed) this.emit('stateChange', this.state);
+    return changed;
+  },
+
   triggerCall(eventId, dueAt=null){
     const evt = this.story.events[eventId];
     if(!evt || evt.type !== 'call') return;
