@@ -54,6 +54,31 @@
     "翻出旧照片": "Take out old photos",
     "（照片里的人和现在的你隔着几年。你看了很久，才把它放回去。）": "(The person in the photo is years away from you now. You look for a long time before putting it back.)",
     "（面好了。你端着碗坐在窗边，霓城的灯一盏一盏亮着。）": "(The noodles are ready. Bowl in hand by the window, you watch Nicheng's lights come on one by one.)",
-    "（照片背面写着一个日期。你记得那天，也记得当时没说出口的话。）": "(A date is written on the back. You remember that day — and the words you never said.)"
+    "（照片背面写着一个日期。你记得那天，也记得当时没说出口的话。）": "(A date is written on the back. You remember that day — and the words you never said.)",
+    // v0.9.3: day5 三条男主线
+    "闭馆了，展厅只剩换灯的活儿。你要是不赶时间——留一盏灯给我就好。": "The museum's closed — only the lights left to change. If you're not in a hurry, just leave one on for me.",
+    "展厅的灯已经灭了一半。": "Half the gallery lights are already out.",
+    "留下，帮他扶梯子": "Stay and hold the ladder",
+    "（梯子晃了一下。他扶住你的手腕，说：\"站稳。\"）": "(The ladder sways. He steadies your wrist and says, \"Stand firm.\")",
+    "先回去，明天见": "Head back — see you tomorrow",
+    "（你走到门口回头。他自己把最后一盏灯换完了。）": "(You glance back from the door. He finishes changing the last light alone.)",
+    "手别松。……好了，这盏灯的位置，以后就按你扶的高度来。": "Don't let go. ...There. From now on, this light stays at the height you held.",
+    "明天见。灯我会一盏一盏点好。": "See you tomorrow. I'll light them one by one.",
+    "暗房今天只开一盏红灯。你要不要进来，看一张照片慢慢显影？": "The darkroom has only the red light on today. Want to come in and watch a photo develop?",
+    "暗房的门缝里透出一点红光。": "A sliver of red light leaks from the darkroom door.",
+    "进去看": "Go in and look",
+    "（红灯下，照片里的人一点点浮出来——是你。）": "(Under the red light, the figure in the photo slowly surfaces — it's you.)",
+    "在门口等你": "Wait outside",
+    "（门再开时，他递出一张还湿着的照片：\"拍的是门口的光。\"）": "(When the door opens again, he hands you a still-damp print: \"It's the light at the doorway.\")",
+    "别急，还要再等一会儿。显影和等人的耐心，是一回事。": "No rush — a little longer. Developing and waiting take the same patience.",
+    "门口的光也很好看。你站在那里的时候，最好看。": "The light at the doorway is beautiful too. You standing there is the best part.",
+    "今晚凌晨有鱼市。我要去买条鱼，顺便找点歌里的声音。你来吗？": "There's a fish market before dawn. I'm going to buy a fish and find a sound for the song. Coming?",
+    "手机屏幕的光映在天花板上。": "Phone light reflects on the ceiling.",
+    "陪他去": "Go with him",
+    "（凌晨的鱼市亮着白灯。他挑鱼的动作很熟练，像在调弦。）": "(The pre-dawn market glows white. He picks fish the way he tunes a guitar.)",
+    "下次吧": "Next time",
+    "（你把闹钟关掉。凌晨三点，手机震了一下。）": "(You turn off the alarm. At 3 a.m., your phone buzzes.)",
+    "听，这个水声。我找了三个月，就是它。": "Listen — this water sound. I've searched three months for it.",
+    "（语音 20\"）：鱼市的潮声。你说下次，那就下次。": "(Voice 20\"): The tide sound of the fish market. You said next time — so, next time."
   });
 })();
