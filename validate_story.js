@@ -72,6 +72,19 @@ Object.entries(STORY.events || {}).forEach(([id, evt]) => {
   else if(!evt.type) err(`events.${id} 缺少 type 字段`);
 });
 
+// ---------- 1.1 时间触发：路线合法值与每日密度（v0.9.2） ----------
+const VALID_ROUTES = new Set(['shenyan', 'luci', 'jiangyu', 'solo']);
+const dailyCount = {};
+Object.entries(STORY.events || {}).forEach(([id, evt]) => {
+  const t = evt && evt.trigger;
+  if(!t || typeof t !== 'object') return;
+  if(t.route && !VALID_ROUTES.has(t.route)) err(`events.${id}.trigger.route 非法：${t.route}`);
+  if(typeof t.day === 'number') dailyCount[t.day] = (dailyCount[t.day] || 0) + 1;
+});
+[4, 5].forEach(d => {
+  if((dailyCount[d] || 0) < 2) warn(`day${d} 时间事件仅 ${dailyCount[d] || 0} 条（建议 ≥2）`);
+});
+
 // ---------- 2. 路线选择 ----------
 (STORY.routeChoice?.options || []).forEach((opt, i)=>{
   if(!['shenyan', 'luci', 'jiangyu', 'solo'].includes(opt.route)) err(`routeChoice.options[${i}].route 非法：${opt.route}`);

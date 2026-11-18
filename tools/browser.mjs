@@ -14,7 +14,7 @@ export async function launchBrowser(options = {}) {
   if (process.env.PW_EXECUTABLE_PATH) {
     return chromium.launch({ ...opts, executablePath: process.env.PW_EXECUTABLE_PATH });
   }
-  if (process.env.PW_CHANNEL) {
+  if (process.env.PW_CHANNEL && process.env.PW_CHANNEL !== 'none') {
     return chromium.launch({ ...opts, channel: process.env.PW_CHANNEL });
   }
   try {
