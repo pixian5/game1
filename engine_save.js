@@ -289,7 +289,7 @@ Object.assign(PhoneEngine.prototype, {
     out.moodHistory = array(source.moodHistory,200,item=>{const m=object(item);return this.story.moods?.[m.mood] ? {mood:m.mood,day:asInt(m.day,0,0,9999),ts:asInt(m.ts,0,0,9999999999999)} : null;});
     out.diary = array(source.diary,200,item=>{const d=object(item);return {text:asText(d.text,500),mood:this.story.moods?.[d.mood]?d.mood:def.mood,day:asInt(d.day,0,0,9999),time:asText(d.time,8),ts:asInt(d.ts,0,0,9999999999999)};});
     out.tarotHistory = array(source.tarotHistory,200,item=>{const t=object(item);return this.story.tarot?.cards?.[t.cardId] ? {day:asInt(t.day,0,0,9999),cardId:t.cardId,reversed:asBool(t.reversed),ts:asInt(t.ts,0,0,9999999999999)} : null;});
-    const fortune=object(source.todayFortune); out.todayFortune=this.story.tarot?.cards?.[fortune.cardId] ? {cardId:fortune.cardId,name:asText(fortune.name,40),roman:asText(fortune.roman,10),reversed:asBool(fortune.reversed),text:asText(fortune.text,1000),hint:object(fortune.hint),day:asInt(fortune.day,0,0,9999)} : null;
+    const fortune=object(source.todayFortune); out.todayFortune=this.story.tarot?.cards?.[fortune.cardId] ? {cardId:fortune.cardId,name:asText(fortune.name,40),roman:asText(fortune.roman,10),reversed:asBool(fortune.reversed),text:asText(fortune.text,1000),hint:(()=>{const h=object(fortune.hint); return {type:['encounter','affection','gift','music','photo','weather'].includes(h.type)?h.type:'',value:asInt(h.value,0,0,99)};})(),day:asInt(fortune.day,0,0,9999)} : null;
     out.achievements = record(source.achievements,100,(_value,key)=>!!this.story.achievements?.[key]);
     Object.keys(out.achievements).forEach(key=>{ if(!out.achievements[key]) delete out.achievements[key]; });
     out.collected = idList(source.collected, knownIds(this.story.collectibles));
@@ -326,7 +326,7 @@ Object.assign(PhoneEngine.prototype, {
         collected: idList(ngc.collected, knownIds(this.story.collectibles), 200),
         achievements: record(ngc.achievements, 100, (_v, key) => !!this.story.achievements?.[key]),
         endingSeen: record(ngc.endingSeen, 50, v => !!v),
-        endingGallery: object(ngc.endingGallery),
+        endingGallery: record(ngc.endingGallery, 50, (_v, key) => !!this.story.endings?.[key]),
         easterEggsSeen: record(ngc.easterEggsSeen, 100, v => !!v),
         tarotHistory: array(ngc.tarotHistory, 200, t => {const o=object(t); return this.story.tarot?.cards?.[o.cardId] ? {day:asInt(o.day,0,0,9999), cardId:o.cardId, reversed:asBool(o.reversed), ts:asInt(o.ts,0,0,9999999999999)} : null;}),
         unlockedThemes: record(ngc.unlockedThemes, 50, v => !!v),
@@ -334,6 +334,7 @@ Object.assign(PhoneEngine.prototype, {
         ngPlus: asInt(ngc.ngPlus, 0, 0, 99),
       };
       Object.keys(out.ngCarry.achievements).forEach(k => { if(!out.ngCarry.achievements[k]) delete out.ngCarry.achievements[k]; });
+      Object.keys(out.ngCarry.endingGallery).forEach(k => { if(!out.ngCarry.endingGallery[k]) delete out.ngCarry.endingGallery[k]; });
     }
     out.endingGallerySeen = record(source.endingGallerySeen,50,(_value,key)=>!!this.story.endingGallery?.[key]);
     Object.keys(out.endingSeen).forEach(key=>{ if(!out.endingSeen[key]) delete out.endingSeen[key]; });
@@ -379,7 +380,7 @@ Object.assign(PhoneEngine.prototype, {
     const pendingRaw = Array.isArray(source.pendingInteractions)
       ? source.pendingInteractions
       : (source.pendingInteraction ? [source.pendingInteraction] : []);
-    out.pendingInteractions = pendingRaw.map(sanitizePendingInteraction).filter(Boolean);
+    out.pendingInteractions = pendingRaw.slice(0, 50).map(sanitizePendingInteraction).filter(Boolean);
     InteractionQueue.syncLegacy(out);
     return out;
   },
@@ -550,6 +551,11 @@ Object.assign(PhoneEngine.prototype, {
   importSave(jsonText, targetSlot){
     try {
       if(typeof jsonText === 'string' && jsonText.length > PhoneEngine.MAX_SAVE_BYTES) return {ok:false, reason:'存档文件过大'};
+      if(typeof jsonText !== 'string'){
+        let size = 0;
+        try { size = JSON.stringify(jsonText ?? null).length; } catch (_) { return {ok:false, reason:'无效存档'}; }
+        if(!jsonText || typeof jsonText !== 'object' || size > PhoneEngine.MAX_SAVE_BYTES) return {ok:false, reason:'无效存档'};
+      }
       const parsed = typeof jsonText === 'string' ? JSON.parse(jsonText) : jsonText;
       const data = parsed.save || parsed;
       const slot = targetSlot || data?.slot || PhoneEngine.SLOT_AUTO;
