@@ -3,7 +3,7 @@
  * 缓存版本号必须与根目录 VERSION 一致——check_version.js 会校验（CACHE_VERSION 行）。
  * 每次发版：VERSION +0.0.1 后同步修改这里的 CACHE_VERSION。
  */
-const CACHE_VERSION = 'neon-heart-v0.9.4';
+const CACHE_VERSION = 'neon-heart-v0.9.5';
 
 // 预缓存核心资源（与 index.html 的脚本清单保持一致）
 const PRECACHE = [
@@ -22,11 +22,15 @@ const PRECACHE = [
   './i18n/story-en-translations-4.js',
   './i18n/story-en-translations-5.js',
   './i18n/story-en-translations-6.js',
+  './i18n/story-en-translations-7.js',
+  './i18n/story-en-translations-8.js',
   './i18n/index.js',
   // 剧情数据层
   './story/00_core.js',
   './story/01_events.js',
   './story/01b_day45.js',
+  './story/01c_day67.js',
+  './story/01d_day814.js',
   './story/02_moments_dreams.js',
   './story/03_assets.js',
   './story/04_route_ending.js',

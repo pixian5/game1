@@ -49,7 +49,35 @@ class PhoneEngine {
     return InteractionQueue.find(this.state, predicate);
   }
   _removeInteraction(predicate){
-    return InteractionQueue.remove(this.state, predicate);
+    const removed = InteractionQueue.remove(this.state, predicate);
+    this._retryDeferredEvents();
+    return removed;
+  }
+  // v0.9.5：主线链（then 链/待处理选择/交互）是否仍在进行
+  _mainChainBusy(){
+    const st = this.state;
+    if((st.pendingEventDispatches || []).length) return true;
+    if((st.pendingMessages || []).length) return true;
+    if((st.pendingInteractions || []).length) return true;
+    if(Object.values(st.conversations || {}).some(c=>c && c.pendingChoice)) return true;
+    if(Object.values(st.groups || {}).some(g=>g && g.pendingChoice)) return true;
+    return false;
+  }
+  // v0.9.5：主线链空闲后，按原时间顺序派发被延后的日常事件
+  _retryDeferredEvents(){
+    const list = this.state.deferredEventIds;
+    if(!list || !list.length){ this._deferredSince = 0; return; }
+    if(!this._deferredSince) this._deferredSince = Date.now();
+    const overdue = Date.now() - this._deferredSince > 15000;
+    if(this._mainChainBusy() && !overdue){
+      if(!this._deferredRetryTimer && this._setTimeout){
+        this._deferredRetryTimer = this._setTimeout(()=>{ this._deferredRetryTimer = null; this._retryDeferredEvents(); }, 2000);
+      }
+      return;
+    }
+    this._deferredSince = 0;
+    const ids = list.splice(0, list.length);
+    ids.forEach(id=>{ if(id && !this.state.firedEvents[id]) this.scheduleEvent(id); });
   }
   getPendingInteractions(){
     return InteractionQueue.all(this.state);
@@ -101,6 +129,8 @@ class PhoneEngine {
       pendingMessages: [],
       pendingEventDispatches: [],
       pendingCalls: [],
+      // v0.9.5：主线链忙碌时被延后的时间事件
+      deferredEventIds: [],
       // 已显示但尚未完成的交互，读档后由 UI 按该状态重建。
       pendingInteractions: [],
       pendingInteraction: null,
@@ -468,6 +498,13 @@ class PhoneEngine {
       let d = fromDay, h = fromHour;
       while(d < toDay || (d === toDay && h <= toHour)){
         if(evt.trigger.day === d && evt.trigger.hour === h){
+          if(evt.deferWhenBusy && this._mainChainBusy() && !['ending','route_choice'].includes(evt.type)){
+            if(!this.state.deferredEventIds.includes(id)){
+              this.state.deferredEventIds.push(id);
+              if(!this._deferredSince) this._deferredSince = Date.now();
+            }
+            break;
+          }
           this.scheduleEvent(id);
           break;
         }
@@ -580,6 +617,14 @@ class PhoneEngine {
         if(evt.trigger.soloOnly && inRoute) continue;
         if(evt.trigger.inRoute && !inRoute) continue;   // v0.3.1: 男主线专属中后期日常
         if(evt.trigger.route && evt.trigger.route !== this.state.route) continue;   // v0.9.2: 按具体路线过滤
+        // v0.9.5：主线链进行中，日常时间事件延后派发，避免抢占主线 choice
+        if(evt.deferWhenBusy && this._mainChainBusy() && !['ending','route_choice'].includes(evt.type)){
+          if(!this.state.deferredEventIds.includes(id)){
+            this.state.deferredEventIds.push(id);
+            if(!this._deferredSince) this._deferredSince = Date.now();
+          }
+          continue;
+        }
         this.scheduleEvent(id);
       }
     }
@@ -656,6 +701,15 @@ class PhoneEngine {
     const idx = this.state.pendingMessages.findIndex(p=>p.id === id);
     if(idx < 0) return;
     const [msg] = this.state.pendingMessages.splice(idx, 1);
+    // v0.9.5：氛围事件自动结算，不挂起选择，避免与主线 choice 竞争
+    if(msg.choice && msg.choice.auto){
+      const autoOpt = msg.choice.options && msg.choice.options[0];
+      msg.choice = null;
+      if(autoOpt){
+        this._applyEffects(autoOpt.effects || {});
+        if(autoOpt.effects && autoOpt.effects.thenEvent) this._queueEventDispatch(autoOpt.effects.thenEvent, 600);
+      }
+    }
     if(msg.choice) msg.choice = this._stampChoiceDeadline(msg.choice);
     if(msg.groupId){
       const group = this.state.groups[msg.groupId];

@@ -71,6 +71,7 @@ Object.assign(PhoneEngine.prototype, {
     this._applyEffects(eff);
     if(eff.thenEvent) this._dispatchSpecialThen(eff.thenEvent);
     this.emit('stateChange', this.state);
+    if(this._retryDeferredEvents) this._retryDeferredEvents();
   },
 
   _dispatchSpecialThen(thenEvent){

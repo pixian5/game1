@@ -1,0 +1,55 @@
+/* ===== 霓虹心事 · 剧情文本英译包（day8-14 路线专属，v0.9.5）===== */
+(function(){
+  'use strict';
+  if(typeof window === 'undefined') return;
+  window.I18N_PACKS = window.I18N_PACKS || {};
+  window.I18N_PACKS['en-US'] = window.I18N_PACKS['en-US'] || {};
+  Object.assign(window.I18N_PACKS['en-US'], {
+    "预展今晚只开给内部。你要不要来？灯还没调完。": "The preview tonight is internal only. Want to come? The lights aren't finished.",
+    "展厅的灯只亮了一半。": "Only half the gallery lights are on.",
+    "留下来看": "Stay and watch",
+    "（空展厅里只有你们两个人。他关掉最后一排灯。）": "(Only the two of you in the empty gallery. He switches off the last row of lights.)",
+    "先回家": "Head home first",
+    "（你走到地铁口。他发来一张照片：展厅只剩一盏灯。）": "(You reach the subway entrance. He sends a photo: one light left in the gallery.)",
+    "灯全关的时候，画反而更清楚。……你也是。": "With all the lights off, the painting is clearer. ...So are you.",
+    "那盏灯我留着。下次你来了再关。": "I'll leave that light on. We'll turn it off when you come.",
+    "评论家提前到了。我本来打算一个人应付——你如果在，站在我旁边就好。": "The critic arrived early. I planned to handle it alone — if you're here, just stand beside me.",
+    "会客室的门开着。": "The reception room door is open.",
+    "站他旁边": "Stand beside him",
+    "（他介绍你时，语气比平时慢。评论家看了你一眼。）": "(He introduces you more slowly than usual. The critic glances at you.)",
+    "让他处理": "Let him handle it",
+    "（你留在办公室。半小时后他回来说：谈成了。）": "(You stay in the office. Half an hour later he returns: \"It's settled.\")",
+    "他说这个展\"有温度\"。我知道温度是哪儿来的。": "He called the show \"warm\". I know where the warmth comes from.",
+    "谈成了。下次这种场合，我还是希望你也在。": "It's settled. Next time, I still hope you'll be there.",
+    "有卷底片划伤了。可能是那天赶时间。我想重拍一次，你还愿意当模特吗？": "One roll of film got scratched — maybe we rushed that day. I want to reshoot. Will you model for me again?",
+    "暗房的红灯亮着。": "The red light is on in the darkroom.",
+    "陪他重拍": "Reshoot with him",
+    "（你们拍到天完全黑。他说：这次比上次好。）": "(You shoot until it's completely dark. He says: \"Better than last time.\")",
+    "改天吧": "Another day",
+    "（他把相机收进包里。划伤的那张，他说留着。）": "(He packs the camera away. The scratched frame, he says, he'll keep.)",
+    "同一张脸，第二次拍，感觉不一样。你比第一次放松了。": "The same face, shot a second time, feels different. You're more relaxed than the first time.",
+    "划伤的地方像一道闪电。也许它本来就该这样。": "The scratch looks like lightning. Maybe it was meant to be there.",
+    "摄影展下周开幕。我留了一张票给你——不是工作票，是私人票。": "My photo show opens next week. I saved a ticket for you — not a work pass, a personal one.",
+    "一张票压在相机包上。": "A ticket rests on the camera bag.",
+    "去": "Go",
+    "（展厅最里面那张，标签上写着你的名字。）": "(The print at the far end of the gallery has your name on its label.)",
+    "不去": "Don't go",
+    "（他说没关系。后来你收到一本展册，扉页有字。）": "(He says it's fine. Later you receive a catalogue; there's writing on the title page.)",
+    "那张照片叫《九年》。你站在它前面的时候，我按下快门了吗？": "That photo is called \"Nine Years\". When you stood in front of it — did I press the shutter?",
+    "扉页那句是：给没来的人。": "The line on the title page: for the one who didn't come.",
+    "歌词卡在第二段。写不下去。你要不要来听听，顺便告诉我它缺什么？": "The lyrics are stuck on the second verse. I can't go on. Want to come listen and tell me what it's missing?",
+    "排练室的窗开着，风把谱子吹起一角。": "The rehearsal room window is open; the wind lifts a corner of the score.",
+    "去听": "Go listen",
+    "（他唱到卡住的地方停下。你说：缺一句真话。他笑了。）": "(He stops where it gets stuck. You say: \"It's missing one true line.\" He smiles.)",
+    "给点建议": "Send a suggestion",
+    "（你发了三行字。他回：这句我留着。）": "(You send three lines. He replies: \"I'm keeping this one.\")",
+    "真话最难写。……那第二段，就写你刚才那句话。": "The truest lines are the hardest. ...Then the second verse will be what you just said.",
+    "三行字，比我一晚上写的都准。": "Three lines from you are more accurate than a whole night of mine.",
+    "周五有个小场，唱三首。票不多，给你留了一张。": "There's a small show Friday, three songs. Not many tickets — I saved one for you.",
+    "手机里躺着一张电子票。": "An e-ticket sits in your phone.",
+    "（台下很挤。他唱到第二首时，看向你这边。）": "(The crowd is packed. Halfway through the second song, he looks your way.)",
+    "（演出结束后他发来一段录音：第三首，留给没来的人。）": "(After the show he sends a recording: the third song, for the one who didn't come.)",
+    "第二首是《夏》的旧版本。唱到一半我才发现，我在看你。": "The second was an old version of \"Summer\". Halfway through I realized I was looking at you.",
+    "第三首没唱。留着，等你在的时候。": "I didn't sing the third. It's saved for when you're there."
+  });
+})();
