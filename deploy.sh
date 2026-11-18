@@ -11,8 +11,13 @@ PORT="2424"
 # 本机 DNS 可能被代理软件劫持为 fake-ip，用 DoH 解析真实公网 IP
 REAL_IP=$(curl -s "https://dns.alidns.com/resolve?name=oh.sbbz.tech&type=A" \
   | python3 -c "import json,sys; d=json.load(sys.stdin); print([a['data'] for a in d.get('Answer',[]) if a['type']==1][0])")
-SSH_OPTS=(-i "$HOME/.ssh/game1_deploy" -p "$PORT" -o StrictHostKeyChecking=no -o ConnectTimeout=10)
-[ -f "$HOME/.ssh/game1_deploy" ] || SSH_OPTS=(-i /Users/x/ed25519 -p "$PORT" -o StrictHostKeyChecking=no -o ConnectTimeout=10)
+SSH_KEY="${DEPLOY_SSH_KEY:-$HOME/.ssh/game1_deploy}"
+if [ ! -f "$SSH_KEY" ]; then
+  echo "错误：未找到部署私钥 $SSH_KEY（可用 DEPLOY_SSH_KEY 指定）" >&2
+  exit 1
+fi
+# 首次连接自动记录主机指纹，后续严格校验，避免 MITM
+SSH_OPTS=(-i "$SSH_KEY" -p "$PORT" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10)
 TARGET="$HOST"
 if [ "$(dig +short oh.sbbz.tech | head -1)" != "$REAL_IP" ]; then
   TARGET="root@$REAL_IP"   # DNS 被劫持时直连真实 IP

@@ -361,14 +361,14 @@ const AudioSys = (() => {
   }
 
   return {
-    play(name){ if(soundOn && unlocked && SFX[name]) SFX[name](); },
+    play(name){ if(soundOn && unlocked && Object.prototype.hasOwnProperty.call(SFX, name)) SFX[name](); },
     // v0.7.3：语音信箱——按角色基频起播/停播合成底声。返回是否真的发声：
     // 音效关闭或未解锁时为 false，此时 UI 侧仍照常走进度条（视觉不受音频开关影响）。
     startVoicemail(charId){ return startVoicemailBed(charId); },
     stopVoicemail(){ stopVoicemailBed(); },
     // v0.4.10（E2）：音乐 App 点播——剧情曲真实可播；再次点同曲或传 null 回主题 BGM
     playTrack(trackId){
-      if(trackId && TRACKS[trackId] && currentTrack === trackId) trackId = null;
+      if(trackId && Object.prototype.hasOwnProperty.call(TRACKS, trackId) && currentTrack === trackId) trackId = null;
       currentTrack = trackId || null;
       if(unlocked && (bgmOn || currentTrack)) startMusic();
       return currentTrack;
