@@ -127,6 +127,9 @@ Object.keys(STORY.endings || {}).forEach(id=>{
 Object.entries(STORY.endingGallery || {}).forEach(([id, g])=>{
   if(!has(STORY.endings, id)) err(`图鉴条目 ${id} 没有对应结局定义（endings）`);
   if(g.id !== id) err(`图鉴 ${id} 的 id 字段不一致：${g.id}`);
+  // v0.9.1：图鉴名必须与结局屏标题一致，否则玩家会看到两个名字
+  const title = STORY.endings?.[id]?.title;
+  if(title && g.name && title !== g.name) err(`图鉴 ${id} 名称「${g.name}」与结局标题「${title}」不一致`);
 });
 
 // ---------- 6. 朋友圈 / 约会 / 梦魇 / 男主视角 ----------

@@ -163,9 +163,13 @@
   }
 
   // ===== 锁屏 =====
-  $('lock-screen').addEventListener('click', ()=>{
-    if(!restorePendingUi()) showScreen('home');
-  });
+  // v0.9.1：锁屏期间 restorePendingUi 不恢复弹窗，解锁后需再调用一次
+  function unlock(){
+    if(restorePendingUi()) return;
+    showScreen('home');
+    restorePendingUi();
+  }
+  $('lock-screen').addEventListener('click', unlock);
   let lockSwipeStart = null;
   $('lock-screen').addEventListener('touchstart', e=>{
     lockSwipeStart = e.touches[0].clientY;
@@ -173,6 +177,6 @@
   $('lock-screen').addEventListener('touchend', e=>{
     if(lockSwipeStart === null) return;
     const dy = e.changedTouches[0].clientY - lockSwipeStart;
-    if(dy < -30 && !restorePendingUi()) showScreen('home');
+    if(dy < -30) unlock();
     lockSwipeStart = null;
   });

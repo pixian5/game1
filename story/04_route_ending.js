@@ -19,21 +19,22 @@ STORY.routeChoice = {
 
 // ===== v0.0.15 结局图鉴 + 多分支 =====
 // 结局分级：GOOD(HE) / NORMAL(NE) / BAD(BE) / HIDDEN(隐藏)
+// v0.9.1：name 统一为 STORY.endings 的实际结局标题，避免「结局屏叫一个名、图鉴叫另一个名」。
 STORY.endingGallery = {
   // 沈砚之线
-  shenyan_good:    { id:'shenyan_good',    charId:'shenyan', tier:'GOOD',    name:'月光画室',     desc:'他终于让你走进他的私人画室。那幅画，画了五年，画的是你。' },
+  shenyan_good:    { id:'shenyan_good',    charId:'shenyan', tier:'GOOD',    name:'未完的画作',   desc:'他终于让你走进他的私人画室。那幅画，画了五年，画的是你。' },
   shenyan_normal:  { id:'shenyan_normal',  charId:'shenyan', tier:'NORMAL',  name:'画框之外',     desc:'你们成为工作上的最佳搭档。画框外的事，他没说，你也没问。' },
-  shenyan_bad:     { id:'shenyan_bad',     charId:'shenyan', tier:'BAD',     name:'未完成的画',   desc:'画被收起来了。他说，下次再画。但你们都知道没有下次。' },
+  shenyan_bad:     { id:'shenyan_bad',     charId:'shenyan', tier:'BAD',     name:'镀金的笼',     desc:'画被收起来了。他说，下次再画。但你们都知道没有下次。' },
   shenyan_hidden:  { id:'shenyan_hidden',  charId:'shenyan', tier:'HIDDEN',  name:'五年前的她',   desc:'(隐藏) 他在画室里发现一张五年前的旧画，画的是另一个女孩。' },
   // 陆辞线
-  luci_good:       { id:'luci_good',       charId:'luci',    tier:'GOOD',    name:'暗房显影',     desc:'九年又一百八十二天。他终于把那句话对你说了。' },
+  luci_good:       { id:'luci_good',       charId:'luci',    tier:'GOOD',    name:'九又二分之一', desc:'九年又一百八十二天。他终于把那句话对你说了。' },
   luci_normal:     { id:'luci_normal',     charId:'luci',    tier:'NORMAL',  name:'镜头之外',     desc:'你们成为最默契的拍摄搭档。镜头之外的关系，没人挑明。' },
-  luci_bad:        { id:'luci_bad',        charId:'luci',    tier:'BAD',     name:'未寄出的信',   desc:'那封信他最终没寄出。九年又一百八十二天，成了永远。' },
+  luci_bad:        { id:'luci_bad',        charId:'luci',    tier:'BAD',     name:'未送出的底片', desc:'那封信他最终没寄出。九年又一百八十二天，成了永远。' },
   luci_hidden:     { id:'luci_hidden',     charId:'luci',    tier:'HIDDEN',  name:'B面歌词',     desc:'(隐藏) 他在《夏》B面写了一首从未公开的歌，唱的是另一个林夏。' },
   // 江屿线
-  jiangyu_good:    { id:'jiangyu_good',    charId:'jiangyu', tier:'GOOD',    name:'《夏》首唱',   desc:'这首歌，是为了等你而写的。B面那首，他只唱给你听。' },
+  jiangyu_good:    { id:'jiangyu_good',    charId:'jiangyu', tier:'GOOD',    name:'雾散之后',     desc:'这首歌，是为了等你而写的。B面那首，他只唱给你听。' },
   jiangyu_normal:  { id:'jiangyu_normal',  charId:'jiangyu', tier:'NORMAL',  name:'雾港常客',     desc:'你成了雾港的常客。他的歌单里，总有一首没唱完。' },
-  jiangyu_bad:     { id:'jiangyu_bad',     charId:'jiangyu', tier:'BAD',     name:'空白B面',     desc:'B面永远是空白。他说，那首歌不唱了。' },
+  jiangyu_bad:     { id:'jiangyu_bad',     charId:'jiangyu', tier:'BAD',     name:'最后一首歌',   desc:'B面永远是空白。他说，那首歌不唱了。' },
   jiangyu_hidden:  { id:'jiangyu_hidden',  charId:'jiangyu', tier:'HIDDEN',  name:'夏的另一面',   desc:'(隐藏) 《夏》的原版歌词里，"林夏"其实是两个人。' },
   // solo 线
   solo_good:       { id:'solo_good',       charId:null,      tier:'GOOD',    name:'霓城独行',     desc:'你谁也没选。霓城的夜，依然为你亮着。' },
