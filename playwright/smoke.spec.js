@@ -198,6 +198,9 @@ test('隐私说明页可访问且声明关键信息（v0.3.7）', async ({page})
   await expect(page).toHaveTitle(/隐私/);
   const body = page.locator('body');
   await expect(body).toContainText('localStorage');
+  await expect(body).toContainText('可选账号');
+  await expect(body).toContainText('云存档');
+  await expect(body).toContainText('注销账号');
   await expect(body).toContainText('不包含');
   await expect(body).toContainText('不经过任何第三方');
   await expect(page.locator('a[href="./index.html"]')).toBeVisible();

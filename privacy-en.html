@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Privacy & Data · Neon Heart</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self'">
+<title>Privacy &amp; Data · Neon Heart</title>
 <style>
   :root{ --bg:#0a0612; --ink:#e8e0f0; --mute:#a99bc4; --pink:#ff5fa8; --purple:#7a5cff; }
   html,body{ margin:0; background:var(--bg); color:var(--ink);
@@ -21,34 +22,59 @@
 <body>
 <div class="wrap">
   <h1>Privacy &amp; Data</h1>
-  <p class="mute">Neon Heart · Lin Xia's Phone · Last updated 2026-10-24</p>
+  <p class="mute">Neon Heart · Lin Xia's Phone · Last updated 2026-11-20</p>
 
-  <h2>1. Your game data</h2>
-  <p>All saves (progress, affection, collection, settings, etc.) are stored in your device's
-  <b>browser storage (localStorage)</b> and are never uploaded to any server. You can export them
-  as a JSON file for backup within the game, or delete them at any time by clearing your browser data.</p>
+  <h2>1. Play without an account: local by default</h2>
+  <p>If you do not register, all saves (progress, affection, collection, settings, etc.) stay in your
+  <b>browser storage (localStorage)</b> and are never uploaded. You can export them as JSON or clear
+  browser data to delete them.</p>
 
-  <h2>2. Error reporting</h2>
-  <p>When a script error occurs, the game sends a brief summary to <b>our own server</b>
-  (error message + location + current version), used solely for troubleshooting. This reporting:</p>
+  <h2>2. Optional account and cloud saves</h2>
+  <p>An account is an <b>optional enhancement</b>. Only after you register and sign in may the game upload
+  all four save slots as one package to this project's own server for cross-device sync. While signed out,
+  or before you press “Upload” / enable auto-sync, the server receives no saves.</p>
   <ul>
-    <li>contains only the summary above — <b>no</b> game saves, chat content, personal information, or device identifiers;</li>
-    <li>goes to this project's own server and never passes through any third party;</li>
-    <li>is throttled to once every 30 seconds and fails silently, so it never interrupts gameplay.</li>
+    <li><b>Registration data</b>: username, nickname, password, one-time recovery code. Passwords are stored
+      only as scrypt hashes with random salts, never in plain text; recovery codes are hashed too.
+      No email or phone number is required.</li>
+    <li><b>Cloud saves</b>: one JSON package covering four slots (progress, affection, collection, settings),
+      plus revision, update time, and a device label.</li>
+    <li><b>Sessions and security records</b>: browser User-Agent, IP address, sign-in/last-active times, and
+      expiry for each signed-in device; security logs for register, login, password change, upload/conflict,
+      export, and deletion (kept for up to 90 days).</li>
+    <li><b>Cookies</b>: one HttpOnly, SameSite=Lax session cookie (<code>nh_session</code>) valid for 30 days.
+      No advertising or third-party tracking cookies.</li>
   </ul>
 
-  <h2>3. What we don't do</h2>
+  <h2>3. Error reporting</h2>
+  <p>When a script error occurs, the game sends a brief summary to this project's own server
+  (error message + location + version) solely for debugging. It contains <b>no</b> saves, chat content,
+  account data, or device identifiers, goes to no third party, is throttled to once per 30 seconds,
+  and fails silently.</p>
+
+  <h2>4. Your controls</h2>
   <ul>
-    <li>No account system; we do not collect your identity information;</li>
-    <li>No third-party tracking scripts, ads, or analytics SDKs;</li>
-    <li>We never sell or share your data with any third party.</li>
+    <li><b>Export</b>: while signed in, export a JSON containing your profile, cloud saves, device sessions,
+      and security records.</li>
+    <li><b>Revoke devices</b>: sign out other devices individually; changing your password signs out all
+      other devices automatically.</li>
+    <li><b>Delete account</b>: requires your password again. It removes the account, cloud saves, all sessions,
+      and that account's security logs. This cannot be undone. Offline saves in this browser's localStorage
+      are not deleted remotely and can be cleared separately in the game.</li>
   </ul>
 
-  <h2>4. Offline &amp; caching</h2>
-  <p>This game is a PWA that uses a Service Worker to cache its own files for offline play;
-  the cache contains game files only and none of your personal data.</p>
+  <h2>5. What we do not do</h2>
+  <ul>
+    <li>No third-party trackers, ads, or analytics SDKs;</li>
+    <li>No selling or sharing your data with third parties;</li>
+    <li>No background upload of saves while you are signed out.</li>
+  </ul>
 
-  <p style="margin-top:32px;"><a href="./index.html">← Back to game</a></p>
+  <h2>6. Offline and caching</h2>
+  <p>This game is a PWA and uses a Service Worker to cache its own files for offline play. The cache contains
+  game files only, never your password or cloud saves.</p>
+
+  <p style="margin-top:32px;"><a href="./index.html">← Back to the game</a></p>
 </div>
 </body>
 </html>

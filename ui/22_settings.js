@@ -43,6 +43,8 @@
       <div class="set-note">${window.t('设置即时生效并自动保存。')}</div>
     `;
     bindSettings();
+    // v0.9.8：账号与云存档（独立模块，服务不可用时不阻断设置页）
+    if(window.AccountUI) window.AccountUI.mount(body);
   }
 
   function bindSettings(){

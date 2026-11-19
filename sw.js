@@ -3,7 +3,7 @@
  * 缓存版本号必须与根目录 VERSION 一致——check_version.js 会校验（CACHE_VERSION 行）。
  * 每次发版：VERSION +0.0.1 后同步修改这里的 CACHE_VERSION。
  */
-const CACHE_VERSION = 'neon-heart-v0.9.7';
+const CACHE_VERSION = 'neon-heart-v0.9.9';
 
 // 预缓存核心资源（与 index.html 的脚本清单保持一致）
 const PRECACHE = [
@@ -86,6 +86,7 @@ const PRECACHE = [
   './ui/23_idle_hint.js',
   './ui/24_app_unlock.js',
   './ui/22_settings.js',
+  './ui/25_account.js',
   // 图标（安装与桌面图标必需）
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
@@ -126,6 +127,9 @@ self.addEventListener('fetch', event => {
   if(req.method !== 'GET') return;
   const url = new URL(req.url);
   if(url.origin !== self.location.origin) return;
+  // 账号/云存档接口绝不进 Cache Storage：/api/auth/me 等响应带登录态，
+  // 一旦被 cache-first 命中，刷新后会拿旧响应，表现为“登录态丢失”。
+  if(url.pathname.startsWith('/api/')) return;
 
   // 页面导航：network-first，离线回退缓存
   if(req.mode === 'navigate'){

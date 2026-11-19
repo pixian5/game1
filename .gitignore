@@ -83,3 +83,11 @@ credentials*.json
 .env.secret
 docs/deploy-handoff-prompt.md
 docs/deploy-handoff-instabox.md
+
+# 账号服务运行时数据（SQLite/日志/PID/备份）
+server/data/
+
+# 旧版纯本地账号实验（未接入当前账号系统，保留备查，不入库）
+/account.js
+/cloud-sync.js
+/tools/test_account_server.mjs

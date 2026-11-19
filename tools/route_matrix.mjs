@@ -97,7 +97,6 @@ function runJump(route){
 
 const out = { selectionTimes: [], matrix: {} };
 for (const [selDay, selHour] of [[6, 23], [7, 23]]){
-  if (false) {}
   out.selectionTimes.push(`day${selDay} ${String(selHour).padStart(2,'0')}:00`);
   for (const r of ROUTES){
     out.matrix[`day${selDay}`] = out.matrix[`day${selDay}`] || {};

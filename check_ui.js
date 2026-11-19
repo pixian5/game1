@@ -3,6 +3,7 @@
  * 2) audio.js / pwa.js / sw.js 单独编译
  * 3) index.html 引用的本地资源必须真实存在
  * 4) sw.js PRECACHE 清单必须真实存在，且覆盖 index.html 的全部本地脚本（漏缓存 = 离线打不开）
+ * 5) sw.js 必须排除 /api 接口（账号响应带登录态，不能进 Cache Storage）
  * 运行：node check_ui.js（已接入 npm run test:all 与 CI）
  */
 const fs = require('fs');
@@ -42,6 +43,13 @@ const precache = [...sw.matchAll(/\'\.\/([^']+)\'/g)].map(m => m[1]);
 const precacheMissing = precache.filter(f => f && !fs.existsSync(path.join(root, f)));
 if(precacheMissing.length) failures.push('✗ sw.js PRECACHE 引用了不存在的文件: ' + precacheMissing.join(', '));
 else ok(`sw.js PRECACHE ${precache.length} 项全部存在`);
+
+// 账号接口带登录态，绝不能走 Service Worker 的 cache-first，否则刷新后拿旧响应=登录态丢失
+if(!sw.includes("url.pathname.startsWith('/api/')")){
+  failures.push('✗ sw.js 未排除 /api 接口缓存（会导致刷新后登录态丢失）');
+}else{
+  ok('sw.js 已排除 /api 接口缓存');
+}
 
 const htmlScripts = refs.filter(f => f.endsWith('.js'));
 const notCached = htmlScripts.filter(f => !precache.includes(f));

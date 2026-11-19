@@ -592,6 +592,27 @@ Object.assign(PhoneEngine.prototype, {
     }
   },
 
+  /* v0.9.8：整包应用云端存档（4 槽全部替换，逐槽走迁移与清洗，拒绝空包）
+   * 只负责写回本地存储，不自动读档——调用方决定是否 load('auto')，避免打断当前剧情。 */
+  applyCloudSaves(saves){
+    try {
+      if(!saves || typeof saves !== 'object' || Array.isArray(saves)) return { ok: false, reason: '无效云端存档' };
+      const normalized = {};
+      for(const slot of [PhoneEngine.SLOT_AUTO, ...PhoneEngine.SLOT_MANUAL]){
+        if(!saves[slot]) continue;
+        const save = this._normalizeSaveData({ ...saves[slot], slot }, slot);
+        if(save) normalized[slot] = save;
+      }
+      const slots = Object.keys(normalized);
+      if(!slots.length) return { ok: false, reason: '云端存档为空' };
+      if(!this._writeAllSaves(normalized)) return { ok: false, reason: '浏览器存储不可用' };
+      this.emit('cloudSavesApplied', { slots });
+      return { ok: true, slots };
+    } catch(e){
+      return { ok: false, reason: e.message || '恢复失败' };
+    }
+  },
+
   _rehydrateDailyTaskChecks(){
     const pool = (this.story.dailyTasks && this.story.dailyTasks.pool) || [];
     const poolMap = {};
