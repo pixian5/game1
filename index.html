@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; object-src 'none'; base-uri 'none'">
+<title>霓虹心事 · 林夏的手机 · v0.9.7</title>
+<meta name="version" content="v0.9.7">
+<meta name="description" content="「模拟一部手机」的沉浸式多线互动叙事游戏：三位男主同时找你，何时回复、回谁、已读不回都有后果。196 事件 · 17 结局。">
+<meta name="theme-color" content="#0a0612">
+<!-- Open Graph / 社交分享卡片（v0.2.8 起） -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="霓虹心事 · 林夏的手机">
+<meta property="og:title" content="霓虹心事 · 林夏的手机">
+<meta property="og:description" content="「模拟一部手机」的沉浸式多线互动叙事游戏：三位男主同时找你，已读不回都有后果。">
+<meta property="og:image" content="https://xbzsb-neon-heart.hf.space/assets/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://xbzsb-neon-heart.hf.space/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="霓虹心事 · 林夏的手机">
+<meta name="twitter:description" content="「模拟一部手机」的沉浸式多线互动叙事游戏。">
+<meta name="twitter:image" content="https://xbzsb-neon-heart.hf.space/assets/og-cover.jpg">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"霓虹心事 · 林夏的手机","description":"「模拟一部手机」的沉浸式多线互动叙事游戏：三位男主同时找你，何时回复、回谁、已读不回都有后果。","genre":["互动小说","恋爱模拟","剧情"],"gamePlatform":"Web Browser","applicationCategory":"Game","operatingSystem":"Any","inLanguage":"zh-CN","playMode":"SinglePlayer","offers":{"@type":"Offer","price":"0","priceCurrency":"CNY"}}
+</script>
+<link rel="apple-touch-icon" sizes="180x180" href="assets/icons/icon-180.png">
+<link rel="stylesheet" href="style.css?v=0.9.7">
+</head>
+<body>
+<div id="phone-frame">
+  <div id="phone">
+
+    <!-- 状态栏 -->
+    <div id="status-bar">
+      <span id="sb-time">22:30</span>
+      <span class="sb-right">
+        <span id="sb-signal">●●●</span>
+        <span id="sb-battery">86%</span>
+      </span>
+    </div>
+
+    <!-- 锁屏 -->
+    <section id="lock-screen" class="screen active">
+      <div class="lock-bg"></div>
+      <div class="lock-content">
+        <div class="lock-time" id="lock-time">22:30</div>
+        <div class="lock-date" id="lock-date">7月15日 星期三</div>
+        <div class="lock-notif" id="lock-notif"></div>
+        <div class="lock-hint" data-i18n="向上滑动解锁">向上滑动解锁</div>
+        <div class="lock-actions" id="lock-actions">
+          <button class="lock-action-btn primary" id="lock-continue-btn" data-action="continue-game" hidden><span data-i18n="继续游戏">继续游戏</span></button>
+          <button class="lock-action-btn" data-action="open-saves"><span data-i18n="存档管理">存档管理</span></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 主屏 -->
+    <section id="home-screen" class="screen">
+      <div class="home-bg"></div>
+      <div class="home-widget">
+        <div class="widget-time" id="widget-time">22:30</div>
+        <div class="widget-date" id="widget-date">7月15日</div>
+        <div class="widget-weather" data-i18n="霓城 · 28°C 多云">霓城 · 28°C 多云</div>
+      </div>
+      <div class="app-grid" id="app-grid">
+        <button class="app-icon" data-app="messages">
+          <span class="app-emoji">💬</span><span class="app-name" data-i18n="消息">消息</span>
+          <span class="app-badge" id="badge-messages" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="phone">
+          <span class="app-emoji">📞</span><span class="app-name" data-i18n="电话">电话</span>
+          <span class="app-badge" id="badge-phone" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="moments">
+          <span class="app-emoji">🌈</span><span class="app-name" data-i18n="朋友圈">朋友圈</span>
+          <span class="app-badge" id="badge-moments" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="album">
+          <span class="app-emoji">📷</span><span class="app-name" data-i18n="相册">相册</span>
+        </button>
+        <button class="app-icon" data-app="calendar">
+          <span class="app-emoji">📅</span><span class="app-name" data-i18n="日历">日历</span>
+        </button>
+        <button class="app-icon" data-app="music">
+          <span class="app-emoji">🎵</span><span class="app-name" data-i18n="音乐">音乐</span>
+        </button>
+        <button class="app-icon" data-app="notes">
+          <span class="app-emoji">📝</span><span class="app-name" data-i18n="备忘录">备忘录</span>
+        </button>
+        <button class="app-icon" data-app="profile">
+          <span class="app-emoji">🔮</span><span class="app-name" data-i18n="画像">画像</span>
+        </button>
+        <button class="app-icon" data-app="map">
+          <span class="app-emoji">🗺️</span><span class="app-name" data-i18n="出行">出行</span>
+        </button>
+        <button class="app-icon" data-app="groups">
+          <span class="app-emoji">👥</span><span class="app-name" data-i18n="群聊">群聊</span>
+          <span class="app-badge" id="badge-groups" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="contacts">
+          <span class="app-emoji">📇</span><span class="app-name" data-i18n="通讯录">通讯录</span>
+        </button>
+        <button class="app-icon" data-app="shop">
+          <span class="app-emoji">🎁</span><span class="app-name" data-i18n="礼物商城">礼物商城</span>
+          <span class="app-badge" id="badge-shop" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="mood">
+          <span class="app-emoji">🎭</span><span class="app-name" data-i18n="心情">心情</span>
+        </button>
+        <button class="app-icon" data-app="tarot">
+          <span class="app-emoji">🔮</span><span class="app-name" data-i18n="塔罗">塔罗</span>
+        </button>
+        <button class="app-icon" data-app="achievements">
+          <span class="app-emoji">🏆</span><span class="app-name" data-i18n="成就">成就</span>
+          <span class="app-badge" id="badge-achievements" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="collection">
+          <span class="app-emoji">🗃️</span><span class="app-name" data-i18n="收集柜">收集柜</span>
+          <span class="app-badge" id="badge-collection" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="puzzles">
+          <span class="app-emoji">🔍</span><span class="app-name" data-i18n="线索本">线索本</span>
+        </button>
+        <button class="app-icon" data-app="calendar2">
+          <span class="app-emoji">📅</span><span class="app-name" data-i18n="节日">节日</span>
+        </button>
+        <button class="app-icon" data-app="perspective">
+          <span class="app-emoji">👁️</span><span class="app-name" data-i18n="男主视角">男主视角</span>
+          <span class="app-badge" id="badge-perspective" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="player">
+          <span class="app-emoji">🪞</span><span class="app-name" data-i18n="主角">主角</span>
+        </button>
+        <button class="app-icon" data-app="relations">
+          <span class="app-emoji">💞</span><span class="app-name" data-i18n="关系">关系</span>
+        </button>
+        <button class="app-icon" data-app="tasks">
+          <span class="app-emoji">✅</span><span class="app-name" data-i18n="今日">今日</span>
+          <span class="app-badge" id="badge-tasks" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="watch">
+          <span class="app-emoji">🎬</span><span class="app-name" data-i18n="观赏">观赏</span>
+        </button>
+        <button class="app-icon" data-app="affection">
+          <span class="app-emoji">💖</span><span class="app-name" data-i18n="深度">深度</span>
+        </button>
+        <button class="app-icon" data-app="themes">
+          <span class="app-emoji">🎨</span><span class="app-name" data-i18n="主题">主题</span>
+        </button>
+        <button class="app-icon" data-app="endings">
+          <span class="app-emoji">📖</span><span class="app-name" data-i18n="图鉴">图鉴</span>
+          <span class="app-badge" id="badge-endings" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="dates">
+          <span class="app-emoji">💌</span><span class="app-name" data-i18n="约会">约会</span>
+          <span class="app-badge" id="badge-dates" hidden>0</span>
+        </button>
+        <!-- v0.0.16 新玩法 -->
+        <button class="app-icon" data-app="dreams">
+          <span class="app-emoji">🌙</span><span class="app-name" data-i18n="梦魇">梦魇</span>
+          <span class="app-badge" id="badge-dreams" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="hints">
+          <span class="app-emoji">💡</span><span class="app-name" data-i18n="提示">提示</span>
+        </button>
+        <button class="app-icon" data-app="saves">
+          <span class="app-emoji">💾</span><span class="app-name" data-i18n="存档">存档</span>
+          <span class="app-badge" id="badge-saves" hidden>0</span>
+        </button>
+        <button class="app-icon" data-app="settings">
+          <span class="app-emoji">⚙️</span><span class="app-name" data-i18n="设置">设置</span>
+        </button>
+      </div>
+      <div class="home-dock">
+        <button class="app-icon" data-app="messages"><span class="app-emoji">💬</span></button>
+        <button class="app-icon" data-app="phone"><span class="app-emoji">📞</span></button>
+        <button class="app-icon" data-app="album"><span class="app-emoji">📷</span></button>
+        <button class="app-icon" data-app="music"><span class="app-emoji">🎵</span></button>
+      </div>
+    </section>
+
+    <!-- 消息App -->
+    <section id="messages-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="消息">消息</h1>
+        <button class="mark-all-read" id="mark-all-read" aria-label="全部已读" data-i18n="全部已读">全部已读</button>
+      </header>
+      <div class="conv-list" id="conv-list" role="list" aria-label="会话列表"></div>
+    </section>
+
+    <!-- 单个会话 -->
+    <section id="chat-screen" class="screen app-screen">
+      <header class="app-header chat-header">
+        <button class="back-btn" data-back="messages" aria-label="返回">‹</button>
+        <div class="chat-title">
+          <span class="chat-avatar" id="chat-avatar"></span>
+          <div>
+            <div class="chat-name" id="chat-name"></div>
+            <div class="chat-status" id="chat-status">在线</div>
+          </div>
+        </div>
+      </header>
+      <div class="chat-body" id="chat-body" role="log" aria-live="polite" aria-label="消息记录"></div>
+      <div class="chat-input-bar" id="chat-input-bar" hidden>
+        <div class="chat-prompt" id="chat-prompt"></div>
+        <div class="chat-timeout-bar" id="chat-timeout-bar" hidden>
+          <div class="chat-timeout-fill" id="chat-timeout-fill"></div>
+          <span class="chat-timeout-text" id="chat-timeout-text"></span>
+        </div>
+        <div class="chat-options" id="chat-options"></div>
+        <div class="chat-free-input" id="chat-free-input" hidden>
+          <input type="text" id="chat-free-input-field" placeholder="输入你想说的话…" data-i18n-placeholder="输入你想说的话…" autocomplete="off">
+          <button id="chat-free-send" data-action="free-send">发送</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 电话App -->
+    <section id="phone-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="电话">电话</h1>
+      </header>
+      <div class="phone-tabs">
+        <button class="phone-tab active" data-phone-tab="calls"><span data-i18n="通话记录">通话记录</span></button>
+        <button class="phone-tab" data-phone-tab="voicemail"><span data-i18n="语音信箱">语音信箱</span><span class="tab-dot" id="phone-vm-dot" hidden></span></button>
+      </div>
+      <!-- v0.7.3：语音信箱筛选栏（未听条数 + 批量已听），随 voicemail 面板一起显隐 -->
+      <div class="vm-filter-bar" id="vm-filter-bar" data-phone-panel="voicemail" hidden>
+        <button class="vm-filter active" data-vm-filter="all"><span data-i18n="全部">全部</span></button>
+        <button class="vm-filter" data-vm-filter="unheard"><span data-i18n="未听">未听</span></button>
+        <span class="vm-filter-hint" id="vm-filter-hint"></span>
+        <button class="vm-filter-action" id="vm-read-all"><span data-i18n="全部标为已听">全部标为已听</span></button>
+      </div>
+      <div class="call-list" id="call-list" data-phone-panel="calls"></div>
+      <div class="voicemail-list" id="voicemail-list" data-phone-panel="voicemail" hidden></div>
+      <!-- v0.7.3：留言详情抽屉由 UI 动态挂载到这里 -->
+      <div class="vm-overlay" id="vm-overlay" hidden></div>
+    </section>
+
+    <!-- 朋友圈App -->
+    <section id="moments-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="朋友圈">朋友圈</h1>
+        <button class="moments-post-btn" id="moments-post-btn" data-action="post-moment">📷</button>
+      </header>
+      <div class="moments-list" id="moments-list"></div>
+    </section>
+
+    <!-- 来电界面 -->
+    <section id="incoming-call" class="screen overlay-screen">
+      <div class="call-bg" id="call-bg"></div>
+      <div class="call-content">
+        <div class="call-name" id="call-name"></div>
+        <div class="call-label" id="call-label" data-i18n="来电…">来电…</div>
+        <div class="call-actions" id="call-actions">
+          <button class="call-btn decline" data-call="decline"><span data-i18n="挂断">挂断</span></button>
+          <button class="call-btn accept" data-call="accept"><span data-i18n="接听">接听</span></button>
+        </div>
+        <div class="call-timer" id="call-timer" hidden></div>
+        <div class="call-script" id="call-script" hidden></div>
+      </div>
+    </section>
+
+    <!-- 相册App -->
+    <section id="album-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="相册">相册</h1>
+      </header>
+      <div class="album-grid" id="album-grid"></div>
+    </section>
+
+    <!-- 单张照片查看 -->
+    <section id="photo-view" class="screen overlay-screen">
+      <div class="photo-bg" id="photo-bg"></div>
+      <div class="photo-content">
+        <div class="photo-art" id="photo-art"></div>
+        <div class="photo-caption" id="photo-caption"></div>
+      </div>
+      <button class="back-btn photo-close" data-back="album"><span data-i18n="关闭">关闭</span></button>
+    </section>
+
+    <!-- 日历App -->
+    <section id="calendar-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="日历">日历</h1>
+      </header>
+      <div class="cal-current" id="cal-current"></div>
+      <div class="cal-events" id="cal-events"></div>
+    </section>
+
+    <!-- 音乐App -->
+    <section id="music-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="音乐">音乐</h1>
+      </header>
+      <div class="music-nowplaying" id="music-nowplaying">
+        <div class="np-art" id="np-art">♪</div>
+        <div class="np-info">
+          <div class="np-title" id="np-title">未播放</div>
+          <div class="np-artist" id="np-artist">—</div>
+        </div>
+      </div>
+      <div class="music-controls">
+        <button class="mc-btn" id="mc-prev">⏮</button>
+        <button class="mc-btn play" id="mc-play">▶</button>
+        <button class="mc-btn" id="mc-next">⏭</button>
+      </div>
+      <div class="sound-settings">
+        <button class="ss-btn" id="ss-sound" data-i18n="🔊 音效：开">🔊 音效：开</button>
+        <button class="ss-btn" id="ss-bgm" data-i18n="🎵 环境音：关">🎵 环境音：关</button>
+      </div>
+      <div class="music-playlist" id="music-playlist"></div>
+    </section>
+
+    <!-- 备忘录App -->
+    <section id="notes-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="备忘录">备忘录</h1>
+      </header>
+      <div class="notes-list" id="notes-list"></div>
+    </section>
+
+    <!-- 性格画像App -->
+    <section id="profile-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="性格画像">性格画像</h1>
+      </header>
+      <div class="profile-content" id="profile-content"></div>
+    </section>
+
+    <!-- 梦境界面 -->
+    <!-- 出行/地图App -->
+    <section id="map-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="出行">出行</h1>
+      </header>
+      <div class="map-tip" role="note" data-i18n="🚶 出行会推进时间，可能遇见某个人、触发新消息">🚶 出行会推进时间，可能遇见某个人、触发新消息</div>
+      <div class="map-current" id="map-current">
+        <div class="map-current-label" data-i18n="当前位置">当前位置</div>
+        <div class="map-current-name" id="map-current-name">家</div>
+        <div class="map-current-hint" id="map-current-hint" data-i18n="选择要去的地方">选择要去的地方</div>
+      </div>
+      <div class="map-list" id="map-list"></div>
+    </section>
+
+    <!-- 偶遇/回忆剧情屏（复用 overlay 风格） -->
+    <section id="encounter-screen" class="screen overlay-screen">
+      <div class="dream-bg"></div>
+      <div class="dream-content">
+        <div class="dream-title" id="encounter-title"></div>
+        <div class="dream-desc" id="encounter-desc"></div>
+        <div class="dream-options" id="encounter-options"></div>
+        <button class="back-btn" id="encounter-close" data-action="close-encounter" style="position:absolute;top:24px;right:24px;font-size:24px;">✕</button>
+      </div>
+    </section>
+
+    <!-- 群聊列表 -->
+    <section id="groups-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="群聊">群聊</h1>
+      </header>
+      <div class="conv-list" id="group-list"></div>
+    </section>
+
+    <!-- 群聊会话 -->
+    <section id="group-chat-screen" class="screen app-screen">
+      <header class="app-header chat-header">
+        <button class="back-btn" data-back="groups" aria-label="返回">‹</button>
+        <div class="chat-title">
+          <span class="chat-avatar" id="group-chat-avatar" style="background:#3a3a5a"><span data-i18n="群">群</span></span>
+          <div>
+            <div class="chat-name" id="group-chat-name"></div>
+            <div class="chat-status" id="group-chat-members"></div>
+          </div>
+        </div>
+      </header>
+      <div class="chat-body" id="group-chat-body"></div>
+      <div class="chat-input-bar" id="group-chat-input-bar" hidden>
+        <div class="chat-prompt" id="group-chat-prompt"></div>
+        <div class="chat-options" id="group-chat-options"></div>
+      </div>
+    </section>
+
+    <!-- 通讯录/社交主页 -->
+    <section id="contacts-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="通讯录">通讯录</h1>
+      </header>
+      <div class="contacts-list" id="contacts-list"></div>
+    </section>
+
+    <!-- 角色社交主页详情 -->
+    <section id="char-profile-screen" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="contacts" aria-label="返回">‹</button>
+        <h1 data-i18n="主页">主页</h1>
+      </header>
+      <div class="char-profile-body" id="char-profile-body"></div>
+    </section>
+
+    <!-- 礼物商城App -->
+    <section id="shop-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="礼物商城">礼物商城</h1>
+        <div class="shop-coins" id="shop-coins">💰 500</div>
+      </header>
+      <div class="shop-tabs">
+        <button class="shop-tab active" data-shop-tab="store"><span data-i18n="商店">商店</span></button>
+        <button class="shop-tab" data-shop-tab="inventory"><span data-i18n="背包">背包</span></button>
+        <button class="shop-tab" data-shop-tab="gifts"><span data-i18n="已送出">已送出</span></button>
+      </div>
+      <div class="shop-content" id="shop-content"></div>
+    </section>
+
+    <!-- 心情App -->
+    <section id="mood-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="心情">心情</h1>
+      </header>
+      <div class="mood-content" id="mood-content"></div>
+    </section>
+
+    <!-- 塔罗App -->
+    <section id="tarot-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="塔罗占卜">塔罗占卜</h1>
+      </header>
+      <div class="tarot-content" id="tarot-content"></div>
+    </section>
+
+    <!-- 成就App -->
+    <section id="achievements-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="成就">成就</h1>
+      </header>
+      <div class="achievements-content" id="achievements-content"></div>
+    </section>
+
+    <!-- 收集柜App -->
+    <section id="collection-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="收集柜">收集柜</h1>
+        <div class="shop-coins" id="collection-count">0/0</div>
+      </header>
+      <div class="collection-tabs" id="collection-tabs">
+        <button class="collection-tab active" data-coll-cat="all"><span data-i18n="全部">全部</span></button>
+        <button class="collection-tab" data-coll-cat="postcard"><span data-i18n="明信片">明信片</span></button>
+        <button class="collection-tab" data-coll-cat="stamp"><span data-i18n="印章">印章</span></button>
+        <button class="collection-tab" data-coll-cat="evidence"><span data-i18n="证据">证据</span></button>
+        <button class="collection-tab" data-coll-cat="recording"><span data-i18n="录音">录音</span></button>
+        <button class="collection-tab" data-coll-cat="ticket"><span data-i18n="票根">票根</span></button>
+        <button class="collection-tab" data-coll-cat="memento"><span data-i18n="信物">信物</span></button>
+      </div>
+      <div class="collection-content" id="collection-content"></div>
+      <div class="collection-eggs-section">
+        <div class="coll-eggs-title" data-i18n="🌙 隐藏彩蛋">🌙 隐藏彩蛋</div>
+        <div id="collection-eggs"></div>
+      </div>
+    </section>
+
+    <!-- 线索本App -->
+    <section id="puzzles-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="线索本">线索本</h1>
+      </header>
+      <div class="puzzles-content" id="puzzles-content"></div>
+    </section>
+
+    <!-- 谜题详情屏 -->
+    <section id="puzzle-detail-screen" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="puzzles" aria-label="返回">‹</button>
+        <h1 id="puzzle-detail-title" data-i18n="谜题">谜题</h1>
+      </header>
+      <div class="puzzle-detail-content" id="puzzle-detail-content"></div>
+    </section>
+
+    <!-- 节日App -->
+    <section id="calendar2-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="霓城时节">霓城时节</h1>
+      </header>
+      <div class="calendar2-content" id="calendar2-content"></div>
+    </section>
+
+    <!-- 男主视角App -->
+    <section id="perspective-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="男主视角">男主视角</h1>
+      </header>
+      <div class="perspective-content" id="perspective-content"></div>
+    </section>
+
+    <!-- 男主视角场景屏 -->
+    <section id="perspective-scene-screen" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="perspective" aria-label="返回">‹</button>
+        <h1 id="pscene-title" data-i18n="视角">视角</h1>
+      </header>
+      <div class="pscene-content" id="pscene-content"></div>
+    </section>
+
+    <!-- 男主真相结局屏 -->
+    <section id="truth-ending-screen" class="screen overlay-screen">
+      <div class="truth-bg"></div>
+      <div class="truth-content">
+        <div class="truth-title" id="truth-title" data-i18n="真相">真相</div>
+        <div class="truth-text" id="truth-text"></div>
+        <button class="truth-close-btn" data-back="perspective"><span data-i18n="合上这页">合上这页</span></button>
+      </div>
+    </section>
+
+    <!-- 闪回/前传章节屏 -->
+    <section id="flashback-screen" class="screen overlay-screen">
+      <div class="flashback-bg"></div>
+      <div class="flashback-content">
+        <div class="flashback-label" id="flashback-label" data-i18n="闪回">闪回</div>
+        <div class="flashback-title" id="flashback-title"></div>
+        <div class="flashback-scenes" id="flashback-scenes"></div>
+        <div class="flashback-options" id="flashback-options"></div>
+      </div>
+    </section>
+
+    <section id="dream-screen" class="screen overlay-screen">
+      <div class="dream-bg"></div>
+      <div class="dream-content">
+        <div class="dream-title" id="dream-title"></div>
+        <div class="dream-desc" id="dream-desc"></div>
+        <div class="dream-options" id="dream-options"></div>
+      </div>
+    </section>
+
+    <!-- v0.0.13 主角自定义App -->
+    <section id="player-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="主角档案">主角档案</h1>
+        <button class="moments-post-btn" id="player-edit-btn" data-action="edit-player">✎</button>
+      </header>
+      <div class="player-content" id="player-content"></div>
+    </section>
+
+    <!-- 主角编辑/性格问答模态 -->
+    <section id="player-edit-screen" class="screen overlay-screen">
+      <div class="player-edit-content" id="player-edit-content"></div>
+    </section>
+
+    <!-- v0.0.13 关系阶段App -->
+    <section id="relations-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="关系阶段">关系阶段</h1>
+      </header>
+      <div class="relations-content" id="relations-content"></div>
+    </section>
+
+    <!-- v0.0.13 每日任务App -->
+    <section id="tasks-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="今日任务">今日任务</h1>
+        <div class="shop-coins" id="tasks-streak">🔥 0</div>
+      </header>
+      <div class="tasks-content" id="tasks-content"></div>
+    </section>
+
+    <!-- v0.0.13 观赏模式App -->
+    <section id="watch-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="观赏模式">观赏模式</h1>
+      </header>
+      <div class="watch-content" id="watch-content"></div>
+    </section>
+
+    <!-- v0.0.15 好感度深度App -->
+    <section id="affection-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="好感度深度">好感度深度</h1>
+      </header>
+      <div class="affection-content" id="affection-content"></div>
+    </section>
+
+    <!-- v0.0.15 主题App -->
+    <section id="themes-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="主题壁纸">主题壁纸</h1>
+      </header>
+      <div class="themes-content" id="themes-content"></div>
+    </section>
+
+    <!-- v0.0.15 结局图鉴App -->
+    <section id="endings-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="结局图鉴">结局图鉴</h1>
+        <div class="shop-coins" id="endings-counter">0/0</div>
+      </header>
+      <div class="endings-content" id="endings-content"></div>
+    </section>
+
+    <!-- v0.0.15 约会App -->
+    <section id="dates-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="每日约会">每日约会</h1>
+      </header>
+      <div class="dates-content" id="dates-content"></div>
+    </section>
+
+    <!-- v0.0.15 约会对话模态 -->
+    <section id="date-scene-screen" class="screen overlay-screen">
+      <div class="date-scene-content" id="date-scene-content"></div>
+    </section>
+
+    <!-- v0.0.16 梦魇 App -->
+    <section id="dreams-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="梦魇录">梦魇录</h1>
+        <div class="shop-coins" id="dreams-counter">0/0</div>
+      </header>
+      <div class="dreams-content" id="dreams-content"></div>
+    </section>
+
+    <!-- v0.0.16 智能提示设置 App -->
+    <section id="hints-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="智能提示">智能提示</h1>
+      </header>
+      <div class="hints-content" id="hints-content"></div>
+      <!-- v0.3.7 隐私与数据说明入口（PWA / 合规） -->
+      <div class="app-footer-links" style="padding:10px 16px 18px;text-align:center;">
+        <a href="privacy.html" target="_blank" rel="noopener" data-i18n-href="privacy.html|privacy-en.html" style="color:var(--ink-mute);font-size:12px;"><span data-i18n="隐私与数据说明">隐私与数据说明</span></a>
+      </div>
+    </section>
+
+    <!-- v0.0.16 梦魇触发模态 -->
+    <section id="nightmare-screen" class="screen overlay-screen">
+      <div class="nightmare-content" id="nightmare-content"></div>
+    </section>
+
+    <!-- 发朋友圈模态框 -->
+    <section id="post-moment-screen" class="screen overlay-screen">
+      <div class="post-moment-content">
+        <div class="post-moment-header">
+          <button class="back-btn" data-back="moments"><span data-i18n="取消">取消</span></button>
+          <h1 data-i18n="发动态">发动态</h1>
+          <button class="post-moment-publish" id="post-moment-publish" data-action="publish-moment"><span data-i18n="发表">发表</span></button>
+        </div>
+        <textarea class="post-moment-text" id="post-moment-text" placeholder="这一刻的想法…" data-i18n-placeholder="这一刻的想法…" rows="4" maxlength="280"></textarea>
+        <div class="post-moment-art">
+          <span class="pm-art-label" data-i18n="配图：">配图：</span>
+          <button class="pm-art-opt" data-moment-art="city">🌃</button>
+          <button class="pm-art-opt" data-moment-art="rooftop">🌃</button>
+          <button class="pm-art-opt" data-moment-art="">🚫</button>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- v0.1.0 存档 App -->
+    <section id="settings-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home">‹</button>
+        <h1 data-i18n="设置">设置</h1>
+      </header>
+      <div class="settings-body" id="settings-body"></div>
+    </section>
+
+    <section id="saves-app" class="screen app-screen">
+      <header class="app-header">
+        <button class="back-btn" data-back="home" aria-label="返回">‹</button>
+        <h1 data-i18n="存档管理">存档管理</h1>
+        <div class="shop-coins" id="saves-counter">0/4</div>
+      </header>
+      <div class="saves-content" id="saves-content"></div>
+      <input type="file" id="save-import-input" accept="application/json,.json" hidden>
+    </section>
+
+    <!-- 结局 -->
+    <section id="ending-screen" class="screen overlay-screen">
+      <div class="ending-bg" id="ending-bg"></div>
+      <div class="ending-content">
+        <p class="ending-tag" id="ending-tag">END</p>
+        <h2 class="ending-title" id="ending-title"></h2>
+        <img id="ending-cg" class="ending-cg" alt="" hidden>
+        <p class="ending-text" id="ending-text"></p>
+        <button class="menu-btn" data-action="restart"><span data-i18n="重新开始">重新开始</span></button>
+        <button class="menu-btn" id="btn-ngplus" style="margin-top:10px"><span data-i18n="再来一次 · 二周目">再来一次 · 二周目</span></button>
+      </div>
+    </section>
+
+    <!-- 顶部通知 -->
+    <div id="notif-stack" class="notif-stack" role="status" aria-live="polite"></div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+    <!-- 时间推进指示 -->
+    <div id="time-adv" class="time-adv" hidden>
+      <div class="time-adv-content">
+        <div class="time-adv-spinner"></div>
+        <div class="time-adv-text" id="time-adv-text"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="bundle.js?v=0.9.7"></script>
+</body>
+</html>
