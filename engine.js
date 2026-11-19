@@ -664,7 +664,7 @@ class PhoneEngine {
       this.emit('groupUpdate', {id:msg.groupId, group});
       this.emit('groupMessageReceived', {groupId:msg.groupId, from:msg.from, text:msg.text, group});
       if(msg.choice){
-        group.pendingChoice = msg.choice;
+        this._setPendingChoice(group, msg.choice);
         this.emit('choicePrompt', {convId:'group:'+msg.groupId, choice:msg.choice, conv:group});
       }
       if(msg.thenEvent) this._queueEventDispatch(msg.thenEvent, 600);
@@ -690,7 +690,8 @@ class PhoneEngine {
     this.emit('conversationUpdate', {id:msg.from, conv});
     this.emit('messageReceived', {from:msg.from, text:msg.text, conv});
     if(msg.choice){
-      conv.pendingChoice = msg.choice;
+      // v0.9.1：覆盖时先结算被顶掉的选择（补发其 thenEvent），避免主线静默中断
+      this._setPendingChoice(conv, msg.choice);
       this.emit('choicePrompt', {convId:msg.from, choice:msg.choice, conv});
     }
     if(msg.followup){
@@ -698,6 +699,32 @@ class PhoneEngine {
     }
     if(msg.thenEvent) this._queueEventDispatch(msg.thenEvent, 600);
     this.emit('stateChange', this.state);
+  }
+  // v0.9.1：选择覆盖保护。
+  // 旧实现新选择直接覆盖 pendingChoice，被覆盖选择的 thenEvent 永远不会派发，
+  // 主线会静默中断（复现：day3 luci 同时挂「陆辞关心」与「重逢邀约」，先到那条永久丢失，
+  // 导致 dream_day3 → opening_day → route_choice 全线不触发）。
+  // 这里保留「一个会话只显示一个选择」的既有语义，但在覆盖发生时按默认项结算旧选择，
+  // 显式派发它的 thenEvent，保证任何分支都不会凭空消失。
+  _setPendingChoice(target, choice){
+    if(!target || !choice) return null;
+    const superseded = target.pendingChoice || null;
+    target.pendingChoice = choice;
+    if(superseded) this._settleSupersededChoice(superseded);
+    return superseded;
+  }
+  _settleSupersededChoice(choice){
+    if(!choice || !Array.isArray(choice.options) || !choice.options.length) return;
+    const opt = choice.options.find(o=>o && o.default) || choice.options[0];
+    if(!opt) return;
+    const eff = this.normalizeOptionEffects(opt);
+    this._applyEffects(eff);
+    // _applyEffects 不处理 thenEvent，必须显式派发，否则被覆盖的选择仍然断链
+    if(eff.thenEvent){
+      if(typeof this._dispatchSpecialThen === 'function') this._dispatchSpecialThen(eff.thenEvent);
+      else this._queueEventDispatch(eff.thenEvent, 900);
+    }
+    this.emit('choiceSuperseded', {prompt:choice.prompt, picked:opt.text});
   }
   _queueFollowup(convId, message, followup){
     if(!message?.id || !followup?.text) return null;

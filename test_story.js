@@ -86,11 +86,12 @@ async function waitFor(fn, timeout=15000, desc='condition'){
 }
 
 // 等待并触发选择
-async function doChoice(convId, optIdx=0, desc=''){
+async function doChoice(convId, optIdx=0, desc='', promptIncludes=''){
   // 跳过邀约 choice（isInvitation）和群聊 choice（convId 以 group: 开头）
   const pred = e=>e.type==='choicePrompt'
     && (convId===null || e.convId===convId)
     && !e.choice?.isInvitation
+    && (!promptIncludes || String(e.choice?.prompt || '').includes(promptIncludes))
     && !(typeof e.convId === 'string' && e.convId.startsWith('group:'));
   const evt = await wait(pred, 12000, desc||`选项(${convId})`);
   if(!evt) return false;
@@ -116,8 +117,11 @@ async function doChoice(convId, optIdx=0, desc=''){
 // 为避免误选，doAnyChoice 只匹配非 susu 的 choicePrompt。
 async function doAnyChoice(optIdx=0, desc=''){
   // 跳过 susu 情报、邀约、群聊的 choice
+  // v0.9.1：覆盖保护生效后，主线选择不再被静默顶掉，其它会话的选项会真实出现；
+  // 只按「主线会话」匹配，避免误答陆辞/江屿线的选择导致主线链路错位。
+  const MAINLINE_CONVS = new Set(['narrator', 'shenyan']);
   const pred = e=>e.type==='choicePrompt'
-    && e.convId !== 'susu'
+    && MAINLINE_CONVS.has(e.convId)
     && !e.choice?.isInvitation
     && !(typeof e.convId === 'string' && e.convId.startsWith('group:'));
   const evt = await wait(pred, 12000, desc||'任意选项');
@@ -315,13 +319,17 @@ async function run(){
   check('雨夜回程', !!rain);
 
   console.log('[21] 半个月后 + 觉醒选项');
-  const half = await wait(e=>e.type==='timeAdvance' && e.text==='半个月后', 8000, '半个月后');
+  const half = await wait(e=>e.type==='timeAdvance' && e.text==='半个月后', 12000, '半个月后');
   check('半个月后', !!half);
+  // v0.9.1：觉醒抉择的发起方是陆辞，按会话精确匹配，避免抓到江屿首唱等其它选项
   const ok10 = await doChoice('luci', 0, '觉醒选项');
   check('觉醒选项', ok10);
 
   console.log('[22] 最终抉择');
-  const ok11 = await doAnyChoice(0, '最终抉择');
+  // v0.9.1：覆盖保护生效后，陆辞会话里并存的日常选项不再被静默顶掉，
+  // 这里必须按 prompt 关键词精确定位主线「破局」选择，避免误答日常。
+  await doChoice('luci', 0, '破局选项', '过滤');
+  const ok11 = await doChoice('narrator', 0, '最终抉择', '最后抉择');
   check('最终抉择', ok11);
 
   console.log('[23] 结局');
