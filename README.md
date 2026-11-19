@@ -16,7 +16,7 @@
 **在线游玩**（自有服务器，主入口）：https://oh.sbbz.tech:9443/
 备份线（GitHub Pages，push main 自动部署）：https://pixian5.github.io/game1/
 抱脸 Space（Hugging Face，push main 自动部署）：https://xbzsb-neon-heart.static.hf.space/index.html
-镜像仓库：gitee（https://gitee.com/ibjxk/leame.git）· github（https://github.com/pixian5/game1.git）· GitCode（https://gitcode.com/laotongtian/game1.git）
+镜像仓库：github（https://github.com/pixian5/game1.git）· GitCode（https://gitcode.com/laotongtian/game1.git）
 
 本地游玩：直接双击 `index.html`（无构建、无依赖），或：
 
@@ -133,9 +133,8 @@ v0.9.9：**完整账号系统 + 云存档同步**——注册/登录/会话保�
 ## 开发约定
 
 - 这是开发测试版：重构无需考虑旧存档兼容与旧数据，但必须先备份/可回溯
-- 提交信息使用中文；**每轮修改完成后必须四远端成套推送**（atomgit / gitcode / gitee / github）：
-  用 `bash push_all.sh`（自动全推并校验一致），AtomGit 单独推。
-  **不要用裸 `git push`**——历史上曾因只推单个远端导致 gitee 落后 29 个提交
+- 提交信息使用中文；**仓库当前未配置任何远端**，推送目标由当轮用户指定。
+  需要推送时用 `bash push_all.sh` 遍历当前已配置远端并校验一致性，不要只推单个远端而漏掉其它已配置远端。
 - 每次修改后必须跑通 `npm run test:all` 才能停下
 - 新增剧情数据 → 写进 `story/` 对应板块文件（不要在 `18_patches.js` 叠补丁），先跑 `npm run validate:story`
 - 新增源码文件 → `story/`、`engine_*.js` 会被测试清单自动包含；`ui/`、`audio.js`、`pwa.js` 需手动加入 `index.html` 与 `sw.js` 的 PRECACHE

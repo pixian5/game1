@@ -10,7 +10,7 @@
 | 项目 | 状态 |
 |---|---|
 | origin（GitHub） | ✅ `4074b4c`（v0.7.8） |
-| gitee | ✅ `4074b4c` |
+| 某远端 | ✅ `4074b4c` |
 | gitcode | ✅ `4074b4c` |
 | GitHub Pages | ✅ v0.7.8 |
 | 自有服务器（oh.sbbz.tech:9443） | ✅ v0.7.8 |
@@ -106,7 +106,7 @@ done
 - ✅ 部署功能完全正常（三条线实测 success，线上均 v0.7.8）
 - ✅ 唯一代价是 CI 每次多跑一遍依赖安装
 
-> gitee / gitcode 同步重写为同一历史（`--force-with-lease`，预期值 `2b2c344`），保证三端 commit 完全一致，避免后续会话 fetch 困惑。
+> 某远端 / gitcode 同步重写为同一历史（`--force-with-lease`，预期值 `2b2c344`），保证三端 commit 完全一致，避免后续会话 fetch 困惑。
 
 ---
 
@@ -158,5 +158,5 @@ bash push_all.sh
 | 5 | 用户提供 fine-grained token | 无写权限（3 项探测全 403） |
 | 6 | 剥离 workflow 重写历史 | ✅ 新历史 `4074b4c`，内容逐字节一致 |
 | 7 | push origin（快进） | ✅ 第 4 次重试成功 |
-| 8 | force-with-lease 推 gitee/gitcode | ✅ 两端 `+ 2b2c344...4074b4c (forced update)` |
+| 8 | force-with-lease 推 某远端/gitcode | ✅ 两端 `+ 2b2c344...4074b4c (forced update)` |
 | 9 | 轮询三线 | ✅ Pages / 服务器 / HF 全部 v0.7.8 |

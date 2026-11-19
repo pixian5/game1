@@ -11,12 +11,12 @@
 > 只看名为 `origin` 的 remote（或它内置已知的），且该 remote 的域名必须是 `github.com`。
 
 本仓库的 `origin` 历史上**指向过 `gitcode.com`**，后来远端被整理成按平台命名的
-`gitcode` / `gitee` / `github` 三个，`origin` 名不再存在。排查时的实际状态：
+`gitcode` / `某远端` / `github` 三个，`origin` 名不再存在。排查时的实际状态：
 
 ```bash
 $ git remote -v
 gitcode  https://gitcode.com/laotongtian/game1.git
-gitee    https://gitee.com/ibjxk/leame.git
+某远端    （远端已移除）
 github   https://github.com/pixian5/game1.git
 $ git rev-parse --abbrev-ref main@{upstream}
 fatal: no upstream configured for branch 'main'
@@ -37,13 +37,13 @@ git branch --set-upstream-to=origin/main main
 ```
 
 结果：`origin` → `https://github.com/pixian5/game1.git`，`main` 跟踪 `origin/main`，
-`gitee` / `gitcode` 保留（其他机器的推送习惯不变）。
+`某远端` / `gitcode` 保留（其他机器的推送习惯不变）。
 
 ## 四、合并与补推
 
-修复时发现 **gitee / gitcode 已到 v0.7.4（4 个提交领先），GitHub 仍停在 b57c5f6**：
+修复时发现 **某远端 / gitcode 已到 v0.7.4（4 个提交领先），GitHub 仍停在 b57c5f6**：
 
-- `git merge --ff-only gitee/main` → 快进 b57c5f6..d93ad51，0 冲突
+- `git merge --ff-only 某远端/main` → 快进 b57c5f6..d93ad51，0 冲突
 - `npm run test:all` → 全绿（57 回归 / 294 剧情 / 16 E2E，覆盖率红线通过）
 - `git push origin main` → GitHub 同步到 v0.7.4
 - 三远端最终均为 `0 0`；GitHub Actions「测试」「部署到 GitHub Pages」
@@ -59,7 +59,7 @@ git branch --set-upstream-to=origin/main main
    git remote get-url origin        # 必须是 https://github.com/...
    git rev-parse --abbrev-ref main@{upstream}   # 必须是 origin/main
    ```
-2. **多远端仓库要先给 GitHub 一个 `origin` 名字**。推送用 `gitee` / `gitcode` 没问题，
+2. **多远端仓库要先给 GitHub 一个 `origin` 名字**。推送用 `某远端` / `gitcode` 没问题，
    但云端执行、CI 模板、IDE 的仓库识别都按 `origin` 找；命名不统一会在换工具时踩坑。
 3. **云端识别仓库后仍可能要求授权**：仓库是 PUBLIC，但云端执行通常还要在 IDE 里
    走一次 GitHub 授权（OAuth / App 安装）。若修完 `origin` 仍提示未关联，先检查这一步，

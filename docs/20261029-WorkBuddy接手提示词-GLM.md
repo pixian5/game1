@@ -8,14 +8,12 @@
 
 ```bash
 git clone https://github.com/pixian5/game1.git game1 && cd game1
-# 如 github 拉不动，用 gitee： git clone https://gitee.com/ibjxk/leame.git game1
 # gitcode 也可：git clone https://gitcode.com/laotongtian/game1.git game1
 # 或 gitcode：        git clone https://gitcode.com/laotongtian/game1.git game1
 ```
 
 无需任何令牌即可克隆（公开仓库）。推送凭据：
 - **gitcode：无需凭据**（实测匿名即可推送——注意这也是安全隐患，见文末安全提醒）
-- **gitee**：remote url 写成 `https://ibjxk:***REMOVED***@gitee.com/ibjxk/leame.git`
 - **github**：需要用户已 `gh auth login`，否则跳过 github 只推另外两个
 
 ## 2. 仓库结构速览
@@ -40,7 +38,7 @@ npm run test:all
 #        lint / 回归51 / 剧情294(0.13s) / E2E 13 / 覆盖率红线60%
 # ③ 提交 + 三远端成套推送（严禁裸 git push——本项目无 origin，会漏推）
 git add -A && git commit -m "v0.7.x：中文描述"
-bash push_all.sh          # 推 gitee/github/gitcode 并校验三者一致
+bash push_all.sh          # 推 某远端/github/gitcode 并校验三者一致
 # ④ 部署（如服务器可达）
 bash deploy.sh
 ```
@@ -100,4 +98,4 @@ bash deploy.sh
 - **gitcode 仓库 laotongtian/game1 实测匿名可推送**（2026-10-29 用 probe 提交验证并已恢复）。
   建议用户登录 gitcode → 项目设置 → 仓库权限，改为「仅成员可写」。
 - 服务器 SSH 私钥 game1_deploy 如泄露，需在服务器 authorized_keys 中删除对应公钥并重新生成。
-- gitee 令牌泄露时在 gitee 设置 → 私人令牌中撤销重建。
+- 某远端 令牌泄露时在 某远端 设置 → 私人令牌中撤销重建。
