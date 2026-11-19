@@ -16,6 +16,7 @@
 **在线游玩**（自有服务器，主入口）：https://oh.sbbz.tech:9443/
 备份线（GitHub Pages，push main 自动部署）：https://pixian5.github.io/game1/
 抱脸 Space（Hugging Face，push main 自动部署）：https://xbzsb-neon-heart.static.hf.space/index.html
+Instabox 沙箱（含账号 API，2026-11-20 部署）：https://9090-agqxoy6u363jxgfufg2onqxbm4.instabox.tech
 镜像仓库：github（https://github.com/pixian5/game1.git）· GitCode（https://gitcode.com/laotongtian/game1.git）
 
 本地游玩：直接双击 `index.html`（无构建、无依赖），或：
