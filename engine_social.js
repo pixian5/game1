@@ -95,10 +95,20 @@ Object.assign(PhoneEngine.prototype, {
     this._removeInteraction(item=>item.type === 'route_choice');
     this.state.flags.route = route;
     this.collectItem('stamp_route');
+    // v0.9.7：补发选线前已经错过窗口的路线事件（否则 day7 选线会丢掉当天白天全部内容）
+    this._flushPendingRouteEvents();
     // 进入路线后，未处理的邀约自动判定为 missed
     this.missPendingInvitations();
     const opt = this.story.routeChoice.options.find(o=>o.route===route);
-    if(opt && opt.thenEvent) this.scheduleEvent(opt.thenEvent);
+    if(opt && opt.thenEvent){
+      const gate = Number(this.story.finaleGate);
+      // v0.9.7（D2-A′，默认关闭）：门槛未到就挂起，到日子由 checkTimeEvents 放行
+      if(Number.isFinite(gate) && gate > this.state.day){
+        this.state.pendingFinale = {eventId: opt.thenEvent, day: gate};
+      } else {
+        this.scheduleEvent(opt.thenEvent);
+      }
+    }
     this.emit('stateChange', this.state);
     return true;
   },

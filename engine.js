@@ -5,6 +5,9 @@
  * - 并发会话：多个男主同时发消息，已读不回会有后果
  * - 玩家自主：不强制顺序，何时回消息、接不接电话都由玩家决定
  */
+// v0.9.7：选线后补发路线事件的间隔（避免 23:00 一次性涌入多条）
+const ROUTE_BACKFILL_GAP_MS = 1500;
+
 class PhoneEngine {
   constructor(story){
     this.story = story;
@@ -79,6 +82,55 @@ class PhoneEngine {
     const ids = list.splice(0, list.length);
     ids.forEach(id=>{ if(id && !this.state.firedEvents[id]) this.scheduleEvent(id); });
   }
+  // v0.9.7（D2-A′ 原型）：finaleGate 生效时，把最终抉择压到指定游戏日再排程。
+  // 默认 gate=null → 行为与 v0.9.6 完全一致。
+  _releasePendingFinale(){
+    const p = this.state.pendingFinale;
+    if(!p || !p.eventId) return false;
+    if(this.state.ended) return false;
+    if(this.state.day < (p.day || 0)) return false;
+    this.state.pendingFinale = null;
+    this.scheduleEvent(p.eventId);
+    this.emit('stateChange', this.state);
+    return true;
+  }
+  // v0.9.7：选线前命中的路线事件先入队，chooseRoute 后补发——否则按玩家节奏（选线夜 day6/day7）
+  // 会静默丢掉整条线的当日事件（实测沈线 6 条全压在 day7 白天，慢节奏玩家 0/6）。
+  _queuePendingRouteEvent(id, evt){
+    if(this.state.ended || this.state.route) return;
+    const trg = evt && evt.trigger;
+    if(!trg || typeof trg.day !== 'number' || typeof trg.hour !== 'number') return;
+    const now = this.getTime();
+    // 只挂起已经过去/正在进行的窗口；未来窗口交给正常调度，避免提前触发
+    if(trg.day > now.day || (trg.day === now.day && trg.hour > now.hour)) return;
+    const list = this.state.pendingRouteEvents || (this.state.pendingRouteEvents = []);
+    if(this.state.firedEvents[id] || list.some(x => x && x.id === id)) return;
+    list.push({id, day:trg.day, hour:trg.hour});
+  }
+  // v0.9.7：选线后补发当前路线已过窗口的事件（错峰、去重、未来窗口不补）
+  _flushPendingRouteEvents(){
+    const list = this.state.pendingRouteEvents || [];
+    if(!list.length) return 0;
+    this.state.pendingRouteEvents = [];
+    if(!this.state.route || this.state.ended) return 0;
+    const now = this.getTime();
+    const due = [];
+    for(const item of list){
+      if(!item || !item.id) continue;
+      const evt = this.story.events[item.id] || (this.story.criticalEvents && this.story.criticalEvents[item.id]);
+      if(!evt || !evt.trigger) continue;
+      if(evt.trigger.route !== this.state.route) continue;   // 别的线：静默丢弃
+      if(this.state.firedEvents[item.id] || this._scheduledEvents.has(item.id)) continue;   // 去重
+      if(item.day > now.day || (item.day === now.day && item.hour > now.hour)) continue;    // 未来窗口不补
+      due.push(item);
+    }
+    due.sort((a, b) => (a.day - b.day) || (a.hour - b.hour));
+    due.forEach((item, i) => {
+      this._setTimeout(() => this.scheduleEvent(item.id), i * ROUTE_BACKFILL_GAP_MS);
+    });
+    if(due.length) this.emit('stateChange', this.state);
+    return due.length;
+  }
   getPendingInteractions(){
     return InteractionQueue.all(this.state);
   }
@@ -131,6 +183,10 @@ class PhoneEngine {
       pendingCalls: [],
       // v0.9.5：主线链忙碌时被延后的时间事件
       deferredEventIds: [],
+      // v0.9.7：选线前命中的路线事件暂存，选线后按序补发（避免按玩家节奏随机丢内容）
+      pendingRouteEvents: [],
+      // v0.9.7（D2-A′，默认关闭）：被日期门槛拦下的最终抉择
+      pendingFinale: null,
       // 已显示但尚未完成的交互，读档后由 UI 按该状态重建。
       pendingInteractions: [],
       pendingInteraction: null,
@@ -490,10 +546,15 @@ class PhoneEngine {
     const inRoute = !!this.state.route && this.state.route !== 'solo';
     for(const [id, evt] of Object.entries(events)){
       if(this.state.firedEvents[id]) continue;
+      if(evt.legacy) continue;   // v0.9.7（D2）：同上
       if(!evt.trigger) continue;
       if(evt.trigger.soloOnly && inRoute) continue;
       if(evt.trigger.inRoute && !inRoute) continue;   // v0.3.1: 男主线专属中后期日常（仅已进男主线时触发）
-      if(evt.trigger.route && evt.trigger.route !== this.state.route) continue;   // v0.9.2: 按具体路线过滤
+      if(evt.trigger.route && evt.trigger.route !== this.state.route){   // v0.9.2: 按具体路线过滤
+        // v0.9.7：跨小时补扫时同样先挂起，避免选线前的窗口被永久丢弃
+        if(!this.state.route) this._queuePendingRouteEvent(id, evt);
+        continue;
+      }
       // 简化：仅检查从起点到终点之间的所有 hour
       let d = fromDay, h = fromHour;
       while(d < toDay || (d === toDay && h <= toHour)){
@@ -527,6 +588,7 @@ class PhoneEngine {
     // 优先查 events，fallback 查 criticalEvents（v0.0.13 临界事件单独定义在 STORY.criticalEvents）
     const evt = this.story.events[eventId] || this.story.criticalEvents?.[eventId];
     if(!evt) return;
+    if(evt.legacy) return;   // v0.9.7（D2）：legacy 内容永不调度
     // 标记已触发（避免重复）
     if(this.state.firedEvents[eventId] || this._scheduledEvents.has(eventId)) return;
     this._scheduledEvents.add(eventId);
@@ -604,6 +666,7 @@ class PhoneEngine {
   }
 
   checkTimeEvents(){
+    this._releasePendingFinale();   // v0.9.7（D2-A′）：到日子了再放行最终抉择
     // 检查基于时间触发的事件
     const t = this.getTime();
     const d = this.state.day;
@@ -611,12 +674,17 @@ class PhoneEngine {
     const inRoute = !!this.state.route && this.state.route !== 'solo';
     for(const [id, evt] of Object.entries(this.story.events)){
       if(this.state.firedEvents[id]) continue;
+      if(evt.legacy) continue;   // v0.9.7（D2）：结局日之后的内容，结构性不可达，不参与调度
       if(evt.trigger && evt.trigger.day === d && evt.trigger.hour === t.hour){
         // trigger.soloOnly 的通用日常事件（day7-10 中后期日常、雨天等）只在未确定男主线时派发，
         // 否则会侵入男主线结局段（曾导致 week1_review 的 choice 抢走最终抉择，测试 294→291 失败）
         if(evt.trigger.soloOnly && inRoute) continue;
         if(evt.trigger.inRoute && !inRoute) continue;   // v0.3.1: 男主线专属中后期日常
-        if(evt.trigger.route && evt.trigger.route !== this.state.route) continue;   // v0.9.2: 按具体路线过滤
+        if(evt.trigger.route && evt.trigger.route !== this.state.route){   // v0.9.2: 按具体路线过滤
+          // v0.9.7：尚未选线时不要直接丢弃，先挂起，chooseRoute 后补发
+          if(!this.state.route) this._queuePendingRouteEvent(id, evt);
+          continue;
+        }
         // v0.9.5：主线链进行中，日常时间事件延后派发，避免抢占主线 choice
         if(evt.deferWhenBusy && this._mainChainBusy() && !['ending','route_choice'].includes(evt.type)){
           if(!this.state.deferredEventIds.includes(id)){

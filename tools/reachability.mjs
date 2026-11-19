@@ -28,10 +28,14 @@ for (const route of ['shenyan', 'luci', 'jiangyu', 'solo']) {
   results[route] = await page.evaluate(async ({ route, ids }) => {
     const e = window.__neonTest.engine;
     const sleep = ms => new Promise(r => setTimeout(r, ms));
-    e.state.route = route;
+    // v0.9.7：这里曾直接写 e.state.route = route，等于替玩家在 day1 就“提前选线”，
+    // 把「选线前命中却被丢弃」整类缺陷抹平（D1 因此长期 3/3 假阳性）。
+    // 现在改成真实时序：先把钟拨到选线夜，再走 chooseRoute。
+    e.state.day = 6; e.state.minute = 23 * 60;
+    const chosen = e.chooseRoute(route);
     const seen = new Set();
-    for (let day = 7; day <= 9; day++) {
-      for (let hour = 6; hour <= 23; hour++) {
+    for (let day = 6; day <= 9; day++) {
+      for (let hour = 0; hour <= 23; hour++) {
         e.state.day = day;
         e.state.minute = hour * 60;
         e.advanceTime(1);
@@ -39,7 +43,7 @@ for (const route of ['shenyan', 'luci', 'jiangyu', 'solo']) {
         Object.keys(e.state.firedEvents).forEach(k => { if (ids.includes(k)) seen.add(k); });
       }
     }
-    return { fired: [...seen].sort() };
+    return { chosen, fired: [...seen].sort() };
   }, { route, ids: NEW_IDS });
   await page.close();
 }

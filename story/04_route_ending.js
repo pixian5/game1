@@ -50,6 +50,11 @@ STORY.trueEndingUnlockCondition = s => {
   return unlocked >= Math.ceil(total * 0.6) && s.route === 'solo';
 };
 
+// v0.9.7（D2-A′ 原型，默认关闭）：结局链日期门槛。
+// null = 现状（一选线就排最终抉择）；设为 9/11/15 时，最终抉择延后到该日再排程。
+// 打开前请先看 docs 里 3.5/3.6 的供片曲线：day8 起只有 1–2 条/天，门槛放太早没有意义。
+STORY.finaleGate = null;
+
 // 结局判定函数：根据多维 flag 聚合计算实际 endingId
 STORY.computeEnding = function(state, route){
   if(!route) return null;  // 未进入任何路线
@@ -66,8 +71,9 @@ STORY.computeEnding = function(state, route){
   if(!endingChoice) return null;
   const [choiceKey, goodChoice, badChoice] = endingChoice;
   const hiddenRequired = {shenyan:'memento_pen',luci:'evidence_letter',jiangyu:'evidence_lyrics'}[route];
-  // v0.1.8: 数值闭环——选了好结局分支且该线好感 ≥15，也能解锁隐藏结局（与隐藏收集品二选一，只增不拦）
-  if(flags['_' + route + '_hidden'] || (flags[choiceKey] === goodChoice && ((state.collected||[]).includes(hiddenRequired) || (state.affection?.[route] || 0) >= 15))) return route + '_hidden';
+  // v0.1.8: 数值闭环——选了好结局分支且该线好感达标，也能解锁隐藏结局（与隐藏收集品二选一，只增不拦）
+  // v0.9.7: 阈值 15 → 19。实测 good 玩法沈 17 / 陆 18，旧阈值下三局两 HIDDEN，隐藏结局被数值淹没。
+  if(flags['_' + route + '_hidden'] || (flags[choiceKey] === goodChoice && ((state.collected||[]).includes(hiddenRequired) || (state.affection?.[route] || 0) >= 19))) return route + '_hidden';
   const positives = {shenyan:['shenyan_resist','shenyan_awaken'],luci:['luci_confess','luci_stop','luci_chase'],jiangyu:['jiangyu_hold','jiangyu_stand']}[route];
   const negatives = {shenyan:['shenyan_obey','shenyan_deny'],luci:['luci_avoid','luci_letgo','luci_giveup'],jiangyu:['jiangyu_leave','jiangyu_silent']}[route];
   const goodCount = positives.filter(key=>flags[key]).length;

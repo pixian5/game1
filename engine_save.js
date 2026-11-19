@@ -197,6 +197,26 @@ Object.assign(PhoneEngine.prototype, {
     out.minute = asInt(source.minute, def.minute, 0, 1439);
     out.ended = asBool(source.ended);
     out.route = ['shenyan','luci','jiangyu','solo'].includes(source.route) ? source.route : null;
+    // v0.9.7（D2-A′）：被日期门槛拦下的最终抉择要能跨刷新存活
+    {
+      const finale = object(source.pendingFinale);
+      const finaleId = safeEventId(finale.eventId);
+      out.pendingFinale = finaleId ? {eventId: finaleId, day: asInt(finale.day, 0, 1, 999)} : null;
+    }
+    // v0.9.7：主线忙时延后的事件也必须随档恢复——旧实现只读不存，刷新一次延后队列就全丢，
+    // 与 D1 同族：内容在内存里排好了，却因为存档白名单没带它而永久消失。
+    out.deferredEventIds = idList(source.deferredEventIds, eventIds, 100);
+    // v0.9.7：选线前挂起的路线事件必须随档恢复，否则刷新一次就永久丢掉整段线内剧情
+    out.pendingRouteEvents = Array.isArray(source.pendingRouteEvents)
+      ? source.pendingRouteEvents.slice(0, 50).map(item => {
+          const row = object(item);
+          const id = safeEventId(row.id);
+          if(!id) return null;
+          const trg = (this.story.events[id] || (this.story.criticalEvents && this.story.criticalEvents[id]) || {}).trigger;
+          if(!trg || !trg.route) return null;
+          return {id, day:asInt(row.day, trg.day, 1, 999), hour:asInt(row.hour, trg.hour, 0, 23)};
+        }).filter(Boolean)
+      : [];
     out.currentLocation = this.story.locations?.[source.currentLocation] ? source.currentLocation : def.currentLocation;
     out.coins = asInt(source.coins, def.coins, 0, 1000000);
     out.lastTarotDay = asInt(source.lastTarotDay, 0, 0, 9999);

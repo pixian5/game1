@@ -288,7 +288,7 @@ test('v2 单例交互存档会迁移为 v3 队列', ()=>{
     }
   };
   const migrated = SaveMigrations.migrate(legacy);
-  assert.equal(migrated.v, 3);
+  assert.equal(migrated.v, SaveMigrations.CURRENT_VERSION);   // v0.9.7：随版本号走，避免每次升级改测试
   assert.equal(migrated.state.pendingInteractions.length, 1);
   assert.equal(migrated.state.pendingInteractions[0].eventId, routeEventId);
   assert.equal(e.importSave(legacy, 'slot1').ok, true);
