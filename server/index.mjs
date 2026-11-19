@@ -59,7 +59,12 @@ function sendError(res, status, text){
 }
 
 function serveStatic(req, res, url){
-  let rel = decodeURIComponent(url.pathname);
+  // 解码可能抛 URIError（例如请求 /%）：不捕获的话异常会穿透 http 回调
+  // 变成 uncaughtException 直接杀死整个服务进程
+  // （已实测：curl /% 一个请求就能让服务崩溃，属于远程拒绝服务漏洞）
+  let rel;
+  try { rel = decodeURIComponent(url.pathname); }
+  catch(_){ return sendError(res, 400, 'Bad request'); }
   if(rel === '/' || rel === '') rel = '/index.html';
   const cleanRel = rel.replace(/^\/+/, '');
   const first = cleanRel.split('/')[0].toLowerCase();
@@ -131,4 +136,13 @@ function shutdown(sig){
   setTimeout(() => process.exit(0), 3000).unref();
 }
 process.on('SIGINT', () => shutdown('SIGINT'));
+// 最后一道防线：任何漏网的未捕获异常只记录不退出。
+// 账号服务挂掉的代价是所有用户登录态不可用，比带着异常继续跑更糟；
+// 精确的解码等缺陷已在各自的 try/catch 里处理，这里只兜真正的意外。
+process.on('uncaughtException', (err) => {
+  log('UNCAUGHT', err && err.stack ? err.stack : err);
+});
+process.on('unhandledRejection', (err) => {
+  log('UNHANDLED_REJECTION', err && err.stack ? err.stack : err);
+});
 process.on('SIGTERM', () => shutdown('SIGTERM'));

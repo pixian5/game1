@@ -402,7 +402,10 @@ export async function handleApi(req, res, url, store, appVersion){
     }
 
     if(method === 'DELETE' && path.startsWith('/api/account/sessions/')){
-      const id = decodeURIComponent(path.slice('/api/account/sessions/'.length));
+      // 解码失败（如 /api/account/sessions/%）按 400 处理，交给 handleApi 的兜底前先给准确语义
+      let id;
+      try { id = decodeURIComponent(path.slice('/api/account/sessions/'.length)); }
+      catch(_){ throw new ApiError(400, 'invalid_session', '会话不存在'); }
       if(!id) throw new ApiError(400, 'invalid_session', '会话不存在');
       const own = store.sessionsByUser(ctx.user.id).find(s => s.id === id);
       if(!own) throw new ApiError(404, 'invalid_session', '会话不存在');

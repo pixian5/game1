@@ -149,6 +149,17 @@ try {
   eq('server 源码被隐藏', (await fetch(BASE + '/server/api.mjs')).status, 404);
   eq('docs 目录被隐藏', (await fetch(BASE + '/docs/')).status, 404);
 
+  console.log('== 畸形 URL 不崩服务（v0.9.10 回归）==');
+  // 历史缺陷：/% 这类非法百分号编码会让 decodeURIComponent 抛 URIError，
+  // 穿透 http 回调直接杀死进程。修复后必须返回 400 且服务存活。
+  const bad1 = await fetch(BASE + '/%');
+  eq('畸形编码返回 400', bad1.status, 400);
+  const bad2 = await fetch(BASE + '/static/%E0%A4%A');
+  ok('半截编码也被拦（400 或 404，不能 5xx）', [400, 404].includes(bad2.status));
+  await new Promise(r => setTimeout(r, 200));
+  const alive = await call('/api/health');
+  eq('畸形请求后服务仍存活', alive.status, 200);
+
   console.log('== 账号锁定 ==');
   for(let i = 0; i < 5; i++) await call('/api/auth/login', { method: 'POST', body: { username: 'carol', password: 'wrong1234' } });
   const locked = await call('/api/auth/login', { method: 'POST', body: { username: 'carol', password: 'wrong1234' } });
