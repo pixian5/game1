@@ -82,3 +82,4 @@ id_ed25519*
 credentials*.json
 .env.secret
 docs/deploy-handoff-prompt.md
+docs/deploy-handoff-instabox.md
