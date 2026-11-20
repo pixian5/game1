@@ -17,7 +17,6 @@
 备份线（GitHub Pages，push main 自动部署）：https://pixian5.github.io/game1/
 抱脸 Space（Hugging Face，push main 自动部署）：https://xbzsb-neon-heart.static.hf.space/index.html
 Instabox 持久入口（主，含账号 API）：https://8081-agqxoy6u363jxgfufg2onqxbm4.instabox.tech
-Instabox 兼容入口（同一数据库）：https://9090-agqxoy6u363jxgfufg2onqxbm4.instabox.tech
 镜像仓库：github（https://github.com/pixian5/game1.git）· GitCode（https://gitcode.com/laotongtian/game1.git）
 
 本地游玩：直接双击 `index.html`（无构建、无依赖），或：
