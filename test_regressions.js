@@ -1207,4 +1207,39 @@ test('v0.7.8: localizeDateLabel——中文快照显示层重拼（en/zh）', ()
   assert.equal(localize('7月15日 星期三'), '7月15日 星期三', '中文模式恒等');
 });
 
+test('v0.9.1: 选择被覆盖时补发 thenEvent（主线不再静默中断）', ()=>{
+  const e = engine();
+  const conv = e.state.conversations.luci;
+  const firstChoice = {
+    prompt:'陆辞的话里似乎有别的意思。',
+    options:[{text:'你说"离他远点"是什么意思？', effects:{affection:{luci:2}, thenEvent:'luci_care_reply_1'}}]
+  };
+  const secondChoice = {prompt:'陆辞约你晚上吃饭。', options:[{text:'好啊', effects:{}}]};
+
+  // 第一个选择挂起
+  e._setPendingChoice(conv, firstChoice);
+  assert.equal(conv.pendingChoice.prompt, firstChoice.prompt, '第一个选择应挂起');
+
+  const superseded = [];
+  e.on('choiceSuperseded', p => superseded.push(p));
+  // 第二个选择到达（旧实现会静默丢弃第一个选择的 thenEvent）
+  e._setPendingChoice(conv, secondChoice);
+
+  assert.equal(superseded.length, 1, '被覆盖的选择应被记录一次');
+  assert.equal(superseded[0].prompt, firstChoice.prompt);
+  // thenEvent 走调度队列（延迟派发），断言已进入待派发队列即可证明不会丢
+  const queuedIds = e.state.pendingEventDispatches.map(p => p.eventId);
+  assert.ok(queuedIds.includes('luci_care_reply_1'), '被覆盖选择的 thenEvent 必须进入调度队列，否则主线断链');
+  assert.equal(conv.pendingChoice.prompt, secondChoice.prompt, '新选择仍应正常挂起');
+  assert.equal(e.state.affection.luci, 2, '被覆盖选择的默认选项效果也应结算');
+});
+
+test('v0.9.1: 图鉴结局名与实际结局标题一致', ()=>{
+  Object.entries(STORY.endingGallery || {}).forEach(([id, g])=>{
+    const title = STORY.endings?.[id]?.title;
+    if(!title) return;
+    assert.equal(g.name, title, `结局 ${id} 的图鉴名须与结局标题一致`);
+  });
+});
+
 console.log('全部回归测试通过');

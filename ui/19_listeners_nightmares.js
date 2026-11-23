@@ -101,6 +101,9 @@
   }
 
   function restorePendingUi(){
+    // v0.9.1：弹窗改挂 #phone 顶层后，锁屏期间恢复会盖住解锁界面（弹窗 z-index 高于锁屏）。
+    // 锁屏阶段先不恢复，解锁时再调用一次即可正常弹出。
+    if(document.getElementById('lock-screen')?.classList.contains('active')) return false;
     const activeNightmareId = engine.state.activeNightmare;
     if(activeNightmareId && STORY.nightmares?.[activeNightmareId]){
       openNightmareScreen(STORY.nightmares[activeNightmareId]);

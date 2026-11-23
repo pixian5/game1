@@ -91,26 +91,31 @@
   function showRouteChoiceModal(routeChoice){
     // 先回主屏
     showScreen('home');
-    const home = $('home-screen');
+    // v0.9.1：弹窗挂到 #phone 顶层而不是 #home-screen。
+    // 旧实现挂 home-screen，玩家停留在其它 App 时 showScreen 被后续操作覆盖，
+    // 弹窗虽然创建成功但 offsetParent 为 null，自动化点击超时、真实玩家也可能看不到。
+    const host = $('phone') || $('home-screen');
     let modal = document.getElementById('route-choice-modal');
     if(modal) modal.remove();
     modal = document.createElement('div');
     modal.id = 'route-choice-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
     modal.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);z-index:160;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:32px;animation:screenIn .4s ease;';
     modal.innerHTML = `
       <div style="font-family:var(--serif);font-size:17px;color:var(--ink-dim);margin-bottom:24px;text-align:center;line-height:1.9;letter-spacing:0.05em;">
-        ${escapeHtml(routeChoice.prompt)}
+        ${escapeHtml(window.t(routeChoice.prompt))}
       </div>
       <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:280px;">
         ${routeChoice.options.map((opt)=>`
           <button class="chat-opt" data-route="${opt.route}" style="padding:14px;">
-            ${escapeHtml(opt.text)}
-            <span style="color:var(--ink-mute);font-size:11px;display:block;margin-top:4px;">${escapeHtml(opt.hint)}</span>
+            ${escapeHtml(window.t(opt.text))}
+            <span style="color:var(--ink-mute);font-size:11px;display:block;margin-top:4px;">${escapeHtml(window.t(opt.hint))}</span>
           </button>
         `).join('')}
       </div>
     `;
-    home.appendChild(modal);
+    host.appendChild(modal);
   }
 
   function handleRouteChoice(route){
