@@ -40,6 +40,10 @@ const clock = globalThis.FakeClock.create();
 globalThis.Clock = clock.api;
 globalThis.setTimeout = clock.setTimeout;
 globalThis.clearTimeout = clock.clearTimeout;
+// 邀约超时（120 秒）、来电未接（25 秒）等判定用的是 Date.now() 真实墙上时间。
+// 整个模拟只跑零点几秒真实时间，不接管的话邀约在模拟里永远不会超时，与真实游玩不符。
+// 这里让 Date.now() 跟随虚拟时钟；Date 构造器不动，不影响「现实日期」类的判断。
+Date.now = clock.Date.now;
 
 // 最小 localStorage 桩：引擎构造时会读写存档索引
 const mem = new Map();
@@ -59,7 +63,7 @@ for (const f of ['engine_domains.js', 'interaction_queue.js', 'save_migrations.j
 const { STORY } = await import(path.join(ROOT, 'story/index.mjs'));
 
 const ALL_ROUTES = ['shenyan', 'luci', 'jiangyu', 'solo'];
-const MAX_DAY = 21;            // 超过这天还没结局就视为「卡住」
+let MAX_DAY = 21;               // 超过这天还没结局就视为「卡住」；可用 --max-day=N 放宽（做长剧情实验时用）
 const IDLE_SECONDS = 6;        // 连续多少秒没动静算玩家空闲
 const MAX_STEPS = 80000;       // 防死循环
 
@@ -70,8 +74,12 @@ function arg(name, fallback){
   return idx >= 0 && process.argv[idx + 1] && !process.argv[idx + 1].startsWith('--') ? process.argv[idx + 1] : fallback;
 }
 
-/* 给消息投递加探测：对比投递前后目标会话的 pendingChoice，变化且旧值非空即为覆盖 */
-function instrument(e, sink){
+/* 给消息投递加探测：对比投递前后目标会话的 pendingChoice。
+ * 「当前选择换了人」分两种情况，必须区别对待：
+ *   - 旧选择仍在队列里（邀约给普通选择让位，v0.9.11 的设计行为）→ 没有丢，单独计数
+ *   - 旧选择既不是当前选择、也不在队列里 → 静默丢失，这才是要拦截的缺陷
+ */
+function instrument(e, sink, stats){
   const orig = e._deliverPendingMessage.bind(e);
   e._deliverPendingMessage = (id) => {
     const item = e.state.pendingMessages.find(p => p.id === id);
@@ -85,6 +93,10 @@ function instrument(e, sink){
     const result = orig(id);
     const after = target ? target.pendingChoice : null;
     if(target && before && after && before !== after){
+      if(Array.isArray(target.choiceQueue) && target.choiceQueue.includes(before)){
+        stats.requeues++;
+        return result;
+      }
       const thenOf = ch => [...new Set((ch.options || []).map(o => o && o.effects && o.effects.thenEvent).filter(Boolean))];
       sink.push({
         day: e.state.day,
@@ -192,7 +204,8 @@ function run(route, delayHours){
   clock.flush();
 
   const overrides = [];
-  instrument(e, overrides);
+  const stats = {requeues: 0};
+  instrument(e, overrides, stats);
 
   const since = new Map();
   let endingId = null;
@@ -222,6 +235,7 @@ function run(route, delayHours){
     route,
     delayHours,
     overrides,
+    requeues: stats.requeues,      // 邀约给普通选择让位的次数（设计行为，不是缺陷）
     fired: new Set(Object.keys(e.state.firedEvents || {})),
     ended: !!e.state.ended,
     endingId,
@@ -234,16 +248,44 @@ function run(route, delayHours){
 
 const routes = String(arg('routes', ALL_ROUTES.join(','))).split(',').filter(r => ALL_ROUTES.includes(r));
 const delays = String(arg('delays', '0,2,6,12')).split(',').map(Number).filter(n => Number.isFinite(n));
+/* --max-day=N：放宽「超过第几天还没结局算卡住」的上限。给剧情加保底长度后故事本来就会变长，
+ * 做这类实验时需要相应放宽，否则长故事会被误判成卡住。默认 21。 */
+const maxDayArg = arg('max-day', '');
+if(maxDayArg !== ''){
+  const n = Number(maxDayArg);
+  if(!Number.isFinite(n) || n < 1 || n > 60){ console.error('--max-day 需要是 1 到 60 之间的整数'); process.exit(2); }
+  MAX_DAY = n;
+}
+/* --finale-gate=N：给路线结局链设「最早游戏日」，用来实测不同保底长度下的内容触达率。
+ * 不传则保持剧情默认值（story/04_route_ending.js 里是 null，即不设门槛）。 */
+const gateArg = arg('finale-gate', '');
+if(gateArg !== ''){
+  const gate = Number(gateArg);
+  if(!Number.isFinite(gate) || gate < 1 || gate > MAX_DAY){ console.error('--finale-gate 需要是 1 到 ' + MAX_DAY + ' 之间的整数'); process.exit(2); }
+  STORY.finaleGate = gate;
+}
 const results = [];
 for(const r of routes) for(const d of delays) results.push(run(r, d));
 
+/* --json：输出结构化结果（每次运行触发了哪些事件），供内容可达性分析等后续脚本使用 */
+if(process.argv.includes('--json')){
+  const summary = {
+    ok: results.every(r => r.ended && r.overrides.length === 0),
+    runs: results.map(r => ({route:r.route, delayHours:r.delayHours, ended:r.ended, endingId:r.endingId,
+      endedAt:r.endedAt, reachedDay:r.reachedDay, fired:[...r.fired], overrides:r.overrides, requeues:r.requeues}))
+  };
+  console.log(JSON.stringify(summary));
+  process.exit(summary.ok ? 0 : 1);
+}
+
 console.log('选择覆盖探测（delayHours = 选择挂起多少个游戏小时后才回复）');
-console.log('路线       delay  覆盖次数  是否通关  结局            结局日    已触发事件  停止原因');
+console.log('路线       delay  静默丢失  邀约让位  是否通关  结局            结局日    已触发事件  停止原因');
 for(const r of results){
   console.log(
     r.route.padEnd(10) +
     String(r.delayHours).padEnd(6) +
     String(r.overrides.length).padEnd(9) +
+    String(r.requeues).padEnd(9) +
     (r.ended ? '是' : '否').padEnd(9) +
     String(r.endingId || '-').padEnd(16) +
     String(r.endedAt ? `day${r.endedAt.day}` : '-').padEnd(10) +
@@ -256,25 +298,29 @@ let total = 0;
 for(const r of results){
   if(!r.overrides.length) continue;
   total += r.overrides.length;
-  console.log(`\n--- ${r.route} / delay=${r.delayHours}：发生 ${r.overrides.length} 次覆盖 ---`);
+  console.log(`\n--- ${r.route} / delay=${r.delayHours}：发生 ${r.overrides.length} 次静默丢失 ---`);
   for(const o of r.overrides){
     console.log(`  day${o.day} ${String(o.hour).padStart(2, '0')} 时  会话=${o.conv}`);
-    console.log(`     被顶掉: 「${o.lost}」  其后续事件=[${o.lostThen.join(', ')}]`);
+    console.log(`     丢失的选择: 「${o.lost}」  其后续事件=[${o.lostThen.join(', ')}]`);
     console.log(`     新到达: 「${o.arrived}」`);
   }
 }
 
-/* 对比：延迟作答导致「勤奋玩家能看到、分心玩家看不到」的事件 */
-console.log('\n=== 延迟作答丢失的事件（勤奋玩家已触发、分心玩家未触发）===');
+/* 对比：延迟作答导致「勤奋玩家能看到、分心玩家看不到」的事件。
+ * 邀约的赴约/拒绝/错过三条分支本身就看回复快慢（邀约有 120 秒真实时限），
+ * 属于设计内的节奏差异，不算丢失，这里排除掉以免误导。
+ * 本节只作参考信息，不影响退出码（分支不同、好感不同都会造成正常差异）。
+ */
+console.log('\n=== 延迟作答后没再触发的事件（仅供参考，不计入门禁；已排除邀约结果分支）===');
 let lostTotal = 0;
 for(const r of routes){
   const base = results.find(x => x.route === r && x.delayHours === delays[0]);
   if(!base) continue;
   for(const x of results.filter(y => y.route === r && y !== base)){
-    const lost = [...base.fired].filter(id => !x.fired.has(id));
+    const lost = [...base.fired].filter(id => !x.fired.has(id) && !/^inv_.*_(accept|decline|miss)$/.test(id));
     if(!lost.length) continue;
     lostTotal += lost.length;
-    console.log(`  ${r} / delay=${x.delayHours}: 丢失 ${lost.length} 条 → ${lost.join(', ')}`);
+    console.log(`  ${r} / delay=${x.delayHours}: ${lost.length} 条 → ${lost.join(', ')}`);
   }
 }
 if(!lostTotal) console.log('  （无）');

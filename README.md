@@ -7,17 +7,24 @@
 游戏本体是纯前端（HTML / CSS / 原生 JS，运行时零依赖、无构建步骤）；账号与云存档是**可选增强**，
 由同仓库的 Node 22 服务提供（内置 `http` + `node:sqlite`，不引入任何运行时 npm 依赖）。
 
-- 当前版本：**v0.9.9**（版本唯一来源：[VERSION](VERSION)）
+- 当前版本：**v0.9.11**（版本唯一来源：[VERSION](VERSION)）
 - 主角：林夏（策展人）｜路线：沈砚之 / 陆辞 / 江屿 / 独行线（真结局）
 - 内容体量：338 个剧情事件 · 17 个结局（含隐藏结局）· 19 件收集品 · 15 个成就 · 3 个谜题 · 16 张塔罗 · 7 套主题（含真实壁纸）· 5 张相册照片 · 4 张角色插画头像 · 3 张氛围壁纸 · 1 张 OG 分享图 · 6 个地点
 
 ## 快速开始
 
-**在线游玩**（自有服务器，主入口）：https://oh.sbbz.tech:9443/
-备份线（GitHub Pages，push main 自动部署）：https://pixian5.github.io/game1/
-抱脸 Space（Hugging Face，push main 自动部署）：https://xbzsb-neon-heart.static.hf.space/index.html
-Instabox 持久入口（主，含账号 API）：https://8081-agqxoy6u363jxgfufg2onqxbm4.instabox.tech
-镜像仓库：github（https://github.com/pixian5/game1.git）· GitCode（https://gitcode.com/laotongtian/game1.git）
+**在线入口**（版本为 2026-11-24 实测；线上以 `/api/health` 与页面标题为准）：
+
+| 入口 | 地址 | 说明 |
+|---|---|---|
+| Instabox（主入口，含账号与云存档） | https://8081-agqxoy6u363jxgfufg2onqxbm4.instabox.tech | 线上 **v0.9.10**，v0.9.11 待部署 |
+| GitHub Pages | https://pixian5.github.io/game1/ | 纯静态，**v0.9.7**，需手动更新 |
+| 抱脸 Space | https://xbzsb-neon-heart.static.hf.space/index.html | 纯静态，**v0.9.0**，令牌失效待重签 |
+| 自有服务器 `uw` / `ue.sbbz.tech` | — | 尚未部署（可登录，环境待安装） |
+
+代码仓库：GitCode（https://gitcode.com/laotongtian/game1.git，AtomGit 是同一个仓库的另一个域名）· Gitee（https://gitee.com/ibjxk/leame）· GitHub（https://github.com/pixian5/game1，因历史提交含凭据被推送保护拦截，暂未同步）
+
+> 这三个线上入口都**不会**随代码推送自动更新，需要手动部署。
 
 本地游玩：直接双击 `index.html`（无构建、无依赖），或：
 
@@ -49,59 +56,69 @@ npm run check:version      # 版本号一致性（VERSION / package.json / index
 npm run check:ui           # 前端语法合并编译 + 引用完整性（含 SW 不缓存 /api 的守卫）
 npm run validate:story     # 剧情数据一致性（事件引用 / 收集品路径 / flag 读写 / 结局图鉴）
 npm run lint               # ESLint 静态检查（v0.2.1 接入）
-npm run test:regressions   # 引擎回归测试（63 项）
+npm run test:regressions   # 引擎回归测试（70 项）
 npm run test:story         # 剧情链路测试（294 项断言）
-npm run test:account-api   # 账号 API 集成测试（51 项，自带临时 SQLite）
+npm run test:route         # 路线时序测试（19 项）
+npm run matrix:route       # 路线开机矩阵（4 条路线 × 3 种推进方式）
+npm run probe:choice       # 选择覆盖探测：模拟「慢玩家」，出现静默丢失或卡死即失败
+npm run test:account-api   # 账号 API 集成测试（54 项，自带临时 SQLite）
 npm run test:account       # 账号与云存档浏览器 E2E（Playwright，1 条全流程）
-npm run test:browser       # 其余浏览器端到端（Playwright，20 项）
-npm run test:all           # 一键跑全部（含账号 API + 账号 E2E）
+npm run test:browser       # 其余浏览器端到端（Playwright，三个浏览器共 69 项）
+npm run test:all           # 一键跑全部（含账号 API + 账号 E2E + 覆盖探测）
 ```
 
 > 说明：GitHub Actions 工作流已按用户要求删除，上述检查需在本地手动执行
 > （`npm run test:all` 一次跑完）。容器内若没有 Playwright 默认内核，可显式指定：
 > `PW_CHANNEL=none PW_EXECUTABLE_PATH=$HOME/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome npm run test:account`。
+>
+> 还有一批检查脚本没有接进 `test:all`，需要单独运行：
+> `node tools/verify-endings.mjs`（结局可达性）、`node tools/i18n-gap.mjs`（翻译缺口）、
+> `node tools/security-check.mjs`（安全）、`node tools/pwa-check.mjs`（离线可用性）、
+> `node tools/live-check.mjs`（线上验收）。它们都需要先启动 `node test_server.js`。
 
 ## 当前开发进度
 
-v0.9.10：**账号系统安全复核 + P0 崩溃缺陷修复**——逐文件复核 v0.9.9 账号后端
-（scrypt 参数符合 OWASP 建议、恒定时间比较、预编译 SQL 无注入、CSRF 双闸、限流完善），
-发现并修复 `server/index.mjs` 的 `decodeURIComponent` 未捕获异常：
-`curl /%` 一个请求即可让整个账号服务进程崩溃（远程拒绝服务）。
-该缺陷线上已修复：Instabox 已部署 v0.9.10，`/%` 返回 400 且进程存活（已实测）。
-修复：解码 try/catch 返回 400 + 进程级异常兜底 + 3 条回归用例（账号 API 测试 51→54）。
+v0.9.11：**会话内选择改为排队，修复「回复慢就卡死」**——引擎投递带选择的消息时会直接覆盖
+会话里未回复的选择，旧选择的后续事件永远不派发。实测修复前隔 2 个游戏小时才回复的玩家在江屿线卡死，
+隔 24 小时才回复的玩家四条线全部卡死（20 次运行 40 次丢失、6 次到不了结局）；修复后同一组运行 0 丢失、0 卡死。
+邀约是有时限的支线，永远排在普通选择之后，不堵主线；队列字段已加入存档白名单。
+同轮把 GitHub 上一条从未并回主线的独立提交合并进来（路线选择弹窗修复、结局图鉴名统一）。
+质量基线：剧情 294/294、回归 70/70、路线时序 19/19、矩阵 12/12、覆盖探测 16 次运行全过、
+账号接口 54/54、端到端 69/69 + 账号 1/1、引擎覆盖率全部在 60% 红线以上。
 
-v0.9.9：**完整账号系统 + 云存档同步**——注册/登录/会话保持/找回码重置/改密/设备管理/
-导出/注销；4 槽整包云存档、revision 冲突二选一、自动同步；中英双语账号 UI；隐私说明同步改写。
+v0.9.10：账号服务「一个畸形请求即崩溃」缺陷修复（`curl /%` 杀死进程）。
+v0.9.9：完整账号系统 + 云存档同步。v0.9.7：路线时序修复。
 
-v0.9.7：**路线时序修复**——选线前路线事件被吞（P0，`pendingRouteEvents` 补发队列 +
-存档迁移 v3→v4）、剧情加载器正则漏 `01b/01c/01d`（事件 270→338）、隐藏结局阈值 15→19。
-
-👉 详细进度：[docs/20261120-0354-当前开发进度-GLM-5.3-Flash.md](docs/20261120-0354-当前开发进度-GLM-5.3-Flash.md)
-👉 安全复核：[docs/20261120-0354-安全复核与崩溃缺陷修复-GLM-5.3-Flash.md](docs/20261120-0354-安全复核与崩溃缺陷修复-GLM-5.3-Flash.md)
-👉 账号技术记录：[docs/20261120-0333-账号系统与云存档-CodeArts.md](docs/20261120-0333-账号系统与云存档-CodeArts.md)
+👉 详细进度：[docs/20261124-0315-当前开发进度-GLM-5.4.md](docs/20261124-0315-当前开发进度-GLM-5.4.md)
+👉 整体分析（含五个维度现状与实测数据）：[docs/20261124-0315-整体分析与下一步开发建议-GLM-5.4.md](docs/20261124-0315-整体分析与下一步开发建议-GLM-5.4.md)
 
 ## 下一步待实现
 
-**部署收口**：Instabox 已完成 v0.9.10 部署——持久目录 `/data/neon-heart`、单入口 8081
-（`serve-loop.sh` 守护，进程退出 4 秒内自动重启）；9090 已按方案 B 停用。
-剩余：抱脸 Space 令牌重签（现 401 失效）；新自有服务器 `uw/ue.sbbz.tech`
-的 2424 端口 SSH 握手被远端关闭，等就绪后部署。
+**需要先决定的风险项**：
+1. **凭据泄露**：历史提交 `9433d26` 含服务器 SSH 私钥与多个平台令牌，仓库可匿名读取。
+   需要更换全部密钥，之后清理 Git 历史（需明确同意强推）。
+2. **线上版本落后**：Instabox 仍是 v0.9.10，待部署 v0.9.11；线上数据库没有定时备份（当前 0 用户）。
 
-**云存档持久化**：数据库已迁移到持久盘 `/data/neon-heart/data/game.db`（`/dev/vdb` 20G），
-沙箱重启不丢；但沙箱整体销毁仍会丢，需定期用 `server/backup_db.mjs` 备份到仓库外。
+**双语**：英文模式下选项文字显示中文——字典里 98.5% 的选项文字已有翻译，
+但 10 处界面渲染没调用翻译函数；需统一渲染并补字典缺口。
 
-**D2 可达性待拍板**：day11-21 共 32 条事件结构性不可达（结局链无日期门槛，
-重排内容无效），两条路：结局窗口延到 day12+，或接受并清理。需决策。
+**检查没有强制执行**：`tools/` 下 27 个脚本有 21 个没接进任何 npm 命令，
+云端流水线已删除；需新增 `npm run gate` 与推送前钩子。
 
-👉 详细清单：[docs/20261120-0354-下一步待实现-GLM-5.3-Flash.md](docs/20261120-0354-下一步待实现-GLM-5.3-Flash.md)
-👉 完整执行方案（阶段/任务/验收/里程碑）：[docs/20261120-0345-完整下一步开发方案-豆包.md](docs/20261120-0345-完整下一步开发方案-豆包.md)
+**内容节奏**：剧情长度由玩家手速决定——勤快玩家 day7 就结局，只看得到 29% 的带日期事件；
+10 条事件对任何玩家都触达不到。实测把结局门槛设为 12 天，day4–13 的 54 条事件可对所有人保底可见。
+
+**自有服务器**：`uw` / `ue` 可登录（端口 22，用户 `x`），未部署；Node、nginx 未装；
+80/443/2053/2083/8443 被既有服务占用，需选对外方案。
+
+👉 详细清单：[docs/20261124-0315-下一步待实现-GLM-5.4.md](docs/20261124-0315-下一步待实现-GLM-5.4.md)
 
 ## 目录结构
 
 | 路径 | 作用 |
 |---|---|
 | `index.html` | 手机外壳与全部屏幕（App）结构 + 脚本加载清单 |
-| `story/` | **剧情数据层**（20 个数据文件 + `index.mjs`）：事件 / 朋友圈 / 结局 / 收集品 / 约会 / 梦魇等按板块分域（纯数据，改剧情不用动逻辑） |
+| `story/` | **剧情数据层**（21 个数据文件 + `index.mjs`）：事件 / 朋友圈 / 结局 / 收集品 / 约会 / 梦魇等按板块分域（纯数据，改剧情不用动逻辑） |
 | `engine.js` | 引擎核心：状态机、时间系统、事件调度、定时器管理 |
 | `engine_social.js` / `engine_content.js` / `engine_progress.js` / `engine_save.js` | 引擎混入：消息通话群聊 / 内容玩法 / 成长系统 / 存档 |
 | `ui/` | **UI 层**（26 个文件）：30+ 个 App 屏幕的渲染与交互；`25_account.js` 为账号/云存档界面 |
@@ -109,7 +126,7 @@ v0.9.7：**路线时序修复**——选线前路线事件被吞（P0，`pending
 | `style.css` | 视觉样式（手机 UI、各 App、动画） |
 | `interaction_queue.js` | 交互队列（并发来电/偶遇/选择的排队与读档恢复） |
 | `save_migrations.js` | 存档版本迁移 |
-| `server/` | **可选账号服务**（Node 22）：`index.mjs` 静态+API 入口、`api.mjs` 路由、`auth.mjs` 密码/会话、`db.mjs` SQLite、`ctl.sh` 运维、`test_api.mjs` 51 项集成测试 |
+| `server/` | **可选账号服务**（Node 22）：`index.mjs` 静态+API 入口、`api.mjs` 路由、`auth.mjs` 密码/会话、`db.mjs` SQLite、`ctl.sh` 运维、`test_api.mjs` 54 项集成测试 |
 | `manifest.json` / `sw.js` / `pwa.js` | PWA：应用清单 / 离线缓存 / 注册（`/api` 明确排除缓存） |
 | `assets/` | 壁纸（`tools/generate_wallpapers.py` 生成）、相册照片（`tools/generate_photos.py` 生成）、角色头像（`tools/generate_avatars.py` 生成）、氛围壁纸（`tools/generate_ambiences.py` 生成）、OG 分享图（`tools/generate_og.py` 生成）与图标（`tools/generate_icons.py` 生成） |
 | `tools/` | 资产生成脚本（`generate_wallpapers.py` / `generate_photos.py` / `generate_avatars.py` / `generate_ambiences.py` / `generate_og.py` / `generate_icons.py`，Python + PIL）与一键发版脚本（`bump_version.py`） |
@@ -135,14 +152,17 @@ v0.9.7：**路线时序修复**——选线前路线事件被吞（P0，`pending
 - `VERSION` 是唯一版本源；每次修改 **+0.0.1**（每一位满十进一）
 - 发版：`python3 tools/bump_version.py` 一键同步 `VERSION / package.json /
   package-lock.json / index.html（标题、meta、所有 `?v=` 缓存参数）/ sw.js 的
-  `CACHE_VERSION`，随后 `npm run check:version` 验证（CI 会拦截不一致）
+  `CACHE_VERSION`，随后 `npm run check:version` 验证（云端流水线已删除，靠 `npm run test:all` 的第一步拦截）
 - 每个版本的问题/经验记录写入 `docs/`（命名：`年月日时分-标题-模型名.md`）
 
 ## 开发约定
 
 - 这是开发测试版：重构无需考虑旧存档兼容与旧数据，但必须先备份/可回溯
-- 提交信息使用中文；**仓库当前未配置任何远端**，推送目标由当轮用户指定。
-  需要推送时用 `bash push_all.sh` 遍历当前已配置远端并校验一致性，不要只推单个远端而漏掉其它已配置远端。
+- 提交信息使用中文。远端共四个：`gitcode`（主）、`atomgit`（与 GitCode 是同一个仓库的另一个域名，
+  本地保存的凭据已失效，推 GitCode 即等于推它）、`gitee`、`origin`（GitHub）。
+  用 `bash push_all.sh` 遍历全部远端并校验一致性，不要只推单个远端而漏掉其它。
+  **GitHub 目前推不上去**：历史提交 `9433d26` 含真实凭据，被 GitHub 推送保护拦截。
+  在凭据更换、历史清理完成之前，不要尝试绕过，也不要把任何含令牌的文件提交进仓库。
 - 每次修改后必须跑通 `npm run test:all` 才能停下
 - 新增剧情数据 → 写进 `story/` 对应板块文件（不要在 `18_patches.js` 叠补丁），先跑 `npm run validate:story`
 - 新增源码文件 → `story/`、`engine_*.js` 会被测试清单自动包含；`ui/`、`audio.js`、`pwa.js` 需手动加入 `index.html` 与 `sw.js` 的 PRECACHE
@@ -150,7 +170,7 @@ v0.9.7：**路线时序修复**——选线前路线事件被吞（P0，`pending
 ## 经验手册
 
 `docs/` 里的文档是历史记录，**不一定是对的**（含中途被推翻的方案与互相矛盾的结论）。
-根目录 [经验/](经验/README.md) 把 148 份文档的结论去重提炼成八类做法手册，
+根目录 [经验/](经验/README.md) 把 `docs/` 下全部文档的结论去重提炼成做法手册，
 供接手者快速避坑：
 
 👉 [经验/README.md](经验/README.md) —
