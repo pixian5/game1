@@ -1,0 +1,17 @@
+[Unit]
+Description=Daily backup of the Neon Heart account database
+# 每天备份一次霓虹心事账号数据库
+# 仓库留档：deploy/backup/neon-heart-backup.timer
+# 安装位置：~/.config/systemd/user/（Instabox 沙箱上为 /data/home/.config/systemd/user/）
+# 启用：systemctl --user daemon-reload && systemctl --user enable --now neon-heart-backup.timer
+
+[Timer]
+# 每天 03:30（UTC，即北京时间 11:30）执行；沙箱被暂停期间错过的话，恢复运行后会补跑一次
+OnCalendar=*-*-* 03:30:00 UTC
+# 随机延迟 0–5 分钟，避免与其它任务同一秒抢资源
+RandomizedDelaySec=300
+# 错过了也要补跑
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -17,12 +17,17 @@
 
 | 入口 | 地址 | 说明 |
 |---|---|---|
-| Instabox（主入口，含账号与云存档） | https://8081-agqxoy6u363jxgfufg2onqxbm4.instabox.tech | 线上 **v0.9.10**，v0.9.11 待部署 |
+| Instabox（主入口，含账号与云存档） | https://8081-agqxoy6u363jxgfufg2onqxbm4.instabox.tech | 线上 **v0.9.11**；数据库每日自动备份到自有服务器 |
 | GitHub Pages | https://pixian5.github.io/game1/ | 纯静态，**v0.9.7**，需手动更新 |
 | 抱脸 Space | https://xbzsb-neon-heart.static.hf.space/index.html | 纯静态，**v0.9.0**，令牌失效待重签 |
-| 自有服务器 `uw` / `ue.sbbz.tech` | — | 尚未部署（可登录，环境待安装） |
+| 自有服务器 `uw` / `ue.sbbz.tech` | — | 游戏未部署；目前作为数据库备份接收端 |
 
-代码仓库：GitCode（https://gitcode.com/laotongtian/game1.git，AtomGit 是同一个仓库的另一个域名）· Gitee（https://gitee.com/ibjxk/leame）· GitHub（https://github.com/pixian5/game1，因历史提交含凭据被推送保护拦截，暂未同步）
+代码仓库：GitCode（https://gitcode.com/laotongtian/game1.git，AtomGit 是同一个仓库的另一个域名）· Gitee（https://gitee.com/ibjxk/leame）· GitHub（https://github.com/pixian5/game1）。三处已同步。
+
+> **Git 历史已于北京时间 2026-11-24 03:50 前后改写**（清除历史提交里的凭据），此后所有提交编号都变了。
+> 改写之前克隆的仓库请重新克隆，或执行 `git fetch origin && git reset --hard origin/main`；
+> 不要从旧克隆强推或合并，否则会把带凭据的历史重新带回来。
+> 详见 [docs/20261124-0446-Git历史清理与线上部署与备份建立-GLM-5.4.md](docs/20261124-0446-Git历史清理与线上部署与备份建立-GLM-5.4.md)。
 
 > 这三个线上入口都**不会**随代码推送自动更新，需要手动部署。
 
@@ -51,7 +56,19 @@ node server/backup_db.mjs             # 生成 SQLite 一致性备份
 运行全部校验与测试：
 
 ```bash
-npm install                # 首次：安装测试依赖（@playwright/test / eslint）
+npm install                # 首次：安装测试依赖（@playwright/test / eslint），并自动启用推送前检查钩子
+npm run gate               # 总闸（推荐）：离线检查集 + 代码规范 + 结局可达性 + 翻译缺口 + 安全 + 离线可用性，约 76 秒
+npm run gate:full          # 总闸完整档：上一行 + 账号端到端 + 三浏览器端到端，约 4 分钟
+npm run test:all           # 仅测试（不含结局可达性、翻译缺口、安全、离线可用性四项）
+```
+
+> **推送前钩子**：`npm install` 之后，每次 `git push` 之前会自动执行不依赖浏览器的离线检查
+> （约 48 秒），未通过则中止推送。同一提交通过一次后，往多个远端连续推送不重复跑。
+> 确需跳过某一次：`SKIP_GATE=1 git push ...`，并在提交说明里写明原因。
+
+单项命令：
+
+```bash
 npm run check:version      # 版本号一致性（VERSION / package.json / index.html / sw.js）
 npm run check:ui           # 前端语法合并编译 + 引用完整性（含 SW 不缓存 /api 的守卫）
 npm run validate:story     # 剧情数据一致性（事件引用 / 收集品路径 / flag 读写 / 结局图鉴）
@@ -64,54 +81,57 @@ npm run probe:choice       # 选择覆盖探测：模拟「慢玩家」，出现
 npm run test:account-api   # 账号 API 集成测试（54 项，自带临时 SQLite）
 npm run test:account       # 账号与云存档浏览器 E2E（Playwright，1 条全流程）
 npm run test:browser       # 其余浏览器端到端（Playwright，三个浏览器共 69 项）
-npm run test:all           # 一键跑全部（含账号 API + 账号 E2E + 覆盖探测）
+npm run check:endings      # 结局可达性（17 个结局）
+npm run check:i18n         # 翻译缺口
+npm run check:security     # 安全检查（存档注入 / 跨站脚本 / 恶意图片）
+npm run check:pwa          # 离线可用性
 ```
 
-> 说明：GitHub Actions 工作流已按用户要求删除，上述检查需在本地手动执行
-> （`npm run test:all` 一次跑完）。容器内若没有 Playwright 默认内核，可显式指定：
-> `PW_CHANNEL=none PW_EXECUTABLE_PATH=$HOME/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome npm run test:account`。
->
-> 还有一批检查脚本没有接进 `test:all`，需要单独运行：
-> `node tools/verify-endings.mjs`（结局可达性）、`node tools/i18n-gap.mjs`（翻译缺口）、
-> `node tools/security-check.mjs`（安全）、`node tools/pwa-check.mjs`（离线可用性）、
-> `node tools/live-check.mjs`（线上验收）。它们都需要先启动 `node test_server.js`。
+> 说明：GitHub Actions 工作流已按用户要求删除，上述检查在本地执行，由推送前钩子强制。
+> 后四项检查需要本地服务器在 4187 端口：单独运行时先执行 `node test_server.js`；
+> 走总闸时脚本会代为启动并在结束后关闭。容器内若没有 Playwright 默认内核，可显式指定：
+> `PW_CHANNEL=none PW_EXECUTABLE_PATH=$HOME/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome`。
+> 线上验收用 `node tools/live-check.mjs`（通过 `BASE=<地址>/index.html` 指定目标）。
 
 ## 当前开发进度
+
+v0.9.11（2026-11-24 续）：**Git 历史清理、上线、数据库备份、自动化检查**——
+分支历史里的凭据已清除并强推四个远端（GitHub 四天来首次同步），192 个提交逐个核对内容无误；
+但托管平台上旧的含私钥提交仍可按编号拉取，**密钥仍需更换**。
+v0.9.11 已部署到 Instabox（线上代码包哈希与本地构建一致）。
+数据库每日自动快照并推送到两台自有服务器，服务器端密钥「只能新增」五项限制实测有效，恢复演练通过。
+新增总闸 `npm run gate` / `gate:full` 与推送前钩子。
 
 v0.9.11：**会话内选择改为排队，修复「回复慢就卡死」**——引擎投递带选择的消息时会直接覆盖
 会话里未回复的选择，旧选择的后续事件永远不派发。实测修复前隔 2 个游戏小时才回复的玩家在江屿线卡死，
 隔 24 小时才回复的玩家四条线全部卡死（20 次运行 40 次丢失、6 次到不了结局）；修复后同一组运行 0 丢失、0 卡死。
 邀约是有时限的支线，永远排在普通选择之后，不堵主线；队列字段已加入存档白名单。
-同轮把 GitHub 上一条从未并回主线的独立提交合并进来（路线选择弹窗修复、结局图鉴名统一）。
 质量基线：剧情 294/294、回归 70/70、路线时序 19/19、矩阵 12/12、覆盖探测 16 次运行全过、
 账号接口 54/54、端到端 69/69 + 账号 1/1、引擎覆盖率全部在 60% 红线以上。
 
-v0.9.10：账号服务「一个畸形请求即崩溃」缺陷修复（`curl /%` 杀死进程）。
-v0.9.9：完整账号系统 + 云存档同步。v0.9.7：路线时序修复。
+v0.9.10：账号服务「一个畸形请求即崩溃」缺陷修复。v0.9.9：完整账号系统 + 云存档同步。
 
-👉 详细进度：[docs/20261124-0315-当前开发进度-GLM-5.4.md](docs/20261124-0315-当前开发进度-GLM-5.4.md)
-👉 整体分析（含五个维度现状与实测数据）：[docs/20261124-0315-整体分析与下一步开发建议-GLM-5.4.md](docs/20261124-0315-整体分析与下一步开发建议-GLM-5.4.md)
+👉 详细进度：[docs/20261124-0446-当前开发进度-GLM-5.4.md](docs/20261124-0446-当前开发进度-GLM-5.4.md)
+👉 本轮操作记录（历史清理 / 上线 / 备份）：[docs/20261124-0446-Git历史清理与线上部署与备份建立-GLM-5.4.md](docs/20261124-0446-Git历史清理与线上部署与备份建立-GLM-5.4.md)
+👉 整体分析（含各维度实测数据）：[docs/20261124-0315-整体分析与下一步开发建议-GLM-5.4.md](docs/20261124-0315-整体分析与下一步开发建议-GLM-5.4.md)
+👉 备份方案（搭建 / 检查 / 恢复）：[deploy/backup/README.md](deploy/backup/README.md)
 
 ## 下一步待实现
 
-**需要先决定的风险项**：
-1. **凭据泄露**：历史提交 `9433d26` 含服务器 SSH 私钥与多个平台令牌，仓库可匿名读取。
-   需要更换全部密钥，之后清理 Git 历史（需明确同意强推）。
-2. **线上版本落后**：Instabox 仍是 v0.9.10，待部署 v0.9.11；线上数据库没有定时备份（当前 0 用户）。
+**只能由用户完成**：
+1. **更换全部已泄露的密钥**（服务器 SSH 密钥对、Cloudflare、GitHub、Gitee、GitCode、抱脸令牌）。
+   清理历史代替不了这一步：托管平台上旧的含私钥提交仍可按编号拉取。
+2. 决定是否删除并重建 GitCode 与 Gitee 上的仓库，以清掉平台上的旧提交。
 
-**双语**：英文模式下选项文字显示中文——字典里 98.5% 的选项文字已有翻译，
-但 10 处界面渲染没调用翻译函数；需统一渲染并补字典缺口。
+**内容（下一版的主体）**：剧情保底长度 12 天，按「路线主线照常开始、只把最终结局压后」实施
+（打开现有原型开关会让玩家选完线后干等 5 天，所以不直接开）；处理 10 条永远触达不到的事件；补独行线。
 
-**检查没有强制执行**：`tools/` 下 27 个脚本有 21 个没接进任何 npm 命令，
-云端流水线已删除；需新增 `npm run gate` 与推送前钩子。
+**双语**：英文模式下选项文字显示中文——字典里 98.5% 的选项文字已有翻译，但 10 处界面渲染没调用翻译函数。
 
-**内容节奏**：剧情长度由玩家手速决定——勤快玩家 day7 就结局，只看得到 29% 的带日期事件；
-10 条事件对任何玩家都触达不到。实测把结局门槛设为 12 天，day4–13 的 54 条事件可对所有人保底可见。
+**运维**：游戏服务进程没有开机自启（沙箱重启后不会自动恢复）；线上缺安全响应头；
+密钥更换之后把游戏部署到自有服务器（方案定为 Cloudflare Tunnel）。
 
-**自有服务器**：`uw` / `ue` 可登录（端口 22，用户 `x`），未部署；Node、nginx 未装；
-80/443/2053/2083/8443 被既有服务占用，需选对外方案。
-
-👉 详细清单：[docs/20261124-0315-下一步待实现-GLM-5.4.md](docs/20261124-0315-下一步待实现-GLM-5.4.md)
+👉 详细清单：[docs/20261124-0446-下一步待实现-GLM-5.4.md](docs/20261124-0446-下一步待实现-GLM-5.4.md)
 
 ## 目录结构
 
@@ -129,13 +149,15 @@ v0.9.9：完整账号系统 + 云存档同步。v0.9.7：路线时序修复。
 | `server/` | **可选账号服务**（Node 22）：`index.mjs` 静态+API 入口、`api.mjs` 路由、`auth.mjs` 密码/会话、`db.mjs` SQLite、`ctl.sh` 运维、`test_api.mjs` 54 项集成测试 |
 | `manifest.json` / `sw.js` / `pwa.js` | PWA：应用清单 / 离线缓存 / 注册（`/api` 明确排除缓存） |
 | `assets/` | 壁纸（`tools/generate_wallpapers.py` 生成）、相册照片（`tools/generate_photos.py` 生成）、角色头像（`tools/generate_avatars.py` 生成）、氛围壁纸（`tools/generate_ambiences.py` 生成）、OG 分享图（`tools/generate_og.py` 生成）与图标（`tools/generate_icons.py` 生成） |
-| `tools/` | 资产生成脚本（`generate_wallpapers.py` / `generate_photos.py` / `generate_avatars.py` / `generate_ambiences.py` / `generate_og.py` / `generate_icons.py`，Python + PIL）与一键发版脚本（`bump_version.py`） |
+| `tools/` | 资产生成脚本（`generate_*.py`，Python + PIL）、一键升版本脚本（`bump_version.py`）、测试与探测脚本（`choice_override_probe.mjs` 模拟慢玩家、`verify-endings.mjs`、`security-check.mjs`、`pwa-check.mjs`、`live-check.mjs` 等）、总闸（`run_gate.mjs`） |
+| `deploy/backup/` | **数据库备份方案**：沙箱端备份脚本、服务器端初始化脚本、两个 systemd 单元、搭建/检查/恢复说明 |
+| `.githooks/pre-push` | 推送前检查钩子（`npm install` 时自动启用） |
 | `eslint.config.mjs` | ESLint 分环境配置（浏览器/Node/ui 分域，v0.2.1 接入） |
 | `deploy.sh` | 一键部署（自动构建 bundle 后 rsync dist/） |
 | `tools/build_bundle.mjs` | 发布构建：全部脚本合并单 bundle（开发零构建不变） |
-| `validate_story.js` | 剧情数据一致性校验器（CI 使用） |
-| `check_version.js` | 版本号一致性校验（CI 使用，含 sw.js 缓存版本） |
-| `check_ui.js` | 前端语法与引用完整性校验（CI 使用，v0.1.8 新增） |
+| `validate_story.js` | 剧情数据一致性校验器（总闸与推送前钩子使用） |
+| `check_version.js` | 版本号一致性校验（总闸与推送前钩子使用，含 sw.js 缓存版本） |
+| `check_ui.js` | 前端语法与引用完整性校验（总闸与推送前钩子使用，v0.1.8 新增） |
 | `test_helper.js` | 测试共享：源码文件清单动态生成（拆文件后测试自动跟进） |
 | `test_server.js` | 本地静态服务器（开发/测试用，端口 4187） |
 | `test_regressions.js` / `test_story.js` | 引擎回归 / 剧情链路自动化测试（Node） |
@@ -161,9 +183,11 @@ v0.9.9：完整账号系统 + 云存档同步。v0.9.7：路线时序修复。
 - 提交信息使用中文。远端共四个：`gitcode`（主）、`atomgit`（与 GitCode 是同一个仓库的另一个域名，
   本地保存的凭据已失效，推 GitCode 即等于推它）、`gitee`、`origin`（GitHub）。
   用 `bash push_all.sh` 遍历全部远端并校验一致性，不要只推单个远端而漏掉其它。
-  **GitHub 目前推不上去**：历史提交 `9433d26` 含真实凭据，被 GitHub 推送保护拦截。
-  在凭据更换、历史清理完成之前，不要尝试绕过，也不要把任何含令牌的文件提交进仓库。
-- 每次修改后必须跑通 `npm run test:all` 才能停下
+- **Git 历史已于 2026-11-24 改写**，不要从改写前的旧克隆强推或合并
+- **含令牌、私钥、授权码的文件绝不入库**（历史上因此泄露过一次）。提交前检查：
+  `git diff --cached --name-only | grep -iE "deploy-handoff|credential|\.env"` 必须为空
+- 每次修改后必须跑通 `npm run gate:full`（至少 `npm run gate`）才能停下；
+  推送前钩子会自动执行不依赖浏览器的部分
 - 新增剧情数据 → 写进 `story/` 对应板块文件（不要在 `18_patches.js` 叠补丁），先跑 `npm run validate:story`
 - 新增源码文件 → `story/`、`engine_*.js` 会被测试清单自动包含；`ui/`、`audio.js`、`pwa.js` 需手动加入 `index.html` 与 `sw.js` 的 PRECACHE
 

@@ -22,7 +22,14 @@
     "verify:offline": "npm run check:version && npm run validate:story && npm run check:ui && npm run test:regressions && npm run test:story && npm run test:route && npm run matrix:route && npm run probe:choice && npm run test:account-api",
     "serve:account": "node server/index.mjs",
     "test:account-api": "node server/test_api.mjs",
-    "probe:choice": "node tools/choice_override_probe.mjs"
+    "probe:choice": "node tools/choice_override_probe.mjs",
+    "check:endings": "node tools/verify-endings.mjs",
+    "check:i18n": "node tools/i18n-gap.mjs",
+    "check:security": "node tools/security-check.mjs",
+    "check:pwa": "node tools/pwa-check.mjs",
+    "gate": "node tools/run_gate.mjs",
+    "gate:full": "node tools/run_gate.mjs --full",
+    "prepare": "node tools/enable_hooks.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",

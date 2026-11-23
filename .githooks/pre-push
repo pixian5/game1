@@ -1,0 +1,44 @@
+#!/bin/sh
+# ===== 推送前总闸 =====
+# 推代码之前自动执行不依赖浏览器的检查（离线档，约 1 分钟）；未通过则拒绝推送。
+# 之所以需要它：云端流水线已删除，此前没有任何东西强制执行检查，
+# 「回复慢就卡死」这类缺陷就是在所有检查都显示通过的情况下存在了好几个版本。
+#
+# 启用：git config core.hooksPath .githooks   （执行 npm install 时会自动设置）
+# 同一提交通过后会记标记，往多个远端连续推送时不重复跑。
+# 确实需要跳过时（请只在清楚后果时使用）：SKIP_GATE=1 git push ...
+command -v node >/dev/null 2>&1 || { echo "[推送前检查] 找不到 node，跳过检查"; exit 0; }
+command -v npm >/dev/null 2>&1 || { echo "[推送前检查] 找不到 npm，跳过检查"; exit 0; }
+if [ -n "$SKIP_GATE" ]; then
+  echo "[推送前检查] 已按 SKIP_GATE 的要求跳过"
+  exit 0
+fi
+[ -f tools/run_gate.mjs ] || { echo "[推送前检查] 不在项目仓库里，跳过检查"; exit 0; }
+
+# 读取 git 传来的待推送引用：每行「本地引用 本地提交 远端引用 远端提交」
+HEAD_SHA=$(git rev-parse HEAD 2>/dev/null)
+ALL_ZERO=0000000000000000000000000000000000000000
+need_stamp=1
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -z "$local_sha" ] && continue
+  [ "$local_sha" = "$ALL_ZERO" ] && continue          # 删除远端分支，不检查
+  if [ "$local_sha" != "$HEAD_SHA" ]; then
+    # 推的不是当前提交（例如别的分支），无法用当前提交的通过标记
+    need_stamp=0
+  fi
+done
+
+if [ "$need_stamp" = "1" ]; then
+  node tools/run_gate.mjs --hook --if-stamped
+else
+  node tools/run_gate.mjs --hook
+fi
+code=$?
+if [ "$code" != "0" ]; then
+  echo ""
+  echo "[推送前检查] ✗ 检查未通过，推送已中止。修好之后再推；"
+  echo "            如确认是环境问题（例如 node 版本低于 22.5 导致账号接口测试跑不了），"
+  echo "            可以用 SKIP_GATE=1 git push ... 跳过一次，并在提交说明里写明原因。"
+  exit 1
+fi
+exit 0

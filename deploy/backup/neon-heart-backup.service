@@ -1,0 +1,13 @@
+[Unit]
+Description=Neon Heart account database backup (snapshot + push to own servers)
+# 霓虹心事账号数据库备份：生成一致性快照并推送到自有服务器
+# 仓库留档：deploy/backup/neon-heart-backup.service
+# 安装位置：~/.config/systemd/user/（Instabox 沙箱上为 /data/home/.config/systemd/user/）
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/data/neon-heart
+ExecStart=/bin/sh /data/neon-heart/backup.sh
+TimeoutStartSec=600

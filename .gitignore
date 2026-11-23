@@ -92,3 +92,4 @@ server/data/
 /account.js
 /cloud-sync.js
 /tools/test_account_server.mjs
+.gate-stamp
