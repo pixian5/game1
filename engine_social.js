@@ -72,6 +72,9 @@ Object.assign(PhoneEngine.prototype, {
     if(eff.thenEvent) this._dispatchSpecialThen(eff.thenEvent);
     this.emit('stateChange', this.state);
     if(this._retryDeferredEvents) this._retryDeferredEvents();
+    // v0.9.11：这个会话还有排队等着的选择 → 把下一个亮出来
+    // （放在最后：本次回复的 thenEvent 已经进入派发队列，之后到达的新选择会排在它后面，顺序不乱）
+    this._promoteNextChoice(convId, conv);
   },
 
   _dispatchSpecialThen(thenEvent){
@@ -269,6 +272,8 @@ Object.assign(PhoneEngine.prototype, {
     this.emit('groupUpdate', {id:groupId, group:g});
     this._applyEffects(effects);
     if(effects && effects.thenEvent) this._queueEventDispatch(effects.thenEvent, 900);
+    // v0.9.11：群里还有排队等着的选择 → 把下一个亮出来
+    this._promoteNextChoice('group:' + groupId, g);
   },
 
   markGroupRead(groupId){

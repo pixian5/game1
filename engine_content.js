@@ -474,6 +474,10 @@ Object.assign(PhoneEngine.prototype, {
     // 标记 pending 项已完成
     const p = this.state.invitations.find(x=>x.id===invId);
     if(p) p.status = decision;
+    // v0.9.11：邀约已有结果（赴约/拒绝/超时错过）后，清掉会话里它的残留选择。
+    // 旧实现里残留的邀约选择会被后到的选择顶掉（相当于自愈）；v0.9.11 改成排队后，
+    // 残留的「僵尸邀约」会把后面排队的主线选择一直堵住，所以必须在这里显式清理。
+    this._purgeInvitationChoice(invId);
     if(decision === 'accepted'){
       this.scheduleEvent(inv.acceptEvent);
     } else if(decision === 'declined'){
@@ -486,6 +490,31 @@ Object.assign(PhoneEngine.prototype, {
     this.emit('invitationResolved', {id:invId, decision});
     this.emit('stateChange', this.state);
     return true;
+  },
+
+  // v0.9.11：清理某个邀约在所有会话/群聊里的残留选择（正在亮出的 + 排队中的）
+  _purgeInvitationChoice(invId){
+    const isMine = ch => !!(ch && ch.isInvitation && ch.invitationId === invId);
+    let purged = 0;
+    const cleared = [];       // 「正在亮出的那个」被清掉的会话，界面据此收起选项条
+    const purge = (key, target) => {
+      if(!target) return;
+      if(Array.isArray(target.choiceQueue) && target.choiceQueue.some(isMine)){
+        target.choiceQueue = target.choiceQueue.filter(ch => !isMine(ch));
+        purged++;
+      }
+      if(isMine(target.pendingChoice)){
+        target.pendingChoice = null;
+        purged++;
+        cleared.push(key);
+        // 邀约超时发生在界面点击流程之外，不存在与点击处理的竞态，可以立即亮出下一个
+        this._promoteNextChoice(key, target, true);
+      }
+    };
+    Object.entries(this.state.conversations || {}).forEach(([cid, conv]) => purge(cid, conv));
+    Object.entries(this.state.groups || {}).forEach(([gid, g]) => purge('group:' + gid, g));
+    if(purged) this.emit('choicePurged', {invitationId:invId, count:purged, convIds:cleared});
+    return purged;
   },
 
   missPendingInvitations(){

@@ -47,6 +47,9 @@
       engine._setTimeout(()=>{
         // 二次校验：定时器触发时观赏模式仍开启才执行
         if(!engine.state.watchMode) return;
+        // v0.9.11：只清掉「当时亮出的那一个」。若期间它已被系统清理、队列里的下一个已亮出，
+        // 这里不能把新的那个一并清掉（否则它的后续事件会丢）。
+        if(conv && conv.pendingChoice && conv.pendingChoice !== choice) return;
         if(conv){ conv.pendingChoice = null; }
         engine.sendMessage(convId, autoOpt.text, engine.normalizeOptionEffects(autoOpt));
         toast('🎬 ' + t('观赏自动选：{opt}', {opt: autoOpt.text}));
@@ -62,6 +65,20 @@
       // 给个提示通知
       showNotif(convId, choice.prompt);
     }
+  });
+
+  // v0.9.11：某个「正在亮出」的选择被系统清理（目前只有「邀约超时被错过」这一种情况）。
+  // 玩家正停在这个会话、选项条上显示的就是它时，立即收起，
+  // 避免玩家去点一个已经失效的邀约（更糟的是会误清掉刚亮出来的下一个选择）。
+  engine.on('choicePurged', ({convIds}={})=>{
+    if(!Array.isArray(convIds) || !convIds.includes(currentConvId)) return;
+    const conv = engine.state.conversations[currentConvId];
+    if(conv && conv.pendingChoice) return;       // 队列里的下一个已经亮出来，界面已刷新，不动
+    clearChatTimeout(currentConvId);
+    const bar = $('chat-input-bar');
+    if(bar) bar.hidden = true;
+    const opts = $('chat-options');
+    if(opts) opts.innerHTML = '';
   });
 
   function showNarratorChoice(choice){
@@ -153,6 +170,15 @@
         [...bar.querySelectorAll('.chat-opt')].forEach(b => b.disabled = true);
         clearChatTimeout(convId);
         const conv = engine.state.conversations[convId];
+        // v0.9.11：只清掉「界面上显示的这一个」。如果它已被系统清理（如邀约超时）、
+        // 队列里的下一个已经亮出，说明这次点击已经过期，直接忽略，
+        // 否则会把刚亮出的下一个选择一并清掉（它的后续事件就丢了）。
+        if(conv && conv.pendingChoice !== choice){
+          // 过期点击：按当前真实状态重绘（有新选择就显示新的，没有就收起）
+          if(conv.pendingChoice) showChatChoice(convId, conv.pendingChoice);
+          else bar.hidden = true;
+          return;
+        }
         if(conv) conv.pendingChoice = null;
         engine.sendMessage(convId, opt.text, mergeOptionEffects(opt));
         bar.hidden = true;

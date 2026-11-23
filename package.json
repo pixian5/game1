@@ -1,7 +1,7 @@
 {
   "name": "neon-heart-game",
   "private": true,
-  "version": "0.9.10",
+  "version": "0.9.11",
   "scripts": {
     "test:regressions": "node test_regressions.js",
     "test:story": "node test_story.js",
@@ -9,7 +9,7 @@
     "test:browser": "playwright test --grep-invert \"账号与云存档\"",
     "validate:story": "node validate_story.js",
     "check:version": "node check_version.js",
-    "test:all": "npm run check:version && npm run validate:story && npm run check:ui && npm run lint && npm run test:regressions && npm run test:story && npm run test:route && npm run matrix:route && npm run test:account-api && npm run test:account && npm run test:browser",
+    "test:all": "npm run check:version && npm run validate:story && npm run check:ui && npm run lint && npm run test:regressions && npm run test:story && npm run test:route && npm run matrix:route && npm run probe:choice && npm run test:account-api && npm run test:account && npm run test:browser",
     "serve": "node test_server.js",
     "check:ui": "node check_ui.js",
     "lint": "eslint .",
@@ -19,9 +19,10 @@
     "test:route": "node test_route_timing.mjs",
     "matrix:route": "node tools/route_matrix.mjs",
     "probe:finale": "node tools/finale_gate_probe.mjs",
-    "verify:offline": "npm run check:version && npm run validate:story && npm run check:ui && npm run test:regressions && npm run test:story && npm run test:route && npm run matrix:route && npm run test:account-api",
+    "verify:offline": "npm run check:version && npm run validate:story && npm run check:ui && npm run test:regressions && npm run test:story && npm run test:route && npm run matrix:route && npm run probe:choice && npm run test:account-api",
     "serve:account": "node server/index.mjs",
-    "test:account-api": "node server/test_api.mjs"
+    "test:account-api": "node server/test_api.mjs",
+    "probe:choice": "node tools/choice_override_probe.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",

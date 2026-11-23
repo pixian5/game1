@@ -506,7 +506,9 @@
         const opt = g.pendingChoice.options[idx];
         if(opt){
           engine.sendGroupMessage(currentGroupId, opt.text, mergeOptionEffects(opt));
-          g.pendingChoice = null;
+          // v0.9.11：这里不能再写 g.pendingChoice = null。
+          // sendGroupMessage 内部已经清掉了本次作答的选择，并可能把队列里的下一个亮出来；
+          // 事后再清一次会把刚亮出的下一个选择抹掉（它的后续事件就永远不会触发）。
           $('group-chat-input-bar').hidden = true;
         }
       }

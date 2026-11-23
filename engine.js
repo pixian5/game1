@@ -788,8 +788,10 @@ class PhoneEngine {
       this.emit('groupUpdate', {id:msg.groupId, group});
       this.emit('groupMessageReceived', {groupId:msg.groupId, from:msg.from, text:msg.text, group});
       if(msg.choice){
-        this._setPendingChoice(group, msg.choice);
-        this.emit('choicePrompt', {convId:'group:'+msg.groupId, choice:msg.choice, conv:group});
+        // v0.9.11：该群已挂着未回复的选择时，新选择排队而不是顶掉旧的
+        if(this._setPendingChoice(group, msg.choice)){
+          this.emit('choicePrompt', {convId:'group:'+msg.groupId, choice:msg.choice, conv:group});
+        }
       }
       if(msg.thenEvent) this._queueEventDispatch(msg.thenEvent, 600);
       this.emit('stateChange', this.state);
@@ -814,9 +816,10 @@ class PhoneEngine {
     this.emit('conversationUpdate', {id:msg.from, conv});
     this.emit('messageReceived', {from:msg.from, text:msg.text, conv});
     if(msg.choice){
-      // v0.9.1：覆盖时先结算被顶掉的选择（补发其 thenEvent），避免主线静默中断
-      this._setPendingChoice(conv, msg.choice);
-      this.emit('choicePrompt', {convId:msg.from, choice:msg.choice, conv});
+      // v0.9.11：该会话已挂着未回复的选择时，新选择排队而不是顶掉旧的
+      if(this._setPendingChoice(conv, msg.choice)){
+        this.emit('choicePrompt', {convId:msg.from, choice:msg.choice, conv});
+      }
     }
     if(msg.followup){
       this._queueFollowup(msg.from, msgObj, msg.followup);
@@ -824,31 +827,88 @@ class PhoneEngine {
     if(msg.thenEvent) this._queueEventDispatch(msg.thenEvent, 600);
     this.emit('stateChange', this.state);
   }
-  // v0.9.1：选择覆盖保护。
-  // 旧实现新选择直接覆盖 pendingChoice，被覆盖选择的 thenEvent 永远不会派发，
-  // 主线会静默中断（复现：day3 luci 同时挂「陆辞关心」与「重逢邀约」，先到那条永久丢失，
-  // 导致 dream_day3 → opening_day → route_choice 全线不触发）。
-  // 这里保留「一个会话只显示一个选择」的既有语义，但在覆盖发生时按默认项结算旧选择，
-  // 显式派发它的 thenEvent，保证任何分支都不会凭空消失。
+  /* ===== v0.9.11：会话内选择排队 =====
+   * 旧实现：投递带选择的消息时直接 target.pendingChoice = msg.choice。
+   * 如果该会话已经挂着没回复的选择，旧选择被静默顶掉，它的 thenEvent 永远不派发。
+   *
+   * 实测后果（node tools/choice_override_probe.mjs 可复现）：
+   *   分心玩家（隔 2 个游戏小时才回复）在江屿线会永久卡死——
+   *   主线选择「他在崩溃的边缘」被「江屿邀请你听首唱」顶掉后，
+   *   route_jiangyu_relic → route_jiangyu_end_check → __jiangyu_end_judge 整条链不再触发，
+   *   玩家到 day21 也等不到结局。
+   *
+   * 新语义：一个会话同一时刻只「亮出」一个选择（界面观感不变），
+   * 后到的选择进入 target.choiceQueue 排队；前一个被回复（或失效）后，下一个自动亮出。
+   * 这样玩家对每一个选择都保留决定权，任何分支都不会凭空消失。
+   *
+   * 为什么不采用「顶掉时替玩家按默认项结算」：
+   *   那样主线确实不会断，但「你的最后抉择」这类关键选择会被系统悄悄替玩家决定，
+   *   对一个以选择为核心的叙事游戏来说不可接受。排队没有这个副作用。
+   *
+   * 邀约（isInvitation）是支线：它有 120 秒真实时限，不应该堵住主线。
+   * 所以队列顺序固定为「普通选择在前（按到达顺序）、邀约在后（按到达顺序）」：
+   *   - 正亮着的是邀约、来了普通选择 → 普通选择立刻亮出，邀约退回队列（仍可回复，直到超时被清理）
+   *   - 正亮着的是普通选择、来了邀约 → 邀约排队
+   * 这样主线永远不会被一条邀约卡住，邀约也不会丢。
+   *
+   * 返回 true  = 已立即亮出（调用方应接着 emit choicePrompt）
+   * 返回 false = 已排队（暂不提示，等前面的被回复后由 _promoteNextChoice 亮出）
+   */
   _setPendingChoice(target, choice){
-    if(!target || !choice) return null;
-    const superseded = target.pendingChoice || null;
-    target.pendingChoice = choice;
-    if(superseded) this._settleSupersededChoice(superseded);
-    return superseded;
-  }
-  _settleSupersededChoice(choice){
-    if(!choice || !Array.isArray(choice.options) || !choice.options.length) return;
-    const opt = choice.options.find(o=>o && o.default) || choice.options[0];
-    if(!opt) return;
-    const eff = this.normalizeOptionEffects(opt);
-    this._applyEffects(eff);
-    // _applyEffects 不处理 thenEvent，必须显式派发，否则被覆盖的选择仍然断链
-    if(eff.thenEvent){
-      if(typeof this._dispatchSpecialThen === 'function') this._dispatchSpecialThen(eff.thenEvent);
-      else this._queueEventDispatch(eff.thenEvent, 900);
+    if(!target || !choice) return false;
+    if(!target.pendingChoice){
+      target.pendingChoice = choice;
+      return true;
     }
-    this.emit('choiceSuperseded', {prompt:choice.prompt, picked:opt.text});
+    if(!Array.isArray(target.choiceQueue)) target.choiceQueue = [];
+    const queue = target.choiceQueue;
+    // 防御性封顶：单会话整局最多十几个选择，20 足够；真超了说明上游调度有问题，记日志不静默丢
+    if(queue.length >= 20){
+      if(typeof console !== 'undefined') console.warn('[choice] 排队已满，丢弃新选择', String(choice.prompt || '').slice(0, 30));
+      return false;
+    }
+    const brief = ch => String(ch && ch.prompt || '').slice(0, 60);
+    if(target.pendingChoice.isInvitation && !choice.isInvitation){
+      // 正亮着的是邀约，来的是普通选择：普通选择优先亮出，邀约退回队列的「邀约区」队首
+      const evicted = target.pendingChoice;
+      target.pendingChoice = choice;
+      queue.splice(this._choiceInsertIndex(queue, true), 0, evicted);
+      this.emit('choiceQueued', {prompt:brief(evicted), queued:queue.length, requeued:true});
+      return true;
+    }
+    queue.splice(this._choiceInsertIndex(queue, !!choice.isInvitation), 0, choice);
+    this.emit('choiceQueued', {prompt:brief(choice), queued:queue.length});
+    return false;
+  }
+  // 入队位置：普通选择插在第一条邀约之前；邀约追加到队尾。返回 -1 表示还没有邀约，按队尾处理
+  _choiceInsertIndex(queue, isInvitation){
+    if(isInvitation) return queue.length;
+    const idx = queue.findIndex(ch => ch && ch.isInvitation);
+    return idx === -1 ? queue.length : idx;
+  }
+  /* 前一个选择已被回复（或失效）→ 把队列里的下一个亮出来
+   * immediate=false：玩家刚点完选项，界面的点击处理还没返回，
+   *   稍后再亮出下一个，避免被点击处理末尾的「收起选项条」清掉；
+   * immediate=true ：调用点不在任何点击处理里（例如邀约超时被系统清理），可以立即亮出。
+   */
+  _promoteNextChoice(convId, target, immediate = false){
+    if(!target || this.state.ended) return false;
+    const queue = target.choiceQueue;
+    if(!Array.isArray(queue) || !queue.length) return false;
+    if(target.pendingChoice) return false;       // 当前已有一个亮出的选择，下一个继续等
+    const next = {...queue.shift()};
+    delete next.dueAt;                            // 排队期间不消耗作答时间，亮出时重新起算限时
+    const shown = this._stampChoiceDeadline(next);
+    target.pendingChoice = shown;
+    const emit = () => {
+      if(this.state.ended || target.pendingChoice !== shown) return;
+      this.emit('choicePrompt', {convId, choice:shown, conv:target});
+      this.emit('stateChange', this.state);
+    };
+    if(immediate) emit();
+    else this._setTimeout(emit, 700);
+    this.emit('choicePromoted', {convId, prompt:String(shown.prompt || '').slice(0, 60), remaining:queue.length});
+    return true;
   }
   _queueFollowup(convId, message, followup){
     if(!message?.id || !followup?.text) return null;

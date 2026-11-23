@@ -1207,31 +1207,148 @@ test('v0.7.8: localizeDateLabel——中文快照显示层重拼（en/zh）', ()
   assert.equal(localize('7月15日 星期三'), '7月15日 星期三', '中文模式恒等');
 });
 
-test('v0.9.1: 选择被覆盖时补发 thenEvent（主线不再静默中断）', ()=>{
+test('v0.9.11: 同一会话后到的选择排队，不再顶掉先到的（分心玩家江屿线卡死的根因）', ()=>{
   const e = engine();
   const conv = e.state.conversations.luci;
-  const firstChoice = {
-    prompt:'陆辞的话里似乎有别的意思。',
-    options:[{text:'你说"离他远点"是什么意思？', effects:{affection:{luci:2}, thenEvent:'luci_care_reply_1'}}]
+  const first = {prompt:'他在崩溃的边缘。', options:[{text:'我陪着你', effects:{affection:{luci:2}, thenEvent:'luci_care_reply_1'}}]};
+  const second = {prompt:'他想让你听。', options:[{text:'好啊', effects:{}}]};
+
+  // 会话空闲 → 第一个选择立即亮出
+  assert.equal(e._setPendingChoice(conv, first), true, '空闲会话的选择应立即亮出');
+  // 第二个选择到达：旧实现直接顶掉第一个，它的 thenEvent 永远不派发
+  const queued = [];
+  e.on('choiceQueued', p => queued.push(p));
+  assert.equal(e._setPendingChoice(conv, second), false, '已有未回复的选择时，新选择应排队');
+  assert.equal(queued.length, 1, '应记录一次入队');
+  assert.equal(conv.pendingChoice, first, '先到的选择必须原样保留，等玩家自己回复');
+  assert.equal(conv.choiceQueue.length, 1, '后到的选择应进队列');
+  assert.equal(conv.choiceQueue[0], second);
+  assert.equal(e.state.affection.luci, 0, '系统不能替玩家结算任何选项');
+
+  // 玩家回复第一个选择 → 它的 thenEvent 进入派发队列；第二个立刻占位成为当前选择
+  conv.pendingChoice = null;
+  e.sendMessage('luci', first.options[0].text, e.normalizeOptionEffects(first.options[0]));
+  const dispatchIds = e.state.pendingEventDispatches.map(p => p.eventId);
+  assert.ok(dispatchIds.includes('luci_care_reply_1'), '被回复选择的 thenEvent 必须进入派发队列，否则主线断链');
+  assert.equal(e.state.affection.luci, 2, '玩家自己选的选项效果应结算');
+  assert.equal(conv.pendingChoice.prompt, second.prompt, '回复后应立刻占位亮出下一个');
+  assert.equal(conv.choiceQueue.length, 0, '队列应随之清空');
+});
+
+test('v0.9.11: 排队的选择按到达顺序依次亮出，一个都不丢', ()=>{
+  const e = engine();
+  const conv = e.state.conversations.jiangyu;
+  const mk = (prompt, ev) => ({prompt, options:[{text:prompt, effects:{thenEvent:ev}}]});
+  const a = mk('第一问', 'jy_d9_demo');
+  const b = mk('第二问', 'jy_d12_sea');
+  const c = mk('第三问', 'route_jiangyu_relic');
+  e._setPendingChoice(conv, a);
+  e._setPendingChoice(conv, b);
+  e._setPendingChoice(conv, c);
+  assert.equal(conv.pendingChoice, a);
+  assert.equal(conv.choiceQueue.length, 2);
+
+  const answer = ch => {
+    assert.equal(conv.pendingChoice.prompt, ch.prompt, '当前亮出的必须是按顺序的下一个');
+    conv.pendingChoice = null;
+    e.sendMessage('jiangyu', ch.options[0].text, e.normalizeOptionEffects(ch.options[0]));
   };
-  const secondChoice = {prompt:'陆辞约你晚上吃饭。', options:[{text:'好啊', effects:{}}]};
+  answer(a); answer(b); answer(c);
+  assert.equal(conv.pendingChoice, undefined, '全部答完后不应再有亮出的选择');
+  assert.equal((conv.choiceQueue || []).length, 0, '全部答完后队列应为空');
+  const dispatchIds = e.state.pendingEventDispatches.map(p => p.eventId);
+  for(const ev of ['jy_d9_demo', 'jy_d12_sea', 'route_jiangyu_relic']){
+    assert.ok(dispatchIds.includes(ev), `三个选择的后续事件都必须派发：缺 ${ev}`);
+  }
+});
 
-  // 第一个选择挂起
-  e._setPendingChoice(conv, firstChoice);
-  assert.equal(conv.pendingChoice.prompt, firstChoice.prompt, '第一个选择应挂起');
+test('v0.9.11: 存档读档后排队的选择不丢', ()=>{
+  const e = engine();
+  const conv = e.state.conversations.luci;
+  const a = {prompt:'第一问', options:[{text:'甲', effects:{thenEvent:'luci_care_reply_1'}}]};
+  const b = {prompt:'第二问', options:[{text:'乙', effects:{thenEvent:'luci_dinner_yes'}}]};
+  e._setPendingChoice(conv, a);
+  e._setPendingChoice(conv, b);
+  assert.equal(e.save('slot1'), true);
+  const restored = engine();
+  assert.equal(restored.load('slot1'), true);
+  const rc = restored.state.conversations.luci;
+  assert.equal(rc.pendingChoice.prompt, '第一问', '当前亮出的选择应保留');
+  assert.ok(Array.isArray(rc.choiceQueue) && rc.choiceQueue.length === 1, '排队的选择读档后不能丢（白名单必须包含 choiceQueue）');
+  assert.equal(rc.choiceQueue[0].prompt, '第二问');
+  assert.equal(rc.choiceQueue[0].options[0].effects.thenEvent, 'luci_dinner_yes', '排队选择的后续事件也要保留');
+});
 
-  const superseded = [];
-  e.on('choiceSuperseded', p => superseded.push(p));
-  // 第二个选择到达（旧实现会静默丢弃第一个选择的 thenEvent）
-  e._setPendingChoice(conv, secondChoice);
+test('v0.9.11: 邀约不堵主线——普通选择越过正亮出的邀约，邀约退回队列不丢', ()=>{
+  const e = engine();
+  const conv = e.state.conversations.luci;
+  const invChoice = {
+    prompt:'陆辞在等你回复：', isInvitation:true, invitationId:'inv_luci_school',
+    options:[
+      {text:'好，我去', effects:{thenEvent:'__inv_accept_inv_luci_school'}},
+      {text:'抱歉，去不了', effects:{thenEvent:'__inv_decline_inv_luci_school'}}
+    ]
+  };
+  const mainChoice = {prompt:'他说出口了。', options:[{text:'我也是', effects:{thenEvent:'route_luci_after_confess'}}]};
+  assert.equal(e._setPendingChoice(conv, invChoice), true, '会话空闲时邀约正常亮出');
 
-  assert.equal(superseded.length, 1, '被覆盖的选择应被记录一次');
-  assert.equal(superseded[0].prompt, firstChoice.prompt);
-  // thenEvent 走调度队列（延迟派发），断言已进入待派发队列即可证明不会丢
-  const queuedIds = e.state.pendingEventDispatches.map(p => p.eventId);
-  assert.ok(queuedIds.includes('luci_care_reply_1'), '被覆盖选择的 thenEvent 必须进入调度队列，否则主线断链');
-  assert.equal(conv.pendingChoice.prompt, secondChoice.prompt, '新选择仍应正常挂起');
-  assert.equal(e.state.affection.luci, 2, '被覆盖选择的默认选项效果也应结算');
+  const queued = [];
+  e.on('choiceQueued', p => queued.push(p));
+  // 主线选择到达：必须立刻亮出，邀约退回队列（仍然可以回复，没有丢）
+  assert.equal(e._setPendingChoice(conv, mainChoice), true, '普通选择应越过邀约立即亮出');
+  assert.equal(conv.pendingChoice.prompt, mainChoice.prompt, '主线选择应成为当前选择');
+  assert.equal(conv.choiceQueue.length, 1, '邀约应退回队列');
+  assert.equal(conv.choiceQueue[0].isInvitation, true, '退回队列的必须是那个邀约');
+  assert.equal(queued.length, 1);
+  assert.equal(queued[0].requeued, true, '应标记为「退回重排」而不是普通入队');
+
+  // 读档后的邀约选择要能被认出来，所以存档清洗必须保留邀约编号
+  const clean = e._sanitizeLoadedState(JSON.parse(JSON.stringify(e.state)));
+  assert.equal(clean.conversations.luci.choiceQueue[0].invitationId, 'inv_luci_school', '存档清洗必须保留邀约编号');
+
+  // 邀约超时：清掉队列里的它，不影响正在亮出的主线选择
+  assert.equal(e.resolveInvitation('inv_luci_school', 'missed'), true);
+  assert.equal(conv.pendingChoice.prompt, mainChoice.prompt, '主线选择不应受影响');
+  assert.equal((conv.choiceQueue || []).length, 0, '队列里的僵尸邀约必须被清掉');
+});
+
+test('v0.9.11: 邀约超时且它正亮出时，立即亮出排在后面的选择', ()=>{
+  const e = engine();
+  const conv = e.state.conversations.luci;
+  const invChoice = {prompt:'陆辞在等你回复：', isInvitation:true, invitationId:'inv_luci_school', options:[{text:'好，我去', effects:{}}, {text:'抱歉，去不了', effects:{}}]};
+  const other = {prompt:'周末的安排。', options:[{text:'再说吧', effects:{}}]};
+  // 直接构造「邀约正亮出、后面还排着一个」的状态。
+  // （按新规则普通选择会越过邀约，所以这里排队的用另一个邀约性质的占位，模拟极端情况）
+  conv.pendingChoice = invChoice;
+  conv.choiceQueue = [other];
+
+  const promoted = [];
+  e.on('choicePrompt', p => promoted.push(p));
+  // 模拟超时：系统按「错过」结算邀约
+  assert.equal(e.resolveInvitation('inv_luci_school', 'missed'), true);
+  assert.equal(conv.pendingChoice.prompt, other.prompt, '邀约失效后，排在它后面的选择应立即亮出');
+  assert.equal(promoted.length, 1, '应立即发出一次亮出通知');
+  assert.equal(promoted[0].choice.prompt, other.prompt);
+  assert.equal((conv.choiceQueue || []).length, 0);
+});
+
+test('v0.9.11: 队列顺序固定为「普通选择在前、邀约在后」', ()=>{
+  const e = engine();
+  const conv = e.state.conversations.jiangyu;
+  const normal = p => ({prompt:p, options:[{text:p, effects:{}}]});
+  const invite = p => ({prompt:p, isInvitation:true, invitationId:'inv_jiangyu_bar', options:[{text:p, effects:{}}]});
+  const a = normal('普通甲'), inv = invite('邀约'), b = normal('普通乙');
+  e._setPendingChoice(conv, a);
+  e._setPendingChoice(conv, inv);     // 邀约到达 → 排队
+  e._setPendingChoice(conv, b);       // 后到的普通选择 → 必须排到邀约前面
+  assert.deepEqual(conv.choiceQueue.map(c => c.prompt), ['普通乙', '邀约'], '普通乙必须排在邀约之前');
+
+  conv.pendingChoice = null;
+  e.sendMessage('jiangyu', a.options[0].text, {});
+  assert.equal(conv.pendingChoice.prompt, '普通乙', '先亮出的一定是普通选择');
+  conv.pendingChoice = null;
+  e.sendMessage('jiangyu', b.options[0].text, {});
+  assert.equal(conv.pendingChoice.prompt, '邀约', '普通选择都答完后才轮到邀约');
 });
 
 test('v0.9.1: 图鉴结局名与实际结局标题一致', ()=>{

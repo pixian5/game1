@@ -101,7 +101,9 @@
     'groupCreated','groupMessageReceived','itemCollected','achievementsUnlocked',
     'puzzleSolved','puzzleFailed','photoUnlocked','musicUnlocked','momentPosted',
     'holidayTriggered','tarotDrawn','giftGiven','saveFailed','loadFailed','gameLoaded','gameSaved',
-    'ambienceChange','invitationNew','flashbackTriggered'
+    'ambienceChange','invitationReceived','flashbackTriggered',
+    // v0.9.11：会话内选择排队的三个节点（入队 / 亮出下一个 / 被系统清理），排查「选项不见了」时必看
+    'choiceQueued','choicePromoted','choicePurged'
   ];
   function attach(engine){
     engineRef = engine;
@@ -112,6 +114,9 @@
         try {
           if(evt === 'messageReceived') brief = (payload.from || '') + ': ' + String(payload.text || '').slice(0, 40);
           else if(evt === 'choicePrompt') brief = (payload.convId || '') + ' → ' + String(payload.choice?.prompt || '').slice(0, 40);
+          else if(evt === 'choiceQueued') brief = '排队第 ' + (payload.queued || 0) + ' 位：' + String(payload.prompt || '').slice(0, 40);
+          else if(evt === 'choicePromoted') brief = (payload.convId || '') + ' → ' + String(payload.prompt || '').slice(0, 40) + '（队列还剩 ' + (payload.remaining || 0) + '）';
+          else if(evt === 'choicePurged') brief = '邀约 ' + (payload.invitationId || '') + ' 残留选择清理 ' + (payload.count || 0) + ' 处';
           else if(evt === 'ending') brief = payload.id || payload.title || '';
           else if(evt === 'incomingCall') brief = payload.from || '';
           else if(evt === 'itemCollected') brief = payload.item?.name || payload.itemId || '';

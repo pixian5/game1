@@ -139,6 +139,10 @@ Object.assign(PhoneEngine.prototype, {
         return outOpt;
       });
       const out = {prompt:asText(c.prompt, 1000), options, isInvitation:asBool(c.isInvitation)};
+      // v0.9.11：邀约选择要保留 invitationId（仅接受剧情里真实存在的邀约编号），
+      // 否则读档后邀约超时时认不出它的残留选择，队列会被僵尸邀约堵住
+      const invitationId = typeof c.invitationId === 'string' && this.story.invitations?.[c.invitationId] ? c.invitationId : null;
+      if(out.isInvitation && invitationId) out.invitationId = invitationId;
       const timeout = asInt(c.timeout, 0, 0, 3600);
       if(timeout > 0) out.timeout = timeout;
       const dueAt = asInt(c.dueAt, 0, 0, 9999999999999);
@@ -159,6 +163,12 @@ Object.assign(PhoneEngine.prototype, {
         };
       }
       return out;
+    };
+    // v0.9.11：同一会话里排队等待的选择（后到的选择不再顶掉先到的）。
+    // 只有确实有排队内容时才带上这个字段，避免给每个会话都塞一个空数组。
+    const sanitizeChoiceQueue = value => {
+      const list = array(value, 20, sanitizeChoice);
+      return list.length ? {choiceQueue: list} : {};
     };
     const sanitizePendingInteraction = value => {
       const p = object(value);
@@ -244,7 +254,8 @@ Object.assign(PhoneEngine.prototype, {
         unread:asInt(conv.unread, 0, 0, 500),
         typing:false,
         finished:asBool(conv.finished),
-        pendingChoice:sanitizeChoice(conv.pendingChoice)
+        pendingChoice:sanitizeChoice(conv.pendingChoice),
+        ...sanitizeChoiceQueue(conv.choiceQueue)
       };
     });
     out.affection = {...def.affection};
@@ -331,7 +342,7 @@ Object.assign(PhoneEngine.prototype, {
     out.invitations = array(source.invitations,100,item=>{const i=object(item);return this.story.invitations?.[i.id] ? {id:i.id,status:['pending','accepted','declined','missed'].includes(i.status)?i.status:'pending',ts:asInt(i.ts,0,0,9999999999999)} : null;});
     out.firedInvitations = record(source.firedInvitations,100,value=>asBool(value));
     out.resolvedInvitations = record(source.resolvedInvitations,100,value=>['accepted','declined','missed'].includes(value)?value:'missed');
-    out.groups = record(source.groups,20,(item,key)=>{const g=object(item); if(!this.story.groups?.[key]) return null; return {id:key,name:asText(g.name,80),members:idList(g.members,new Set(chars),10),messages:array(g.messages,300,m=>{const x=object(m);return {from:['me',...chars].includes(x.from)?x.from:'me',text:asText(x.text,1000),time:asText(x.time,8),ts:asInt(x.ts,0,0,9999999999999)};}),unread:asInt(g.unread,0,0,300),typing:false,pendingChoice:sanitizeChoice(g.pendingChoice)};});
+    out.groups = record(source.groups,20,(item,key)=>{const g=object(item); if(!this.story.groups?.[key]) return null; return {id:key,name:asText(g.name,80),members:idList(g.members,new Set(chars),10),messages:array(g.messages,300,m=>{const x=object(m);return {from:['me',...chars].includes(x.from)?x.from:'me',text:asText(x.text,1000),time:asText(x.time,8),ts:asInt(x.ts,0,0,9999999999999)};}),unread:asInt(g.unread,0,0,300),typing:false,pendingChoice:sanitizeChoice(g.pendingChoice),...sanitizeChoiceQueue(g.choiceQueue)};});
     Object.keys(out.groups).forEach(key=>{if(!out.groups[key]) delete out.groups[key];});
     out.currentTheme = this.story.themes?.[source.currentTheme] ? source.currentTheme : 'default';
     out.currentIconTheme = this.story.iconThemes?.[source.currentIconTheme] ? source.currentIconTheme : 'default';
