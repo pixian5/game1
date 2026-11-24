@@ -3,14 +3,20 @@
  *       很多有价值的检查（结局可达性、翻译缺口、安全、离线可用性）全靠人记得手动跑。
  *
  * 三档：
- *   hook  推送前钩子用。不依赖浏览器：verify:offline + lint          （约 1 分钟）
- *   gate  默认档。hook + 四项浏览器检查                              （约 1.5 分钟）
- *   full  完整档。gate + 账号端到端 + 三浏览器端到端                  （约 4 分钟）
+ *   hook  推送前钩子用。不依赖浏览器：verify:offline + lint          （约 50 秒）
+ *   gate  默认档。hook + 四项浏览器检查                              （约 75 秒）
+ *   full  完整档。gate + 三浏览器端到端                              （约 3 分钟）
+ *
+ * 依赖数据库的测试（账号接口测试会启动服务进程并用 SQLite；
+ * 账号与云存档端到端同理）默认不在本机运行，需要时加 --with-db。
+ * 用户的规定是：本机不启动数据库、不部署任何环境；这类测试一律放到 Instabox 沙箱上跑：
+ *   npm run test:db:instabox
  *
  * 用法：
  *   npm run gate            默认档
  *   npm run gate:full       完整档
  *   node tools/run_gate.mjs --hook --if-stamped   推送前钩子内部调用
+ *   node tools/run_gate.mjs --with-db             额外跑依赖数据库的测试（仅限允许跑数据库的环境）
  *
  * 通过标记：同一提交通过某一档后，结果记在 .gate-stamp（不入库）。
  *   之后对同一提交再跑同等或更低档位的检查会直接跳过——往多个远端连续推送时不会重复跑。
@@ -30,6 +36,8 @@ const PORT = 4187;
 const argv = process.argv.slice(2);
 const MODE = argv.includes('--full') ? 'full' : argv.includes('--hook') ? 'hook' : 'gate';
 const IF_STAMPED = argv.includes('--if-stamped');
+// 依赖数据库的测试默认不跑（本机规则：数据库相关一律放到 Instabox）；--with-db 时才加进来
+const WITH_DB = argv.includes('--with-db');
 const RANK = { hook: 0, gate: 1, full: 2 };
 const LABEL = { hook: '离线档', gate: '默认档', full: '完整档' };
 
@@ -64,7 +72,7 @@ const steps = [];
 const npm = (label, script) => steps.push({ label, cmd: 'npm', args: ['run', '--silent', script] });
 const node = (label, file) => steps.push({ label, cmd: process.execPath, args: [file] });
 
-npm('离线检查集（版本号 / 剧情数据 / 界面静态 / 回归 / 剧情链路 / 路线时序 / 路线矩阵 / 覆盖探测 / 账号接口）', 'verify:offline');
+npm('离线检查集（版本号 / 剧情数据 / 界面静态 / 回归 / 剧情链路 / 路线时序 / 路线矩阵 / 覆盖探测）', 'verify:offline');
 if(hasEslint()) npm('代码规范（eslint）', 'lint');
 else console.log('[总闸] 未安装测试依赖（没有 node_modules），跳过代码规范检查');
 
@@ -75,8 +83,10 @@ if(MODE !== 'hook'){
   npm('离线可用性（PWA）', 'check:pwa');
 }
 if(MODE === 'full'){
-  npm('账号与云存档端到端', 'test:account');
   npm('三浏览器端到端', 'test:browser');
+}
+if(WITH_DB){
+  npm('依赖数据库的测试（账号接口 + 账号与云存档端到端）', 'test:db');
 }
 
 /* 四项浏览器检查与端到端用例都需要本地服务器在 4187 端口；没开的话由这里代开，结束时关掉 */
@@ -127,4 +137,7 @@ if(dirty){
 } else {
   fs.writeFileSync(STAMP, JSON.stringify({ head, mode: MODE, at: new Date().toISOString() }));
   console.log(`\n[总闸] ✓ 全部通过（${LABEL[MODE]}），已为提交 ${head.slice(0, 7)} 记录通过标记`);
+}
+if(!WITH_DB){
+  console.log('[总闸] 提示：依赖数据库的账号测试没有在本机运行。提交之后执行  npm run test:db:instabox  在 Instabox 上跑。');
 }

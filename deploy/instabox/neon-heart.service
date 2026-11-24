@@ -1,0 +1,25 @@
+[Unit]
+Description=Neon Heart game + account service (serve-loop under systemd)
+# 霓虹心事游戏与账号服务：由 systemd 托管 /data/neon-heart/serve-loop.sh
+# 仓库留档：deploy/instabox/neon-heart.service
+# 安装位置：~/.config/systemd/user/（Instabox 沙箱上为 /data/home/.config/systemd/user/）
+# 启用：systemctl --user daemon-reload && systemctl --user enable --now neon-heart.service
+#
+# 为什么要加这一层：serve-loop.sh 只负责「进程崩了自动拉起」，
+# 但此前它是用 setsid nohup 手动启动的，沙箱真正重启后不会自己回来。
+# 交给 systemd 之后：开机自启（配合 loginctl enable-linger）、
+# 守护脚本本身被杀掉也会被重新拉起。
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/data/neon-heart
+ExecStart=/bin/sh /data/neon-heart/serve-loop.sh
+# 守护脚本异常退出后 3 秒重新拉起
+Restart=always
+RestartSec=3
+
+[Install]
+# 用户级服务：登录会话不存在时也运行（需要 loginctl enable-linger x）
+WantedBy=default.target

@@ -17,7 +17,7 @@
 
 | 入口 | 地址 | 说明 |
 |---|---|---|
-| Instabox（主入口，含账号与云存档） | https://8081-agqxoy6u363jxgfufg2onqxbm4.instabox.tech | 线上 **v0.9.11**；数据库每日自动备份到自有服务器 |
+| Instabox（主入口，含账号与云存档） | https://8081-agqxoy6u363jxgfufg2onqxbm4.instabox.tech | 线上 **v0.9.11**；服务已设开机自启；数据库每日自动备份到自有服务器 |
 | GitHub Pages | https://pixian5.github.io/game1/ | 纯静态，**v0.9.7**，需手动更新 |
 | 抱脸 Space | https://xbzsb-neon-heart.static.hf.space/index.html | 纯静态，**v0.9.0**，令牌失效待重签 |
 | 自有服务器 `uw` / `ue.sbbz.tech` | — | 游戏未部署；目前作为数据库备份接收端 |
@@ -56,14 +56,19 @@ node server/backup_db.mjs             # 生成 SQLite 一致性备份
 运行全部校验与测试：
 
 ```bash
-npm install                # 首次：安装测试依赖（@playwright/test / eslint），并自动启用推送前检查钩子
-npm run gate               # 总闸（推荐）：离线检查集 + 代码规范 + 结局可达性 + 翻译缺口 + 安全 + 离线可用性，约 76 秒
-npm run gate:full          # 总闸完整档：上一行 + 账号端到端 + 三浏览器端到端，约 4 分钟
-npm run test:all           # 仅测试（不含结局可达性、翻译缺口、安全、离线可用性四项）
+npm install                        # 首次：安装测试依赖（@playwright/test / eslint），并自动启用推送前检查钩子
+npm run gate                       # 本机总闸（推荐）：离线检查集 + 代码规范 + 结局可达性 + 翻译缺口 + 安全 + 离线可用性，约 75 秒
+npm run gate:full                  # 本机总闸完整档：上一行 + 三浏览器端到端，约 3 分钟
+npm run test:db:instabox -- all    # 依赖数据库的测试，在 Instabox 沙箱上跑：账号接口 54 项 + 账号与云存档端到端，约 1 分钟
 ```
 
-> **推送前钩子**：`npm install` 之后，每次 `git push` 之前会自动执行不依赖浏览器的离线检查
-> （约 48 秒），未通过则中止推送。同一提交通过一次后，往多个远端连续推送不重复跑。
+> **本机不跑依赖数据库的测试。** 账号接口测试与账号端到端都会启动服务进程并使用 SQLite 数据库，
+> 按规定一律放到 Instabox 上：`npm run test:db:instabox`（只跑接口测试）或加 `-- all`。
+> 它测的是远端 main 分支的最新提交，所以要先提交并推送再运行。
+> 认证用 `instabox login` 或环境变量 `INSTABOX_API_KEY`（密钥不写在仓库里）。
+
+> **推送前钩子**：`npm install` 之后，每次 `git push` 之前会自动执行不依赖浏览器、不依赖数据库的
+> 离线检查（约 47 秒），未通过则中止推送。同一提交通过一次后，往多个远端连续推送不重复跑。
 > 确需跳过某一次：`SKIP_GATE=1 git push ...`，并在提交说明里写明原因。
 
 单项命令：
@@ -78,13 +83,13 @@ npm run test:story         # 剧情链路测试（294 项断言）
 npm run test:route         # 路线时序测试（19 项）
 npm run matrix:route       # 路线开机矩阵（4 条路线 × 3 种推进方式）
 npm run probe:choice       # 选择覆盖探测：模拟「慢玩家」，出现静默丢失或卡死即失败
-npm run test:account-api   # 账号 API 集成测试（54 项，自带临时 SQLite）
-npm run test:account       # 账号与云存档浏览器 E2E（Playwright，1 条全流程）
-npm run test:browser       # 其余浏览器端到端（Playwright，三个浏览器共 69 项）
+npm run test:browser       # 其余浏览器端到端（Playwright，三个浏览器共 69 项；不含账号）
 npm run check:endings      # 结局可达性（17 个结局）
 npm run check:i18n         # 翻译缺口
 npm run check:security     # 安全检查（存档注入 / 跨站脚本 / 恶意图片）
 npm run check:pwa          # 离线可用性
+npm run test:db            # 依赖数据库：账号 API 集成测试（54 项）+ 账号与云存档浏览器端到端（1 条）
+                           # ↑ 只在允许跑数据库的环境里用；在本机上请用上面的 test:db:instabox
 ```
 
 > 说明：GitHub Actions 工作流已按用户要求删除，上述检查在本地执行，由推送前钩子强制。
@@ -97,7 +102,7 @@ npm run check:pwa          # 离线可用性
 
 v0.9.11（2026-11-24 续）：**Git 历史清理、上线、数据库备份、自动化检查**——
 分支历史里的凭据已清除并强推四个远端（GitHub 四天来首次同步），192 个提交逐个核对内容无误；
-但托管平台上旧的含私钥提交仍可按编号拉取，**密钥仍需更换**。
+当时托管平台上旧的含私钥提交仍可按编号拉取（已在再续一轮通过重建仓库清除）。
 v0.9.11 已部署到 Instabox（线上代码包哈希与本地构建一致）。
 数据库每日自动快照并推送到两台自有服务器，服务器端密钥「只能新增」五项限制实测有效，恢复演练通过。
 新增总闸 `npm run gate` / `gate:full` 与推送前钩子。
@@ -109,10 +114,18 @@ v0.9.11：**会话内选择改为排队，修复「回复慢就卡死」**——
 质量基线：剧情 294/294、回归 70/70、路线时序 19/19、矩阵 12/12、覆盖探测 16 次运行全过、
 账号接口 54/54、端到端 69/69 + 账号 1/1、引擎覆盖率全部在 60% 红线以上。
 
+v0.9.11（2026-11-24 再续）：**仓库重建、服务开机自启、检查分流**——
+GitCode 与 Gitee 上的仓库已重建（先改名旧仓库、再用原名新建、推送干净历史、验证后才删除旧的），
+含凭据的旧提交在四个远端都已无法按编号拉取，并用有效提交做了对照测试。
+游戏服务改由 systemd 用户服务托管，进程被杀约 2 秒恢复、守护脚本被杀约 4 秒恢复。
+按「本机不跑数据库」的规定，把依赖数据库的测试分流到 Instabox：`npm run test:db:instabox -- all`。
+
 v0.9.10：账号服务「一个畸形请求即崩溃」缺陷修复。v0.9.9：完整账号系统 + 云存档同步。
 
-👉 详细进度：[docs/20261124-0446-当前开发进度-GLM-5.4.md](docs/20261124-0446-当前开发进度-GLM-5.4.md)
-👉 本轮操作记录（历史清理 / 上线 / 备份）：[docs/20261124-0446-Git历史清理与线上部署与备份建立-GLM-5.4.md](docs/20261124-0446-Git历史清理与线上部署与备份建立-GLM-5.4.md)
+👉 详细进度：[docs/20261124-1245-当前开发进度-GLM-5.4.md](docs/20261124-1245-当前开发进度-GLM-5.4.md)
+👉 操作记录（仓库重建 / 服务托管 / 检查分流）：[docs/20261124-1245-仓库重建清除平台旧提交与服务托管-GLM-5.4.md](docs/20261124-1245-仓库重建清除平台旧提交与服务托管-GLM-5.4.md)
+👉 操作记录（历史清理 / 上线 / 备份）：[docs/20261124-0446-Git历史清理与线上部署与备份建立-GLM-5.4.md](docs/20261124-0446-Git历史清理与线上部署与备份建立-GLM-5.4.md)
+👉 游戏服务托管：[deploy/instabox/README.md](deploy/instabox/README.md)
 👉 整体分析（含各维度实测数据）：[docs/20261124-0315-整体分析与下一步开发建议-GLM-5.4.md](docs/20261124-0315-整体分析与下一步开发建议-GLM-5.4.md)
 👉 备份方案（搭建 / 检查 / 恢复）：[deploy/backup/README.md](deploy/backup/README.md)
 
@@ -120,18 +133,17 @@ v0.9.10：账号服务「一个畸形请求即崩溃」缺陷修复。v0.9.9：�
 
 **只能由用户完成**：
 1. **更换全部已泄露的密钥**（服务器 SSH 密钥对、Cloudflare、GitHub、Gitee、GitCode、抱脸令牌）。
-   清理历史代替不了这一步：托管平台上旧的含私钥提交仍可按编号拉取。
-2. 决定是否删除并重建 GitCode 与 Gitee 上的仓库，以清掉平台上的旧提交。
+   含凭据的旧提交已从四个远端清除，但它们此前已公开 6 到 25 天，清除代替不了更换。
 
 **内容（下一版的主体）**：剧情保底长度 12 天，按「路线主线照常开始、只把最终结局压后」实施
 （打开现有原型开关会让玩家选完线后干等 5 天，所以不直接开）；处理 10 条永远触达不到的事件；补独行线。
 
 **双语**：英文模式下选项文字显示中文——字典里 98.5% 的选项文字已有翻译，但 10 处界面渲染没调用翻译函数。
 
-**运维**：游戏服务进程没有开机自启（沙箱重启后不会自动恢复）；线上缺安全响应头；
-密钥更换之后把游戏部署到自有服务器（方案定为 Cloudflare Tunnel）。
+**运维**：线上缺安全响应头；密钥更换之后把游戏部署到自有服务器（方案定为 Cloudflare Tunnel）；
+沙箱真正重启后服务自动恢复这一点，等一次自然的重启机会确认。
 
-👉 详细清单：[docs/20261124-0446-下一步待实现-GLM-5.4.md](docs/20261124-0446-下一步待实现-GLM-5.4.md)
+👉 详细清单：[docs/20261124-1245-下一步待实现-GLM-5.4.md](docs/20261124-1245-下一步待实现-GLM-5.4.md)
 
 ## 目录结构
 
@@ -151,6 +163,8 @@ v0.9.10：账号服务「一个畸形请求即崩溃」缺陷修复。v0.9.9：�
 | `assets/` | 壁纸（`tools/generate_wallpapers.py` 生成）、相册照片（`tools/generate_photos.py` 生成）、角色头像（`tools/generate_avatars.py` 生成）、氛围壁纸（`tools/generate_ambiences.py` 生成）、OG 分享图（`tools/generate_og.py` 生成）与图标（`tools/generate_icons.py` 生成） |
 | `tools/` | 资产生成脚本（`generate_*.py`，Python + PIL）、一键升版本脚本（`bump_version.py`）、测试与探测脚本（`choice_override_probe.mjs` 模拟慢玩家、`verify-endings.mjs`、`security-check.mjs`、`pwa-check.mjs`、`live-check.mjs` 等）、总闸（`run_gate.mjs`） |
 | `deploy/backup/` | **数据库备份方案**：沙箱端备份脚本、服务器端初始化脚本、两个 systemd 单元、搭建/检查/恢复说明 |
+| `deploy/instabox/` | **Instabox 上的游戏服务托管**：systemd 用户服务单元、说明文档、在沙箱上跑数据库测试的脚本 |
+| `tools/instabox_db_tests.sh` | 本机入口：把依赖数据库的测试放到 Instabox 上跑（`npm run test:db:instabox`） |
 | `.githooks/pre-push` | 推送前检查钩子（`npm install` 时自动启用） |
 | `eslint.config.mjs` | ESLint 分环境配置（浏览器/Node/ui 分域，v0.2.1 接入） |
 | `deploy.sh` | 一键部署（自动构建 bundle 后 rsync dist/） |
@@ -174,7 +188,7 @@ v0.9.10：账号服务「一个畸形请求即崩溃」缺陷修复。v0.9.9：�
 - `VERSION` 是唯一版本源；每次修改 **+0.0.1**（每一位满十进一）
 - 发版：`python3 tools/bump_version.py` 一键同步 `VERSION / package.json /
   package-lock.json / index.html（标题、meta、所有 `?v=` 缓存参数）/ sw.js 的
-  `CACHE_VERSION`，随后 `npm run check:version` 验证（云端流水线已删除，靠 `npm run test:all` 的第一步拦截）
+  `CACHE_VERSION`，随后 `npm run check:version` 验证（云端流水线已删除，靠总闸与推送前钩子的第一步拦截）
 - 每个版本的问题/经验记录写入 `docs/`（命名：`年月日时分-标题-模型名.md`）
 
 ## 开发约定
@@ -187,7 +201,10 @@ v0.9.10：账号服务「一个畸形请求即崩溃」缺陷修复。v0.9.9：�
 - **含令牌、私钥、授权码的文件绝不入库**（历史上因此泄露过一次）。提交前检查：
   `git diff --cached --name-only | grep -iE "deploy-handoff|credential|\.env"` 必须为空
 - 每次修改后必须跑通 `npm run gate:full`（至少 `npm run gate`）才能停下；
-  推送前钩子会自动执行不依赖浏览器的部分
+  推送前钩子会自动执行不依赖浏览器也不依赖数据库的部分
+- **本机不启动数据库、不启动 Docker、不部署任何环境**：依赖数据库的测试
+  （账号接口测试、账号与云存档端到端）一律在 Instabox 上跑：`npm run test:db:instabox -- all`；
+  需要真实运行环境时同样放到 Instabox
 - 新增剧情数据 → 写进 `story/` 对应板块文件（不要在 `18_patches.js` 叠补丁），先跑 `npm run validate:story`
 - 新增源码文件 → `story/`、`engine_*.js` 会被测试清单自动包含；`ui/`、`audio.js`、`pwa.js` 需手动加入 `index.html` 与 `sw.js` 的 PRECACHE
 
