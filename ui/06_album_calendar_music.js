@@ -14,7 +14,7 @@
       item.dataset.photo = pid;
       if(unlocked){
         const p = STORY.photos[pid];
-        item.innerHTML = `<img src="${photoSrc(p.art)}" alt="${escapeHtml(p.title)}" loading="lazy">`;
+        item.innerHTML = `<img src="${photoSrc(p.art)}" alt="${tEsc(p.title)}" loading="lazy">`;
       } else {
         item.innerHTML = '?';
       }
@@ -38,14 +38,14 @@
     const unlocked = engine.state.photos.find(x=>x.id===pid);
     if(!unlocked){ toast('照片未解锁'); return; }
     $('photo-bg').style.background = `linear-gradient(135deg, #1a0a2e, #0a0712)`;
-    $('photo-art').innerHTML = `<img src="${photoSrc(p.art)}" alt="${escapeHtml(p.title)}">`;
+    $('photo-art').innerHTML = `<img src="${photoSrc(p.art)}" alt="${tEsc(p.title)}">`;
     // 检查是否有回忆可触发
     const memId = engine.getMemoriesByPhoto(pid);
     const hasMemory = memId && !engine.state.resolvedMemories[memId];
     const memBtn = hasMemory
       ? `<button class="photo-memory-btn" data-memory="${escapeHtml(pid)}">✦ 回味这段回忆</button>`
       : (memId ? '<div class="photo-memory-done">回忆已回味</div>' : '');
-    $('photo-caption').innerHTML = `<strong>${escapeHtml(p.title)}</strong><br>${escapeHtml(p.caption).replace(/\n/g,'<br>')}${memBtn}`;
+    $('photo-caption').innerHTML = `<strong>${tEsc(p.title)}</strong><br>${tBr(p.caption)}${memBtn}`;
     showScreen('photoView');
   }
   function photoSrc(type){
@@ -58,8 +58,8 @@
     const d = engine.getDateLabel();
     $('cal-current').innerHTML = `
       <div class="cc-day">${d.date}</div>
-      <div class="cc-month">${d.month}月</div>
-      <div class="cc-weekday">${escapeHtml(window.t('星期' + d.weekday))}</div>
+      <div class="cc-month">${monthLabel(d.month)}</div>
+      <div class="cc-weekday">${escapeHtml(window.t(d.weekday))}</div>
     `;
     const events = $('cal-events');
     events.innerHTML = '';
@@ -115,14 +115,14 @@
       item.dataset.music = id;
       item.innerHTML = `
         <span class="mi-num">${isPlaying?'▶':(Object.keys(STORY.music).indexOf(id)+1)}</span>
-        <span class="mi-title">${escapeHtml(m.title)}</span>
+        <span class="mi-title">${tEsc(m.title)}</span>
         <span class="mi-dur">${escapeHtml(m.duration)}</span>
       `;
       playlist.appendChild(item);
     });
     if(playing){
       const m = STORY.music[playing];
-      $('np-title').textContent = m.title;
+      $('np-title').textContent = optTranslate(m.title);
       $('np-artist').textContent = m.artist;
       $('np-art').classList.add('playing');
       $('np-art').textContent = '♪';

@@ -255,6 +255,13 @@ Object.assign(PhoneEngine.prototype, {
     return ['shenyan','luci','jiangyu'].every(c => this.state.truthEndingsSeen[c] === true);
   },
 
+  // v0.9.12：主角姓名、昵称的长度上限。6 个字是为中文名定的，英文名 7 个字母就输不进去；
+  // 其他语言一个字母的宽度约为汉字的一半，给 12 个字符，显示宽度与 6 个汉字相当
+  playerNameMaxLength(){
+    const lang = (typeof window !== 'undefined' && window.I18N && typeof window.I18N.getLang === 'function') ? window.I18N.getLang() : 'zh-CN';
+    return lang === 'zh-CN' ? 6 : 12;
+  },
+
   setPlayer(info){
     const def = (this.story.playerCustomization && this.story.playerCustomization.defaultPlayer) || {};
     this.state.player = {

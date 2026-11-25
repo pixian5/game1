@@ -413,7 +413,7 @@
     const g = engine.state.groups[groupId];
     if(!g) return;
     $('group-chat-name').textContent = VMT(g.name);
-    $('group-chat-members').textContent = g.members.length + ' 位成员';
+    $('group-chat-members').textContent = window.t('{n} 位成员', {n: g.members.length});   // v0.9.12：走翻译模板
     renderGroupChatBody(groupId);
     engine.markGroupRead(groupId);
     updateGroupBadge();
@@ -435,7 +435,7 @@
       const div = document.createElement('div');
       if(m.from === 'me'){
         div.className = 'msg send';
-        div.textContent = m.text;
+        div.textContent = optTranslate(m.text);
       } else {
         div.className = 'msg recv';
         const char = STORY.characters[m.from];
@@ -466,13 +466,13 @@
       return;
     }
     bar.hidden = false;
-    $('group-chat-prompt').textContent = choice.prompt;
+    $('group-chat-prompt').textContent = optTranslate(choice.prompt);
     const opts = $('group-chat-options');
     opts.innerHTML = '';
     choice.options.forEach((opt, i)=>{
       const btn = document.createElement('button');
       btn.className = 'chat-opt';
-        btn.innerHTML = escapeHtml(opt.text) + (opt.hint?` <span style="color:var(--ink-mute);font-size:11px">(${escapeHtml(opt.hint)})</span>`:'');
+        btn.innerHTML = escapeHtml(optText(opt)) + (opt.hint?` <span style="color:var(--ink-mute);font-size:11px">(${escapeHtml(optHint(opt))})</span>`:'');
       btn.dataset.groupOpt = i;
       opts.appendChild(btn);
     });
@@ -485,7 +485,7 @@
     if(screens.groups.classList.contains('active')) renderGroupList();
     if(currentGroupId === id && screens.groupChat.classList.contains('active')){
       renderGroupChatBody(id);
-      $('group-chat-members').textContent = group.members.length + ' 位成员';
+      $('group-chat-members').textContent = window.t('{n} 位成员', {n: group.members.length});
     }
   });
   engine.on('groupMessageReceived', ({groupId, from})=>{

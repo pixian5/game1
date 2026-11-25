@@ -13,7 +13,7 @@ STORY.optionHints = {
   generate: function(opt){
     if(!opt.effects) return null;
     // v0.7.4 角色名显示层翻译：提示串里的角色名过 t()（拼音映射）；无 i18n 环境（Node 测试）回退原文
-    const _tn = (typeof window !== 'undefined' && typeof window.t === 'function') ? window.t : (s)=>s;
+    const _tn = (typeof window !== 'undefined' && typeof window.t === 'function') ? window.t : (s, v)=>String(s).replace(/\{(\w+)\}/g, (m, k)=>(v && k in v ? v[k] : m));
     const parts = [];
     if(opt.effects.affection){
       for(const k in opt.effects.affection){
@@ -26,15 +26,15 @@ STORY.optionHints = {
       for(const k in opt.effects.affectionDetail){
         const ad = opt.effects.affectionDetail[k];
         const dims = [];
-        if(ad.closeness) dims.push(`亲密${ad.closeness>0?'+':''}${ad.closeness}`);
-        if(ad.trust) dims.push(`信任${ad.trust>0?'+':''}${ad.trust}`);
-        if(ad.tension) dims.push(`暧昧${ad.tension>0?'+':''}${ad.tension}`);
+        if(ad.closeness) dims.push(_tn('亲密{v}', {v: (ad.closeness>0?'+':'') + ad.closeness}));
+        if(ad.trust) dims.push(_tn('信任{v}', {v: (ad.trust>0?'+':'') + ad.trust}));
+        if(ad.tension) dims.push(_tn('暧昧{v}', {v: (ad.tension>0?'+':'') + ad.tension}));
         if(dims.length) parts.push(`${_tn(STORY.characters[k]?.name||k)}(${dims.join('/')})`);
       }
     }
     if(opt.effects.flags){
       const flagKeys = Object.keys(opt.effects.flags);
-      if(flagKeys.length > 0) parts.push(`解锁 ${flagKeys.length} 个剧情标记`);
+      if(flagKeys.length > 0) parts.push(_tn('解锁 {n} 个剧情标记', {n: flagKeys.length}));
     }
     if(opt.effects.personality){
       const ps = [];
@@ -42,7 +42,7 @@ STORY.optionHints = {
         const v = opt.effects.personality[k];
         if(v > 0) ps.push(k);
       }
-      if(ps.length) parts.push(`性格+${ps.join('/')}`);
+      if(ps.length) parts.push(_tn('性格+{v}', {v: ps.join('/')}));
     }
     return parts.length > 0 ? parts.join(' · ') : null;
   }

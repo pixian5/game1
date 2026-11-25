@@ -52,7 +52,7 @@
         if(conv && conv.pendingChoice && conv.pendingChoice !== choice) return;
         if(conv){ conv.pendingChoice = null; }
         engine.sendMessage(convId, autoOpt.text, engine.normalizeOptionEffects(autoOpt));
-        toast('🎬 ' + t('观赏自动选：{opt}', {opt: autoOpt.text}));
+        toast('🎬 ' + t('观赏自动选：{opt}', {opt: t(autoOpt.text)}));   // v0.9.12：选项文字也走翻译
       }, delay);
       return;
     }
@@ -160,7 +160,7 @@
       const smartHint = engine.getOptionHint(opt);
       const hintHtml = opt.hint ? ` <span style="color:var(--ink-mute);font-size:11px">(${escapeHtml(_t(opt.hint))})</span>` : '';
       const smartHintHtml = smartHint ? ` <span class="chat-opt-smart-hint">💡 ${escapeHtml(smartHint)}</span>` : '';
-      btn.innerHTML = escapeHtml(opt.text) + hintHtml + smartHintHtml;
+      btn.innerHTML = escapeHtml(optText(opt)) + hintHtml + smartHintHtml;
       btn.onclick = (e)=>{
         e.stopPropagation();
         // v0.8.6：防重复——点击后立即禁用全部选项按钮并清空容器，

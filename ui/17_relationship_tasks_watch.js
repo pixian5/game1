@@ -20,8 +20,8 @@
           <div class="rel-card-avatar" style="background:${char.bg}">${avatarImg(char)}</div>
           <div class="rel-card-info">
             <div class="rel-card-name">${escapeHtml(window.t(char.name))}</div>
-            <div class="rel-card-stage">阶段 ${curStageNum} · ${escapeHtml(r.stage.name)} · ${escapeHtml(r.stage.title)}</div>
-            <div class="rel-card-aff">好感度 ${aff}</div>
+            <div class="rel-card-stage">${window.t('阶段 {n}', {n: curStageNum})} · ${tEsc(r.stage.name)} · ${tEsc(r.stage.title)}</div>
+            <div class="rel-card-aff">${window.t('好感度 {n}', {n: aff})}</div>
           </div>
         </div>
         <div class="rel-card-bar">
@@ -39,11 +39,11 @@
         html += `<div class="rel-stage-item ${cls}">
           <div class="rel-stage-dot"></div>
           <div class="rel-stage-info">
-            <div class="rel-stage-name">阶段 ${s.stage} · ${escapeHtml(s.name)}</div>
-            <div class="rel-stage-title">${escapeHtml(s.title)}</div>
-            <div class="rel-stage-desc">${escapeHtml(s.desc)}</div>
-            ${isCurrent && s.unlockMsg ? `<div class="rel-stage-unlock">"${escapeHtml(s.unlockMsg)}"</div>` : ''}
-            ${s.criticalEvent && !isLocked ? `<div class="rel-stage-unlock" style="color:#ffd566">★ 临界事件已配置</div>` : ''}
+            <div class="rel-stage-name">${window.t('阶段 {n}', {n: s.stage})} · ${tEsc(s.name)}</div>
+            <div class="rel-stage-title">${tEsc(s.title)}</div>
+            <div class="rel-stage-desc">${tEsc(s.desc)}</div>
+            ${isCurrent && s.unlockMsg ? `<div class="rel-stage-unlock">"${tEsc(s.unlockMsg)}"</div>` : ''}
+            ${s.criticalEvent && !isLocked ? `<div class="rel-stage-unlock" style="color:#ffd566">${window.t('★ 临界事件已配置')}</div>` : ''}
           </div>
         </div>`;
       });
@@ -78,10 +78,10 @@
     let html = `<div class="tasks-streak-banner">
       <div class="tasks-streak-num">${engine.state.taskStreak || 0}</div>
       <div class="tasks-streak-label">连续完成天数</div>
-      <div class="tasks-streak-hint">${tasks.every(t=>t.completed) && tasks.length>0 ? '今日已全部完成 ✓' : `今日完成 ${tasks.filter(t=>t.completed).length}/${tasks.length}`}</div>
+      <div class="tasks-streak-hint">${tasks.every(t=>t.completed) && tasks.length>0 ? window.t('今日已全部完成 ✓') : window.t('今日完成 {done}/{total}', {done: tasks.filter(t=>t.completed).length, total: tasks.length})}</div>
     </div>`;
     // 今日任务列表
-    html += '<div class="tasks-section-title">今日任务</div>';
+    html += '<div class="tasks-section-title">' + window.t('今日任务') + '</div>';
     if(tasks.length === 0){
       html += '<div style="font-size:12px;color:var(--ink-mute);padding:8px 0;">暂无任务</div>';
     } else {
@@ -89,7 +89,7 @@
         html += `<div class="task-item ${t.completed?'done':''}">
           <div class="task-check">${t.completed ? '✓' : ''}</div>
           <div class="task-info">
-            <div class="task-name">${escapeHtml(t.name)}</div>
+            <div class="task-name">${tEsc(t.name)}</div>
             <div class="task-desc">${escapeHtml(t.desc)}</div>
           </div>
           <div class="task-reward">+${t.reward?.coins || 0} 💰</div>
@@ -99,21 +99,21 @@
     // 连胜奖励
     const rewards = STORY.dailyTasks?.streakRewards || [];
     if(rewards.length > 0){
-      html += '<div class="tasks-section-title">连胜奖励</div>';
+      html += '<div class="tasks-section-title">' + window.t('连胜奖励') + '</div>';
       html += '<div class="tasks-streak-rewards">';
       rewards.forEach(r=>{
         const claimed = engine.state.taskStreakClaimed[r.days];
         const unlocked = (engine.state.taskStreak || 0) >= r.days;
         const cls = claimed ? 'claimed' : (unlocked ? 'unlocked' : '');
         html += `<div class="streak-reward-item ${cls}">
-          <div class="streak-reward-days">${r.days}天</div>
+          <div class="streak-reward-days">${window.t('{n}天', {n: r.days})}</div>
           <div class="streak-reward-info">
-            <div class="streak-reward-name">${escapeHtml(r.name)}</div>
-            <div class="streak-reward-desc">${escapeHtml(r.desc)} · 奖励 ${r.reward?.coins||0}💰${r.reward?.collectible?' +纪念品':''}</div>
+            <div class="streak-reward-name">${tEsc(r.name)}</div>
+            <div class="streak-reward-desc">${tEsc(r.desc)} · ${window.t('奖励 {n}💰', {n: r.reward?.coins||0})}${r.reward?.collectible?window.t(' +纪念品'):''}</div>
           </div>
           ${claimed ? '<div class="streak-reward-claimed">已领取 ✓</div>' :
             (unlocked ? `<button class="streak-reward-claim" data-action="claim-streak" data-days="${r.days}">领取</button>` :
-            `<div style="font-size:10px;color:var(--ink-mute)">还差 ${r.days - (engine.state.taskStreak||0)} 天</div>`)}
+            `<div style="font-size:10px;color:var(--ink-mute)">${window.t('还差 {n} 天', {n: r.days - (engine.state.taskStreak||0)})}</div>`)}
         </div>`;
       });
       html += '</div>';
@@ -135,7 +135,7 @@
     }
   });
   engine.on('streakRewardClaimed', (r)=>{
-    toast(t('连胜奖励：{name} +{coins}💰', {name: r.name, coins: r.reward?.coins||0}));
+    toast(t('连胜奖励：{name} +{coins}💰', {name: optTranslate(r.name), coins: r.reward?.coins||0}));
     if(screens.tasks && screens.tasks.classList.contains('active')){
       renderTasks();
     }
@@ -144,7 +144,7 @@
     rewards.forEach(r=>{
       const n = document.createElement('div');
       n.className = 'egg-notif';
-      n.textContent = `🎁 连胜 ${r.days} 天达成！可领取：${r.name}`;
+      n.textContent = window.t('🎁 连胜 {n} 天达成！可领取：{name}', {n: r.days, name: optTranslate(r.name)});
       document.body.appendChild(n);
       setUiTimeout(()=> n.remove(), 4500);
     });
@@ -177,7 +177,7 @@
       const rows = ['shenyan','luci','jiangyu'].map(cid => {
         const c = STORY.characters[cid];
         const d = ad[cid] || {closeness:0, trust:0, tension:0};
-        return `<div class="director-row"><span style="background:${c.bg}">${c.avatar}</span> ${escapeHtml(window.t(c.name))}
+        return `<div class="director-row"><span style="background:${c.bg}">${escapeHtml(optTranslate(c.avatar))}</span> ${escapeHtml(window.t(c.name))}
           好感 ${aff[cid]||0} · 密 ${d.closeness} / 信 ${d.trust} / 暧 ${d.tension}</div>`;
       }).join('');
       const flags = ['shenyan_resist','luci_confess','jiangyu_hold','solo_independent','group_dinner_hotpot','rain_event_done']
@@ -196,8 +196,8 @@
       html += `<div class="watch-strategy-item ${s.id===curStrategy?'selected':''}" data-watch-strategy="${s.id}">
         <div class="watch-strategy-icon">${WATCH_ICONS[s.id] || '🎯'}</div>
         <div class="watch-strategy-info">
-          <div class="watch-strategy-name">${escapeHtml(s.name)}</div>
-          <div class="watch-strategy-desc">${escapeHtml(s.desc)}</div>
+          <div class="watch-strategy-name">${tEsc(s.name)}</div>
+          <div class="watch-strategy-desc">${tEsc(s.desc)}</div>
         </div>
         ${s.id===curStrategy ? '<div class="watch-strategy-check">✓</div>' : ''}
       </div>`;

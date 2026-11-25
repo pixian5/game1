@@ -4,8 +4,9 @@
  *
  * 三档：
  *   hook  推送前钩子用。不依赖浏览器：verify:offline + lint          （约 50 秒）
- *   gate  默认档。hook + 四项浏览器检查                              （约 75 秒）
- *   full  完整档。gate + 三浏览器端到端                              （约 3 分钟）
+ *         verify:offline 里含双语三项：翻译层测试、选项类文字覆盖、界面代码字面量覆盖
+ *   gate  默认档。hook + 四项浏览器检查 + 英文模式中文残留实测        （约 90 秒）
+ *   full  完整档。gate + 三浏览器端到端 + 英文模式深入残留实测        （约 5 分钟）
  *
  * 依赖数据库的测试（账号接口测试会启动服务进程并用 SQLite；
  * 账号与云存档端到端同理）默认不在本机运行，需要时加 --with-db。
@@ -72,7 +73,7 @@ const steps = [];
 const npm = (label, script) => steps.push({ label, cmd: 'npm', args: ['run', '--silent', script] });
 const node = (label, file) => steps.push({ label, cmd: process.execPath, args: [file] });
 
-npm('离线检查集（版本号 / 剧情数据 / 界面静态 / 回归 / 剧情链路 / 路线时序 / 路线矩阵 / 覆盖探测）', 'verify:offline');
+npm('离线检查集（版本号 / 剧情数据 / 界面静态 / 回归 / 剧情链路 / 路线时序 / 路线矩阵 / 覆盖探测 / 双语翻译层与文字覆盖）', 'verify:offline');
 if(hasEslint()) npm('代码规范（eslint）', 'lint');
 else console.log('[总闸] 未安装测试依赖（没有 node_modules），跳过代码规范检查');
 
@@ -81,9 +82,13 @@ if(MODE !== 'hook'){
   npm('翻译缺口', 'check:i18n');
   npm('安全检查（存档注入 / 跨站脚本 / 恶意图片）', 'check:security');
   npm('离线可用性（PWA）', 'check:pwa');
+  // v0.9.12：在真实浏览器里看英文模式下各应用首层界面还剩多少中文（带对照自检，扫描失效会报错而不是报零）
+  npm('英文模式中文残留实测（全部应用首层界面）', 'check:i18n-leak');
 }
 if(MODE === 'full'){
   npm('三浏览器端到端', 'test:browser');
+  // v0.9.12：逐类点进详情页、弹层后再测一遍，约 2 分钟，所以只放在完整档
+  npm('英文模式中文残留实测（深入：点进详情页与弹层）', 'check:i18n-leak:deep');
 }
 if(WITH_DB){
   npm('依赖数据库的测试（账号接口 + 账号与云存档端到端）', 'test:db');

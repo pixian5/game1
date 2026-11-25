@@ -109,7 +109,7 @@
       return;
     }
     if(action === 'delete'){
-      if(!confirm(`确认删除 ${slotDisplayName(slot)}？`)) return;
+      if(!confirm(window.t('确认删除 {slot}？', {slot: slotDisplayName(slot)}))) return;   // v0.9.12：确认框文字不在页面里，显示层兜底管不到
       const ok = engine.deleteSave(slot);
       toast(ok ? '已删除' : '删除失败');
       renderSaves();

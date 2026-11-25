@@ -27,14 +27,14 @@
         const char = STORY.characters[c.from];
         const name = c.from === 'me' ? window.t('我') : (char ? window.t(char.name) : window.t(c.from));
         return `<div class="moment-comment ${c.from==='me'?'me':''} ${c.isReply?'reply':''}">
-          <span class="mc-name">${escapeHtml(name)}</span>${escapeHtml(c.text)}
+          <span class="mc-name">${escapeHtml(name)}</span>${tEsc(c.text)}
         </div>`;
       }).join('');
       // 评论选项
       let commentOptsHtml = '';
       if(m.commentOptions && !inter.commented){
         commentOptsHtml = `<div class="moment-comment-options" id="opts-${safeMomentId}" hidden>
-          ${m.commentOptions.map((opt,i)=>`<button class="moment-comment-opt" data-moment-comment-opt="${safeMomentId}" data-opt-idx="${i}">${escapeHtml(opt.text)}</button>`).join('')}
+          ${m.commentOptions.map((opt,i)=>`<button class="moment-comment-opt" data-moment-comment-opt="${safeMomentId}" data-opt-idx="${i}">${escapeHtml(optText(opt))}</button>`).join('')}
         </div>`;
       }
       // v0.0.16: 男主朋友圈互动评论 + 回复选项
@@ -48,7 +48,7 @@
         if(comment.replyOptions && !sentReply){
           replyOptsHtml = '<div class="moment-reply-options">';
           comment.replyOptions.forEach((rp, ri) => {
-            replyOptsHtml += `<button class="moment-reply-opt" data-moment-reply="${safeMomentId}|${escapeHtml(cc.charId)}|${cc.commentIdx}|${ri}">${escapeHtml(rp.text)}</button>`;
+            replyOptsHtml += `<button class="moment-reply-opt" data-moment-reply="${safeMomentId}|${escapeHtml(cc.charId)}|${cc.commentIdx}|${ri}">${escapeHtml(optText(rp))}</button>`;
           });
           replyOptsHtml += '</div>';
         } else if(sentReply){
@@ -57,7 +57,7 @@
         }
         return `<div class="moment-char-comment">
           <span class="moment-char-comment-name">${escapeHtml(charName)}：</span>
-          <span class="moment-char-comment-text">${escapeHtml(comment.text)}</span>
+          <span class="moment-char-comment-text">${tEsc(comment.text)}</span>
           ${replyOptsHtml}
         </div>`;
       }).join('');
@@ -163,7 +163,9 @@
     const moment = payload && payload.moment ? payload.moment : payload;
     if(!moment) return;
     if(moment.author !== 'me'){
-      showNotif(moment.author, '发了新动态：' + String(moment.text || '').slice(0,20) + '…');
+      // v0.9.12：整条动态先翻译再截断（英文比中文长，截断长度也放宽）
+      const brief = optTranslate(String(moment.text || '')).replace(/\s+/g, ' ').slice(0, i18nEnglish() ? 48 : 20);
+      showNotif(moment.author, window.t('发了新动态：{text}…', {text: brief}));
     }
     updateMomentsBadge();
   });

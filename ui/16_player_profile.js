@@ -13,13 +13,13 @@
       <div class="player-hero-name">${escapeHtml(window.t(p.name || '林夏'))}</div>
       <div class="player-hero-nick">${escapeHtml(window.t('昵称 · {nick}', {nick: window.t(p.nickname || '夏夏')}))}</div>
       <div class="player-hero-meta">
-        <span>${p.age || 24} 岁</span>
-        <span>称谓 · ${escapeHtml(p.pronoun || '她')}</span>
+        <span>${window.t('{n} 岁', {n: p.age || 24})}</span>
+        <span>${window.t('称谓 · {p}', {p: optTranslate(p.pronoun || '她')})}</span>
         ${engine.state.playerQuizDone ? '<span style="color:#4ade80">✓ 性格已画像</span>' : '<span style="color:var(--accent2)">性格问答待完成</span>'}
       </div>
       <div class="player-hero-meta">
-        ${engine.state.ngPlus ? `<span style="color:#fbbf24">周目 ${engine.state.ngPlus + 1}</span>` : '<span>一周目</span>'}
-        <span>结局达成 ${Object.keys(engine.state.endingSeen || {}).length}/17</span>
+        ${engine.state.ngPlus ? `<span style="color:#fbbf24">${window.t('周目 {n}', {n: engine.state.ngPlus + 1})}</span>` : '<span>一周目</span>'}
+        <span>${window.t('结局达成 {n}/{total}', {n: Object.keys(engine.state.endingSeen || {}).length, total: 17})}</span>
       </div>
     </div>`;
     // 性格问答回顾
@@ -31,8 +31,8 @@
         const ansIdx = p.answers?.[q.id];
         const opt = (ansIdx !== undefined) ? q.options[ansIdx] : null;
         html += `<div class="player-quiz-item">
-          <div class="player-quiz-q">${escapeHtml(q.question)}</div>
-          <div class="player-quiz-a">${opt ? ('→ ' + escapeHtml(opt.text) + (opt.label ? ` (${opt.label})` : '')) : '未作答'}</div>
+          <div class="player-quiz-q">${tEsc(q.question)}</div>
+          <div class="player-quiz-a">${opt ? ('→ ' + escapeHtml(optText(opt)) + (opt.label ? ` (${tEsc(opt.label)})` : '')) : tEsc('未作答')}</div>
         </div>`;
       });
       html += '</div>';
@@ -51,9 +51,9 @@
         <div class="player-nick-char" style="background:${char.bg}">${avatarImg(char)}</div>
         <div class="player-nick-info">
           <div class="player-nick-call">${escapeHtml(window.t(nick.call))}</div>
-          ${nick.inner ? `<div class="player-nick-inner">"${escapeHtml(nick.inner)}"</div>` : ''}
+          ${nick.inner ? `<div class="player-nick-inner">"${tEsc(nick.inner)}"</div>` : ''}
         </div>
-        <div class="player-nick-stage">${hasRelStage ? ('阶段 ' + stageNum) : '闺蜜'}</div>
+        <div class="player-nick-stage">${hasRelStage ? window.t('阶段 {n}', {n: stageNum}) : window.t('闺蜜')}</div>
       </div>`;
     });
     html += '</div>';
@@ -79,16 +79,17 @@
     const s = playerEditState;
     if(!s) return;
     const quiz = STORY.playerCustomization?.personalityQuiz || [];
+    const nameMax = engine.playerNameMaxLength ? engine.playerNameMaxLength() : 6;   // v0.9.12：中文 6 个字，其他语言 12 个字符
     let html = `<div class="player-edit-title">编辑主角档案</div>
       <div class="player-edit-sub">自定义姓名、昵称和性格画像</div>`;
     // 基本信息
     html += `<div class="player-edit-field">
       <div class="player-edit-label">姓名</div>
-      <input class="player-edit-input" id="pe-name" type="text" maxlength="6" value="${escapeHtml(s.name)}">
+      <input class="player-edit-input" id="pe-name" type="text" maxlength="${nameMax}" value="${escapeHtml(s.name)}">
     </div>`;
     html += `<div class="player-edit-field">
       <div class="player-edit-label">昵称（闺蜜/男主称呼你的小名基础）</div>
-      <input class="player-edit-input" id="pe-nick" type="text" maxlength="6" value="${escapeHtml(s.nickname)}">
+      <input class="player-edit-input" id="pe-nick" type="text" maxlength="${nameMax}" value="${escapeHtml(s.nickname)}">
     </div>`;
     html += `<div class="player-edit-field">
       <div class="player-edit-label">年龄</div>
@@ -105,7 +106,7 @@
     html += `<div class="player-edit-field">
       <div class="player-edit-label">称谓</div>
       <div class="player-edit-pronoun-row" id="pe-pronouns">
-        ${['她','他','TA'].map(pn=>`<div class="player-edit-pronoun-opt ${pn===s.pronoun?'selected':''}" data-pe-pronoun="${pn}">${pn}</div>`).join('')}
+        ${['她','他','TA'].map(pn=>`<div class="player-edit-pronoun-opt ${pn===s.pronoun?'selected':''}" data-pe-pronoun="${pn}">${escapeHtml(optTranslate(pn))}</div>`).join('')}
       </div>
     </div>`;
     // 性格问答
@@ -113,12 +114,12 @@
     quiz.forEach(q=>{
       const sel = s.answers[q.id];
       html += `<div class="player-edit-question">
-        <div class="player-edit-question-text">${escapeHtml(q.question)}</div>
+        <div class="player-edit-question-text">${tEsc(q.question)}</div>
         <div class="player-edit-options">`;
       q.options.forEach((opt, i)=>{
         html += `<div class="player-edit-opt ${i===sel?'selected':''}" data-pe-quiz="${q.id}" data-pe-idx="${i}">
-          ${escapeHtml(opt.text)}
-          ${opt.label ? `<span class="player-edit-opt-label">${escapeHtml(opt.label)}</span>` : ''}
+          ${escapeHtml(optText(opt))}
+          ${opt.label ? `<span class="player-edit-opt-label">${tEsc(opt.label)}</span>` : ''}
         </div>`;
       });
       html += '</div></div>';
@@ -136,8 +137,9 @@
     const name = $('pe-name');
     const nickname = $('pe-nick');
     const age = $('pe-age');
-    if(name) playerEditState.name = name.value.slice(0, 6);
-    if(nickname) playerEditState.nickname = nickname.value.slice(0, 6);
+    const nameMax = engine.playerNameMaxLength ? engine.playerNameMaxLength() : 6;
+    if(name) playerEditState.name = name.value.slice(0, nameMax);
+    if(nickname) playerEditState.nickname = nickname.value.slice(0, nameMax);
     if(age) playerEditState.age = Math.max(18, Math.min(40, parseInt(age.value) || 24));
   }
 

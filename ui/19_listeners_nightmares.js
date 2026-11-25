@@ -48,10 +48,10 @@
     all.forEach(nm => {
       const isSeen = !!seen[nm.id];
       html += `<div class="dream-card ${isSeen?'seen':'unseen'}">
-        <div class="dream-card-status">${isSeen?'已触发':'未触发'}</div>
+        <div class="dream-card-status">${isSeen?window.t('已触发'):window.t('未触发')}</div>
         <div class="dream-card-icon">🌙</div>
-        <div class="dream-card-name">${isSeen ? escapeHtml(nm.name) : '???'}</div>
-        <div class="dream-card-desc">${isSeen ? escapeHtml(nm.desc) : '尚未触发此梦魇。'}</div>
+        <div class="dream-card-name">${isSeen ? tEsc(nm.name) : '???'}</div>
+        <div class="dream-card-desc">${isSeen ? tEsc(nm.desc) : window.t('尚未触发此梦魇。')}</div>
       </div>`;
     });
     content.innerHTML = html;
@@ -65,7 +65,7 @@
     const content = $('nightmare-content');
     // v0.5.2（E5）：空舞台梦魇配专属 CG
     const nmCg = nm.id === 'nightmare_stage' ? '<img class="nightmare-cg" src="assets/cg/cg_nightmare_stage.jpg" alt="" loading="lazy">' : '';
-    let html = `<div class="nightmare-title">🌙 ${escapeHtml(nm.name)}</div>${nmCg}`;
+    let html = `<div class="nightmare-title">🌙 ${tEsc(nm.name)}</div>${nmCg}`;
     html += '<div class="nightmare-dialogue">';
     (nm.dialogue||[]).forEach(d => {
       const who = d.who === 'me' ? 'me' : (d.who === 'narrator' ? 'narrator' : 'him');
@@ -73,10 +73,10 @@
     });
     html += '</div>';
     if(nm.resolve){
-      html += `<div class="nightmare-prompt">${escapeHtml(nm.resolve.prompt||'你的选择：')}</div>`;
+      html += `<div class="nightmare-prompt">${tEsc(nm.resolve.prompt||'你的选择：')}</div>`;
       html += '<div class="nightmare-options">';
       nm.resolve.options.forEach((opt, idx) => {
-        html += `<button class="nightmare-opt" data-nightmare-opt="${idx}">${escapeHtml(opt.text)}</button>`;
+        html += `<button class="nightmare-opt" data-nightmare-opt="${idx}">${escapeHtml(optText(opt))}</button>`;
       });
       html += '</div>';
     } else {
@@ -157,7 +157,7 @@
     </div>`;
     html += `<div class="hints-example">
       <div class="hints-example-title">提示样式示例</div>
-      <div class="hints-example-text">沈砚之 +2 · 沈砚之(亲密+1/信任+2) · 解锁 1 个剧情标记 · 性格+active/emotional</div>
+      <div class="hints-example-text">${escapeHtml(window.STORY?.optionHints?.generate ? window.STORY.optionHints.generate({effects:{affection:{shenyan:2}, affectionDetail:{shenyan:{closeness:1, trust:2}}, flags:{sample:1}, personality:{active:1, emotional:1}}}) : '')}</div>
     </div>`;
     html += `<div class="watch-info" style="margin-top:14px;">
       💡 适合二周目玩家或想提前规划路线的人。提示文案由选项的 effects 字段自动生成，不会泄露隐藏剧情。<br>

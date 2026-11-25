@@ -63,13 +63,13 @@
     // v0.1.6: 闪回时间标签改为按数据读取（原先固定显示"五年前"，与九年/八年前内容矛盾）
     const flashbackLabel = $('flashback-label');
     if(flashbackLabel) flashbackLabel.textContent = fb.time || '闪回';
-    $('flashback-title').textContent = fb.title;
+    $('flashback-title').textContent = optTranslate(fb.title);
     const scenesEl = $('flashback-scenes');
     scenesEl.innerHTML = '';
     fb.scenes.forEach((sc, i)=>{
       const div = document.createElement('div');
       div.className = 'flashback-scene';
-      div.textContent = sc.text;
+      div.textContent = optTranslate(sc.text);
       scenesEl.appendChild(div);
     });
     // 最后一个场景有 choice
@@ -80,7 +80,7 @@
       lastScene.choice.options.forEach((opt, i)=>{
         const btn = document.createElement('button');
         btn.className = 'dream-opt';
-        btn.innerHTML = escapeHtml(opt.text) + (opt.shard?` <span style="color:#c8a84a;font-size:11px">✦ ${escapeHtml(opt.shard)}</span>`:'');
+        btn.innerHTML = escapeHtml(optText(opt)) + (opt.shard?` <span style="color:#c8a84a;font-size:11px">✦ ${tEsc(opt.shard)}</span>`:'');
         btn.dataset.fbOpt = i;
         optsEl.appendChild(btn);
       });

@@ -60,7 +60,7 @@
         choices.className = 'choices';
         line.options.forEach((opt)=>{
           const btn = document.createElement('button');
-          btn.textContent = opt.text;
+          btn.textContent = optText(opt);
           btn.onclick = (e)=>{
             e.stopPropagation();
             engine.applyEffects(mergeOptionEffects(opt));
@@ -77,7 +77,7 @@
         const lineDiv = document.createElement('div');
         lineDiv.className = 'line';
         const speaker = line.who === 'me' ? `<span class="you">${escapeHtml(window.t('你'))}：</span>` : `<span class="speaker">${escapeHtml(window.t(call.name))}：</span>`;
-        lineDiv.innerHTML = speaker + escapeHtml(line.text);
+        lineDiv.innerHTML = speaker + tEsc(line.text);
         scriptEl.appendChild(lineDiv);
         scriptEl.scrollTop = scriptEl.scrollHeight;
         call.step++;

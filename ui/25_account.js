@@ -261,7 +261,7 @@
         <div class="acct-avatar">${userInitial(u.nickname || u.username)}</div>
         <div class="acct-id">
           <div class="acct-name">${escapeHtml(u.nickname || u.username)}</div>
-          <div class="acct-sub">@${escapeHtml(u.username)} · ${t('注册于')} ${escapeHtml(fmtTime(u.createdAt))}</div>
+          <div class="acct-sub">@${escapeHtml(u.username)} · <span>${t('注册于')}</span> ${escapeHtml(fmtTime(u.createdAt))}</div>
         </div>
         <span class="acct-pill">${t('已登录')}</span>
       </div>
@@ -328,7 +328,7 @@
         <div class="acct-sessions">
           ${state.sessions.length ? state.sessions.map(s => `<div class="acct-session">
             <div class="acct-session-main"><b>${escapeHtml(shortUa(s.userAgent))}</b>${s.current ? ` <span class="acct-pill small">${t('当前设备')}</span>` : ''}</div>
-            <div class="acct-session-sub">${t('最近活动')} ${escapeHtml(fmtTime(s.lastSeenAt))} · ${t('登录于')} ${escapeHtml(fmtTime(s.createdAt))}</div>
+            <div class="acct-session-sub"><span>${t('最近活动')}</span> ${escapeHtml(fmtTime(s.lastSeenAt))} · <span>${t('登录于')}</span> ${escapeHtml(fmtTime(s.createdAt))}</div>
             ${s.current ? '' : `<button class="save-btn danger" data-acct-action="revoke-session" data-id="${escapeHtml(s.id)}">${t('退出该设备')}</button>`}
           </div>`).join('') : `<div class="acct-note">${t('暂无设备信息')}</div>`}
         </div>

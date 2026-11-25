@@ -144,6 +144,21 @@ try {
   eq('注销后审计记录已删除', count('SELECT COUNT(*) AS n FROM audit_log WHERE user_id = ?', uid), 0);
   checkDb.close();
 
+  console.log('== 安全响应头（v0.9.12）==');
+  // 静态页面、接口、错误响应三类都要带上；漏掉任何一类，那一类响应就可能被别的网页嵌进框架
+  const SECURITY = {
+    'x-frame-options': 'DENY',
+    'content-security-policy': "frame-ancestors 'none'",
+    'x-content-type-options': 'nosniff',
+    'referrer-policy': 'strict-origin-when-cross-origin',
+  };
+  for(const [label, target] of [['首页', '/'], ['接口', '/api/health'], ['被隐藏的路径', '/server/api.mjs'], ['不存在的文件', '/no-such-file.xyz']]){
+    const res = await fetch(BASE + target);
+    for(const [name, value] of Object.entries(SECURITY)) eq(`${label}带 ${name}`, res.headers.get(name), value);
+    const pp = res.headers.get('permissions-policy') || '';
+    ok(`${label}的 Permissions-Policy 关闭摄像头与麦克风`, /camera=\(\)/.test(pp) && /microphone=\(\)/.test(pp), pp);
+  }
+
   console.log('== 静态目录隔离 ==');
   eq('首页 200', (await fetch(BASE + '/')).status, 200);
   eq('server 源码被隐藏', (await fetch(BASE + '/server/api.mjs')).status, 404);

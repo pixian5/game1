@@ -5,14 +5,14 @@
   // ===== 梦境 =====
   function openDreamScreen(dreamId, dream){
     if(!dream) return;
-    $('dream-title').textContent = dream.title;
+    $('dream-title').textContent = optTranslate(dream.title);
     $('dream-desc').textContent = dream.desc;
     const opts = $('dream-options');
     opts.innerHTML = '';
     dream.options.forEach((opt, i)=>{
       const btn = document.createElement('button');
       btn.className = 'dream-opt';
-      btn.textContent = opt.text;
+      btn.textContent = optText(opt);
       btn.dataset.dreamOpt = dreamId;
       btn.dataset.optIdx = i;
       opts.appendChild(btn);
@@ -76,27 +76,31 @@
       content.innerHTML = '<div class="profile-empty">' + window.t('梦境尚未开始') + '<br>' + window.t('你的画像正在形成中…') + '</div>' + (invHtml || '');
       return;
     }
-    let html = '<div class="profile-hero"><div class="profile-hero-title">林夏</div><div class="profile-hero-sub">已收集 ' + profile.shards + ' 个记忆碎片</div></div>';
+    // v0.9.12：主角名与碎片数量都走翻译（数量是拼接文字，用带占位符的模板）
+    let html = '<div class="profile-hero"><div class="profile-hero-title">' + escapeHtml(optTranslate(engine.state.player?.name || '林夏')) + '</div><div class="profile-hero-sub">' + escapeHtml(window.t('已收集 {n} 个记忆碎片', {n: profile.shards})) + '</div></div>';
     // 三维画像
     const dims = [
       {label:'行动力', a:'active', b:'passive', aLabel:'主动', bLabel:'被动'},
       {label:'决策方式', a:'rational', b:'emotional', aLabel:'理性', bLabel:'感性'},
       {label:'依赖度', a:'independent', b:'dependent', aLabel:'独立', bLabel:'依赖'}
     ];
+    // 倾向的完整说法（整词查字典，不用「主动」+「型」拼——拼接文字对不上字典）
+    const traitWord = { 主动:'主动型', 被动:'被动型', 理性:'理性型', 感性:'感性型', 独立:'独立型', 依赖:'依赖型' };
     dims.forEach(d=>{
       const aVal = p[d.a], bVal = p[d.b];
       const total = aVal + bVal;
       const aPct = total > 0 ? (aVal / total) * 100 : 50;
       const bPct = total > 0 ? (bVal / total) * 100 : 50;
-      const value = aVal > bVal ? d.aLabel + '型' : (bVal > aVal ? d.bLabel + '型' : '平衡型');
+      const value = aVal > bVal ? traitWord[d.aLabel] : (bVal > aVal ? traitWord[d.bLabel] : '平衡型');   // 主动型 / 被动型 / 平衡型…
+      const sideLabel = (label, n) => escapeHtml(window.t('{label} {n}', {label: window.t(label), n}));
       html += `<div class="profile-trait">
-        <div class="profile-trait-dim">${d.label}</div>
-        <div class="profile-trait-value">${value}</div>
+        <div class="profile-trait-dim">${tEsc(d.label)}</div>
+        <div class="profile-trait-value">${tEsc(value)}</div>
         <div class="profile-trait-bar">
           <div class="profile-trait-fill ${d.a}" style="width:${aPct}%"></div>
         </div>
         <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--ink-mute)">
-          <span>${d.aLabel} ${aVal}</span><span>${d.bLabel} ${bVal}</span>
+          <span>${sideLabel(d.aLabel, aVal)}</span><span>${sideLabel(d.bLabel, bVal)}</span>
         </div>
       </div>`;
     });
@@ -142,12 +146,12 @@
       if(resolved === 'accepted'){ status = window.t('已赴约'); cls = 'inv-accepted'; }
       else if(resolved === 'declined'){ status = window.t('已拒绝'); cls = 'inv-declined'; }
       else if(resolved === 'missed'){ status = window.t('已错过'); cls = 'inv-missed'; }
-      else if(pending){ status = window.t('待回复') + ' · ' + (inv.schedule || ''); cls = 'inv-active'; }
+      else if(pending){ status = window.t('待回复') + ' · ' + window.t(inv.schedule || '邀约'); cls = 'inv-active'; }
       else { status = window.t('尚未达成'); cls = 'inv-locked'; }
       html += `<div class="profile-shard ${cls}">
-        <div class="profile-shard-title">${escapeHtml(char.avatar)} ${escapeHtml(window.t(char.name))} · ${escapeHtml(window.t(inv.schedule||'邀约'))}</div>
+        <div class="profile-shard-title">${escapeHtml(optTranslate(char.avatar))} ${escapeHtml(window.t(char.name))} · ${escapeHtml(window.t(inv.schedule||'邀约'))}</div>
         <div class="profile-shard-meaning">${escapeHtml(window.t(inv.text))}</div>
-        <div style="margin-top:4px;font-size:11px;color:var(--ink-mute)">状态：${escapeHtml(status)}</div>
+        <div style="margin-top:4px;font-size:11px;color:var(--ink-mute)"><span>${escapeHtml(window.t('状态：'))}</span>${escapeHtml(status)}</div>
       </div>`;
     });
     html += '</div>';

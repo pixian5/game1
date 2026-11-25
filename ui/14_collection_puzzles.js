@@ -20,9 +20,9 @@
       const isCollected = engine.state.collected.includes(item.id);
       return `<div class="coll-card ${isCollected?'':'locked'}">
         <div class="coll-card-icon">${isCollected ? item.icon : '❓'}</div>
-        <div class="coll-card-name">${isCollected ? escapeHtml(item.name) : '未收集'}</div>
-        <div class="coll-card-desc">${isCollected ? escapeHtml(item.desc) : '等待霓城的某一个瞬间…'}</div>
-        ${isCollected ? `<div class="coll-card-how">${escapeHtml(item.how)}</div>` : ''}
+        <div class="coll-card-name">${isCollected ? tEsc(item.name) : '未收集'}</div>
+        <div class="coll-card-desc">${isCollected ? tEsc(item.desc) : '等待霓城的某一个瞬间…'}</div>
+        ${isCollected ? `<div class="coll-card-how">${tEsc(item.how)}</div>` : ''}
       </div>`;
     }).join('');
     // 隐藏彩蛋
@@ -33,15 +33,15 @@
       return `<div class="coll-egg ${seen?'':'locked'}">
         <div class="coll-egg-icon">${seen ? egg.icon : '🔒'}</div>
         <div class="coll-egg-info">
-          <div class="coll-egg-name">${seen ? escapeHtml(egg.name) : '???'}</div>
-          <div class="coll-egg-desc">${seen ? escapeHtml(egg.desc) : '尚未触发'}</div>
+          <div class="coll-egg-name">${seen ? tEsc(egg.name) : '???'}</div>
+          <div class="coll-egg-desc">${seen ? tEsc(egg.desc) : '尚未触发'}</div>
         </div>
       </div>`;
     }).join('');
   }
   engine.on('itemCollected', ({item, itemId})=>{
     AudioSys.play('achieve');  // v0.1.7: 收集提示音
-    showNotif('susu', `✦ ${window.t('新收集')}：${window.t(item.name)}`);
+    showNotif('susu', window.t('✦ 新收集：{name}', {name: window.t(item.name)}));
     if(screens.collection && screens.collection.classList.contains('active')){
       renderCollection(collectionCurrentCat);
     }
@@ -67,15 +67,15 @@
     }
     content.innerHTML = puzzles.map(p=>{
       const statusCls = p.solved ? 'solved' : '';
-      const statusText = p.solved ? '已解开' : (p.attemptCount > 0 ? `已尝试 ${p.attemptCount} 次` : '未尝试');
+      const statusText = p.solved ? window.t('已解开') : (p.attemptCount > 0 ? window.t('已尝试 {n} 次', {n: p.attemptCount}) : window.t('未尝试'));
       const discoveredClues = p.clues.filter(c=>c.discovered).length;
       return `<div class="puzzle-card ${statusCls}" data-puzzle="${p.id}">
         <div class="puzzle-card-title">
-          <span>${escapeHtml(p.title)}</span>
+          <span>${tEsc(p.title)}</span>
           <span class="puzzle-card-status ${p.solved?'solved':''}">${statusText}</span>
         </div>
-        <div class="puzzle-card-desc">${escapeHtml(p.desc)}</div>
-        <div class="puzzle-card-meta">线索 ${discoveredClues}/${p.clues.length} · 点击进入</div>
+        <div class="puzzle-card-desc">${tEsc(p.desc)}</div>
+        <div class="puzzle-card-meta">${window.t('线索 {a}/{b} · 点击进入', {a: discoveredClues, b: p.clues.length})}</div>
       </div>`;
     }).join('');
   }
@@ -88,15 +88,15 @@
     const puzzle = STORY.puzzles?.[puzzleId];
     if(!puzzle) return;
     const progress = engine.state.puzzleProgress[puzzleId] || {};
-    $('puzzle-detail-title').textContent = puzzle.title;
+    $('puzzle-detail-title').textContent = optTranslate(puzzle.title);
     const content = $('puzzle-detail-content');
-    let html = `<div class="pd-desc">${escapeHtml(puzzle.desc)}</div>`;
+    let html = `<div class="pd-desc">${tEsc(puzzle.desc)}</div>`;
     html += '<div class="pd-section-title">线索</div>';
     puzzle.clues.forEach(c=>{
       const discovered = engine.state.discoveredClues[c.id];
       html += `<div class="pd-clue">
         <div class="pd-clue-text">
-          ${discovered ? escapeHtml(c.text) : '<span style="color:var(--ink-mute)">未发现线索 · 点击发现</span>'}
+          ${discovered ? tEsc(c.text) : '<span style="color:var(--ink-mute)">未发现线索 · 点击发现</span>'}
           ${discovered ? `<span class="pd-clue-digit">${c.digit}</span>` : ''}
         </div>
         ${!discovered ? `<button data-clue="${c.id}" style="margin-top:6px;padding:4px 10px;font-size:11px;background:rgba(255,255,255,0.05);color:var(--ink-mute);border:0.5px solid rgba(255,255,255,0.1);border-radius:6px;cursor:pointer;">翻开这条线索</button>` : ''}

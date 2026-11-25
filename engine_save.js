@@ -334,7 +334,7 @@ Object.assign(PhoneEngine.prototype, {
     const quizIds = new Set((this.story.playerCustomization?.personalityQuiz||[]).map(q=>q.id));
     const answers = record(player.answers,20,(value,key)=>quizIds.has(key) ? asInt(value,0,0,9) : null);
     Object.keys(answers).forEach(key=>{ if(answers[key] === null) delete answers[key]; });
-    out.player=player.name || player.nickname ? {name:asText(player.name,6)||'林夏',nickname:asText(player.nickname,6)||'夏夏',avatar:asText(player.avatar,4)||'林',bg:color(player.bg),age:asInt(player.age,24,18,40),pronoun:['她','他','TA'].includes(player.pronoun)?player.pronoun:'她',answers} : null;
+    out.player=player.name || player.nickname ? {name:asText(player.name,this.playerNameMaxLength())||'林夏',nickname:asText(player.nickname,this.playerNameMaxLength())||'夏夏',avatar:asText(player.avatar,4)||'林',bg:color(player.bg),age:asInt(player.age,24,18,40),pronoun:['她','他','TA'].includes(player.pronoun)?player.pronoun:'她',answers} : null;
     const taskMap = new Map((this.story.dailyTasks?.pool||[]).map(t=>[t.id,t]));
     out.dailyTasks = array(source.dailyTasks,3,item=>{const t=object(item), defTask=taskMap.get(t.id);return defTask ? {id:defTask.id,name:defTask.name,desc:defTask.desc,reward:defTask.reward,completed:asBool(t.completed),day:asInt(t.day,out.lastTaskDay,0,9999),check:defTask.check} : null;});
     out.taskStreakClaimed = record(source.taskStreakClaimed,20,value=>asBool(value));

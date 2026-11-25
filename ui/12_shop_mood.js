@@ -39,7 +39,7 @@
           return `<div class="shop-item">
             <div class="shop-item-icon">${item.icon}</div>
             <div class="shop-item-info">
-              <div class="shop-item-name">${escapeHtml(item.name)} ×${count}</div>
+              <div class="shop-item-name">${tEsc(item.name)} ×${count}</div>
               <div class="shop-item-desc">${escapeHtml(window.t(item.desc))}</div>
             </div>
             <button class="shop-buy-btn" data-send-gift="${itemId}" style="background:var(--accent2)">送出</button>
@@ -69,7 +69,7 @@
   function handleBuyGift(itemId){
     const r = engine.buyGift(itemId);
     if(!r.ok){ toast(r.reason); return; }
-    toast(t('已购买：{name}', {name: r.item.name}));
+    toast(t('已购买：{name}', {name: t(r.item.name)}));   // v0.9.12：商品名也走翻译
     renderShop(shopCurrentTab);
   }
   let giftSendItemId = null;
@@ -83,7 +83,7 @@
     modal.className = 'gift-send-modal';
     modal.id = 'gift-send-modal';
     modal.innerHTML = `<div class="gift-send-content">
-      <div class="gift-send-title">把「${escapeHtml(item.name)}」送给谁？</div>
+      <div class="gift-send-title">${window.t('把「{item}」送给谁？', {item: optTranslate(item.name)})}</div>
       <div class="gift-send-char">
         ${['shenyan','luci','jiangyu'].map(cid=>{
           const c = STORY.characters[cid];
@@ -156,7 +156,7 @@
     Object.values(STORY.moods).forEach(m=>{
       html += `<div class="mood-opt ${m.id===engine.state.mood?'selected':''}" data-mood-opt="${m.id}">
         <div class="mood-opt-icon">${m.icon}</div>
-        <div class="mood-opt-label">${m.label}</div>
+        <div class="mood-opt-label">${escapeHtml(window.t(m.label))}</div>
       </div>`;
     });
     html += '</div>';
@@ -171,7 +171,7 @@
       engine.state.diary.slice().reverse().slice(0, 5).forEach(d=>{
         const m = STORY.moods[d.mood] || {icon:'·'};
         html += `<div class="mood-diary-item">
-          <div class="mood-diary-item-text">${m.icon} ${escapeHtml(d.text)}</div>
+          <div class="mood-diary-item-text">${m.icon} ${tEsc(d.text)}</div>
           <div class="mood-diary-item-meta">第${d.day}天 ${d.time}</div>
         </div>`;
       });
@@ -190,5 +190,5 @@
     renderMood();
   }
   engine.on('moodChanged', ({mood, moodInfo})=>{
-    toast(t('心情：{mood}', {mood: moodInfo.label}));
+    toast(t('心情：{mood}', {mood: t(moodInfo.label)}));   // v0.9.12：心情名也走翻译
   });

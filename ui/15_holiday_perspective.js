@@ -10,17 +10,17 @@
     const todayHoliday = STORY.seasons?.holidays[`${today.month}-${today.date}`];
     let html = `<div class="cal2-season">
       <div class="cal2-season-icon">${season.icon}</div>
-      <div class="cal2-season-name">${season.name} · ${today.month}月${today.date}日</div>
-      <div class="cal2-season-desc">"${escapeHtml(season.desc)}"</div>
+      <div class="cal2-season-name">${tEsc(season.name)} · ${window.t('{m}月{d}日', {m: today.month, d: today.date})}</div>
+      <div class="cal2-season-desc">"${tEsc(season.desc)}"</div>
     </div>`;
     if(todayHoliday){
       html += `<div class="cal2-today-holiday">
         <div class="cal2-today-holiday-icon">${todayHoliday.icon}</div>
-        <div class="cal2-today-holiday-name">${escapeHtml(todayHoliday.name)}</div>
-        <div class="cal2-today-holiday-text">${escapeHtml(todayHoliday.text)}</div>
+        <div class="cal2-today-holiday-name">${tEsc(todayHoliday.name)}</div>
+        <div class="cal2-today-holiday-text">${tEsc(todayHoliday.text)}</div>
       </div>`;
     } else {
-      html += '<div class="cal2-section-title">今日</div>';
+      html += '<div class="cal2-section-title">' + window.t('今日') + '</div>';
       html += '<div style="font-size:12px;color:var(--ink-mute);padding:8px 0;">今天没有特别的日子。</div>';
     }
     // 即将到来的节日
@@ -32,9 +32,9 @@
           <div class="cal2-upcoming-icon">${u.holiday.icon}</div>
           <div class="cal2-upcoming-info">
             <div class="cal2-upcoming-name">${escapeHtml(u.holiday.name)}</div>
-            <div class="cal2-upcoming-date">${u.date.month}月${u.date.date}日</div>
+            <div class="cal2-upcoming-date">${window.t('{m}月{d}日', {m: u.date.month, d: u.date.date})}</div>
           </div>
-          <div class="cal2-upcoming-in">${u.inDays}天后</div>
+          <div class="cal2-upcoming-in">${window.t('{n}天后', {n: u.inDays})}</div>
         </div>`;
       });
     }
@@ -44,15 +44,15 @@
       html += `<div class="cal2-upcoming-item">
         <div class="cal2-upcoming-icon">${h.icon}</div>
         <div class="cal2-upcoming-info">
-          <div class="cal2-upcoming-name">${escapeHtml(h.name)}</div>
-          <div class="cal2-upcoming-date">${escapeHtml(h.text)}</div>
+          <div class="cal2-upcoming-name">${tEsc(h.name)}</div>
+          <div class="cal2-upcoming-date">${tEsc(h.text)}</div>
         </div>
       </div>`;
     });
     content.innerHTML = html;
   }
   engine.on('holidayTriggered', ({holiday, date})=>{
-    showNotif('susu', `今日节日：${holiday.name}`);
+    showNotif('susu', `${window.t('今日节日：{name}', {name: optTranslate(holiday.name)})}`);
   });
 
   // ===== v0.0.10 男主视角+反向剧情 =====
@@ -76,7 +76,7 @@
         scenesHtml = '<div class="persp-card-scenes">';
         p.scenes.forEach(s=>{
           scenesHtml += `<div class="persp-scene-item ${s.seen?'seen':''}" data-pscene="${p.charId}:${s.id}">
-            <span class="persp-scene-item-title">${escapeHtml(s.title)}</span>
+            <span class="persp-scene-item-title">${tEsc(s.title)}</span>
             ${s.seen ? '<span class="persp-scene-item-check">✓</span>' : '<span style="font-size:10px;color:var(--ink-mute)">未看</span>'}
           </div>`;
         });
@@ -93,7 +93,7 @@
         <div class="persp-card-header">
           <div class="persp-card-avatar" style="background:${char.bg||'#333'}">${avatarImg(char)}</div>
           <div>
-            <div class="persp-card-title">${escapeHtml(p.title)}</div>
+            <div class="persp-card-title">${tEsc(p.title)}</div>
             <div class="persp-card-status">${statusText}</div>
           </div>
         </div>
@@ -108,19 +108,19 @@
     const p = STORY.malePerspectives?.[charId];
     const scene = p?.scenes.find(s=>s.id === sceneId);
     if(!scene) return;
-    $('pscene-title').textContent = p.title;
+    $('pscene-title').textContent = optTranslate(p.title);
     const content = $('pscene-content');
     let html = `<div class="pscene-time">${escapeHtml(scene.time)}</div>`;
-    html += `<div class="pscene-title">${escapeHtml(scene.title)}</div>`;
+    html += `<div class="pscene-title">${tEsc(scene.title)}</div>`;
     html += `<div class="pscene-narration">${escapeHtml(scene.narration)}</div>`;
     html += `<div class="pscene-inner">${escapeHtml(scene.innerVoice)}</div>`;
     if(scene.choice){
-      html += `<div class="pscene-choice-prompt">${escapeHtml(scene.choice.prompt)}</div>`;
+      html += `<div class="pscene-choice-prompt">${tEsc(scene.choice.prompt)}</div>`;
       html += '<div class="pscene-options">';
       scene.choice.options.forEach((opt, i)=>{
         html += `<div class="pscene-opt" data-pscene-opt="${i}">
-          ${escapeHtml(opt.text)}
-          <span class="pscene-opt-inner">${escapeHtml(opt.inner)}</span>
+          ${escapeHtml(optText(opt))}
+          <span class="pscene-opt-inner">${tEsc(opt.inner)}</span>
         </div>`;
       });
       html += '</div>';

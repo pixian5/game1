@@ -409,15 +409,17 @@ class PhoneEngine {
     return {day:d, time:`${hh}:${mm}`, hour:Math.floor(m/60), minute:mm};
   }
   getDateLabel(){
-    const dayMap = ['日','一','二','三','四','五','六'];
-    // 起始7月15日星期三
+    // v0.9.12：星期用完整词（界面拿去整词查字典：星期二 → Tue），拼出的 full 与以前完全相同
+    const dayMap = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+    // 起始 2025 年 7 月 15 日，按真实日历是星期二（首页锁屏的占位文字与此一致）
     const startDate = new Date(2025, 6, 15);
     startDate.setDate(startDate.getDate() + this.state.day - 1);
+    const weekday = dayMap[startDate.getDay()];
     return {
       month: startDate.getMonth()+1,
       date: startDate.getDate(),
-      weekday: dayMap[startDate.getDay()],
-      full: `${startDate.getMonth()+1}月${startDate.getDate()}日 星期${dayMap[startDate.getDay()]}`
+      weekday,
+      full: `${startDate.getMonth()+1}月${startDate.getDate()}日 ${weekday}`
     };
   }
   // 时间推进前先派发待处理事件链，避免日常事件插到主线（路线选择等）前面

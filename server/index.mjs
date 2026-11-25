@@ -98,11 +98,28 @@ function serveStatic(req, res, url){
   });
 }
 
+// v0.9.12：安全响应头。静态文件、接口、错误响应统一带上（在请求入口一次性设置，后面各处 writeHead 传入的头与之合并）。
+//   X-Frame-Options / frame-ancestors  禁止被别的网页嵌进框架，防「点击劫持」（把真实的登录界面盖在诱饵页面下面）。
+//                                       页面里的策略元标签管不到这一项，必须由响应头下发
+//   X-Content-Type-Options              浏览器不要自作聪明地猜文件类型
+//   Referrer-Policy                     跳到别的网站时不带完整地址，只带来源
+//   Permissions-Policy                  本游戏用不到的设备能力一律关闭（摄像头、麦克风、定位、支付、通用串行总线设备）
+// 其余内容安全策略仍由 index.html 的策略元标签负责（纯静态部署时同样生效），这里不重复下发，免得两份策略不一致
+const SECURITY_HEADERS = {
+  'X-Frame-Options': 'DENY',
+  'Content-Security-Policy': "frame-ancestors 'none'",
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+};
+
 const server = http.createServer((req, res) => {
   const started = Date.now();
   let url;
   try { url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`); }
   catch(_){ return sendError(res, 400, 'Bad request'); }
+
+  for(const [name, value] of Object.entries(SECURITY_HEADERS)) res.setHeader(name, value);
 
   res.on('finish', () => {
     // 只记录方法/路径/状态/耗时，避免把 Cookie、密码写进日志

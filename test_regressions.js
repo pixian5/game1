@@ -1359,4 +1359,32 @@ test('v0.9.1: 图鉴结局名与实际结局标题一致', ()=>{
   });
 });
 
+test('v0.9.12: 日期标签的星期用完整词，拼出的日期文字与以前一致', ()=>{
+  const e = engine();
+  const d1 = e.getDateLabel();
+  assert.equal(d1.month, 7); assert.equal(d1.date, 15);
+  assert.equal(d1.weekday, '星期二', '界面拿星期整词去查字典（星期二 → Tue）；2025 年 7 月 15 日是星期二');
+  assert.equal(d1.full, '7月15日 星期二', '备忘录、朋友圈、存档摘要里存的日期文字不能变');
+  e.state.day = 2;
+  assert.equal(e.getDateLabel().full, '7月16日 星期三');
+});
+
+test('v0.9.12: 主角姓名长度上限按语言区分（中文 6 个字，其他语言 12 个字符）', ()=>{
+  const e = engine();
+  assert.equal(e.playerNameMaxLength(), 6, '没有语言信息时按中文算');
+  sandbox.window.I18N = { getLang: () => 'en-US' };
+  try {
+    assert.equal(e.playerNameMaxLength(), 12);
+    // 读档清洗：12 个字符的英文名应完整保留
+    const wrapped = e._normalizeSaveData({ slot: 'slot1', state: { ...JSON.parse(JSON.stringify(e.defaultState())), player: { name: 'Alexandria', nickname: 'Summer', pronoun: 'TA', answers: {} } } }, 'slot1');
+    assert.ok(wrapped, '存档应能被识别');
+    assert.equal(wrapped.state.player.name, 'Alexandria', '12 个字符的英文名不应被截断');
+    assert.equal(wrapped.state.player.pronoun, 'TA');
+  } finally {
+    delete sandbox.window.I18N;
+  }
+  const wrappedZh = e._normalizeSaveData({ slot: 'slot1', state: { ...JSON.parse(JSON.stringify(e.defaultState())), player: { name: '王小美美美美美', nickname: '夏夏', pronoun: '她', answers: {} } } }, 'slot1');
+  assert.equal(wrappedZh.state.player.name, '王小美美美美', '中文仍然截到 6 个字');
+});
+
 console.log('全部回归测试通过');

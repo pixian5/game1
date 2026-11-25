@@ -51,7 +51,7 @@
         <div class="call-avatar" style="background:${char?.bg||'#2a2f5a'}">${avatarImg(char)}</div>
         <div class="call-info">
           <div class="call-name">${escapeHtml(window.t(c.name))}</div>
-          <div class="call-meta">${escapeHtml(typeText)} · ${escapeHtml(c.duration)}</div>
+          <div class="call-meta">${escapeHtml(window.t(typeText))} · ${escapeHtml(c.duration)}</div>
         </div>
         <div class="call-type ${escapeHtml(c.type)}">${escapeHtml(c.time)}</div>
       `;
