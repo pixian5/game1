@@ -11,6 +11,9 @@
  *
  * 用法：node tools/i18n-leak-scan.mjs [--json <输出文件>] [--all]
  *   需要本地服务器在 4187 端口（先 node test_server.js；走总闸时由脚本代为启动）。
+ *   也可以直接测线上：BASE=https://… node tools/i18n-leak-scan.mjs --selftest
+ *     线上站点没有调试入口（出于安全只在 127.0.0.1 / localhost 下暴露），这时进入「线上模式」：
+ *     不能补全游戏状态，只检查当前已解锁的应用，结论相应弱一些。
  *   --json  把完整结果写成 JSON（每条残留文字、所属应用、字典里有没有译文）
  *   --all   打印全部残留文字（默认每种只打印前几条）
  *   --selftest  对照自检：扫描前故意往页面里放两条中文（手机容器外、内各一条），结束时必须都被抓到，
@@ -43,9 +46,12 @@ const hasTr = s => Object.prototype.hasOwnProperty.call(PACK, s);
 const browser = await launchBrowser({ headless: true });
 const page = await browser.newPage({ viewport: { width: 430, height: 932 } });
 await page.goto(BASE + '/?debug=1', { waitUntil: 'load', timeout: 60000 });
-await page.waitForFunction(() => window.__neonTest && window.__neonTest.engine);
-await page.evaluate(() => { try { localStorage.clear(); } catch (_) {} });
-await page.click('#lock-screen');
+await page.waitForFunction(() => document.getElementById('lock-screen'));
+// 线上站点出于安全考虑不暴露调试入口（只在 127.0.0.1 / localhost 下才有），所以这里不能等它；
+// 没有调试入口时进入「线上模式」：不能补全游戏状态，只检查当前已解锁的应用
+const HAS_DEBUG = await page.evaluate(() => !!(window.__neonTest && window.__neonTest.engine));
+if(HAS_DEBUG) await page.evaluate(() => { try { localStorage.clear(); } catch (_) {} });
+await page.click('#lock-screen');          // 本地与线上一样：像玩家一样解锁进入主屏
 await page.waitForTimeout(400);
 
 const DEEP = argv.includes('--deep');
@@ -58,32 +64,44 @@ if(SELFTEST) await page.evaluate(texts => {
   document.body.appendChild(mk('leak-selftest-outer', texts.outer));
   (document.getElementById('phone') || document.body).appendChild(mk('leak-selftest-inner', texts.inner));
 }, SELFTEST);
-const result = await page.evaluate(async ({ deep, selftest }) => {
+const result = await page.evaluate(async ({ deep, selftest, hasDebug }) => {
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   // 等待函数必须真的等待：曾经把它写错成「不等待」，扫描在界面还没渲染完时就取文字，
   // 报出一堆假残留（数字看着都合理）。这里实测一次，不达标直接抛错，不让结果流出去
   { const t0 = Date.now(); await sleep(200); if(Date.now() - t0 < 150) throw new Error('等待函数没有真正等待，扫描结果不可信'); }
-  const e = window.__neonTest.engine, S = window.STORY;
+  const e = hasDebug ? window.__neonTest.engine : null, S = window.STORY;
   // 深入模式会点到「删除存档」等会弹出确认框的按钮；无人值守时确认框会卡住整个页面，这里一律按「取消」处理
   window.confirm = () => false; window.alert = () => {}; window.prompt = () => null;
-  // 补全状态：解锁全部应用，并塞入各类数据，让界面有内容可查
-  e.state.day = 12; e.state.minute = 20 * 60;
-  e.state.affection = { shenyan: 16, luci: 16, jiangyu: 16 };
-  e.state.collected = Object.keys(S.collectibles || {}).slice(0, 12);
-  e.state.photos = Object.keys(S.photos || {}).map(id => ({ id, ...S.photos[id], unlocked: true }));
-  e.state.achievements = Object.fromEntries(Object.keys(S.achievements).slice(0, 8).map(k => [k, 1]));
-  e.state.moments = Object.keys(S.moments || {}).slice(0, 4).map(id => ({ id, ...S.moments[id], likes: [], comments: [] }));
-  e.state.flags = { ...(e.state.flags || {}), group_created_group_neon: true };
-  e.state.endingSeen = { shenyan_normal: { day: 12 } };
-  window.I18N.setLang('en-US');
-  e.emit('stateChange', e.state);
-  await sleep(500);
-  const apps = [...document.querySelectorAll('[data-app]')].map(el => el.dataset.app);
-  e.state.appsUnlocked = Object.fromEntries(apps.map(a => [a, true]));
+  if(hasDebug){
+    // 补全状态：解锁全部应用，并塞入各类数据，让界面有内容可查
+    e.state.day = 12; e.state.minute = 20 * 60;
+    e.state.affection = { shenyan: 16, luci: 16, jiangyu: 16 };
+    e.state.collected = Object.keys(S.collectibles || {}).slice(0, 12);
+    e.state.photos = Object.keys(S.photos || {}).map(id => ({ id, ...S.photos[id], unlocked: true }));
+    e.state.achievements = Object.fromEntries(Object.keys(S.achievements).slice(0, 8).map(k => [k, 1]));
+    e.state.moments = Object.keys(S.moments || {}).slice(0, 4).map(id => ({ id, ...S.moments[id], likes: [], comments: [] }));
+    e.state.flags = { ...(e.state.flags || {}), group_created_group_neon: true };
+    e.state.endingSeen = { shenyan_normal: { day: 12 } };
+    window.I18N.setLang('en-US');
+    e.emit('stateChange', e.state);
+    await sleep(500);
+  } else {
+    // 线上模式：像玩家一样操作——打开设置，点「英文」单选框
+    window.openApp('settings');
+    await sleep(200);
+    const radio = document.querySelector('input[name=set-lang][value=en-US]');
+    if(!radio) throw new Error('设置界面里找不到语言选项');
+    radio.click();
+    await sleep(500);
+  }
+  // 线上模式只看当前已解锁的应用（未解锁的图标带 hidden 属性；此刻主屏不是当前界面，不能按「看得见」判断）
+  const apps = [...document.querySelectorAll('[data-app]')].filter(el => hasDebug || !el.hidden).map(el => el.dataset.app);
+  if(hasDebug) e.state.appsUnlocked = Object.fromEntries(apps.map(a => [a, true]));
   const perApp = {};
   const stat = { clicks: 0, texts: 0, errors: 0 };
   // 扫描期间页面抛出的异常也记下来：界面报错会让某个应用打不开，看上去就像「没有残留」
   window.addEventListener('error', () => { stat.errors++; });
+  if(!hasDebug) stat.live = true;
   // 收集当前页面上可见的、含中文的整段文字。
   // 只取「自己不再有子元素」的可见节点，避免父容器把子节点的文字重复算一遍；
   // 范围是整个页面——解锁横幅、礼物弹层、闲逛提示等都直接挂在 body 上，不在手机容器里
@@ -150,7 +168,7 @@ const result = await page.evaluate(async ({ deep, selftest }) => {
     }
   }
   return { perApp, stat };
-}, { deep: DEEP, selftest: SELFTEST });
+}, { deep: DEEP, selftest: SELFTEST, hasDebug: HAS_DEBUG });
 await browser.close();
 
 const cjkCount = s => (s.match(/[\u4e00-\u9fff]/g) || []).length;
@@ -174,7 +192,7 @@ const selftestCaught = !SELFTEST || ['outer', 'inner'].every(k => (result.perApp
 
 console.log(`英文模式中文残留：${appTotal} 个应用里 ${appLeak} 个有残留，共 ${lineTotal} 行、${charTotal} 个汉字`);
 console.log(`去重后 ${strings.size} 种文字：字典里已有译文但界面没用上的 ${withTr} 种；字典里没有译文的 ${without} 种`);
-console.log(`扫描范围：${appTotal} 个应用${DEEP ? `，共点击 ${SCAN.clicks} 次` : ''}；同一时刻最多看到 ${SCAN.texts} 条可见文字；页面异常 ${SCAN.errors} 次`
+console.log(`扫描范围：${appTotal} 个应用${SCAN.live ? '（线上模式：未补全游戏状态，只含当前已解锁的应用）' : ''}${DEEP ? `，共点击 ${SCAN.clicks} 次` : ''}；同一时刻最多看到 ${SCAN.texts} 条可见文字；页面异常 ${SCAN.errors} 次`
   + (SELFTEST ? `；对照自检${selftestCaught ? '通过' : '失败'}（故意放入的两条中文${selftestCaught ? '都被抓到' : '没有被全部抓到'}）` : ''));
 for(const [app, info] of Object.entries(result.perApp)){
   if(!info || app.startsWith('selftest-') || !info.lines.length) continue;

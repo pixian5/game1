@@ -1,7 +1,7 @@
 #!/bin/sh
 # ===== 在 Instabox 沙箱上运行依赖数据库的测试（本机入口）=====
 # 用法：
-#   npm run test:db:instabox           账号接口测试（54 项，约 15 秒）
+#   npm run test:db:instabox           账号接口测试（74 项，约 15 秒）
 #   npm run test:db:instabox -- all    再加「账号与云存档」浏览器端到端（约 1 分钟）
 # 可用环境变量 INSTABOX_BOX 指定沙箱实例编号（默认是本项目一直用的那个）。
 #
